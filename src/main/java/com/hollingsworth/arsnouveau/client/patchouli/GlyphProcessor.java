@@ -8,6 +8,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.crafting.RecipeManager;
+import net.minecraft.world.level.Level;
 import vazkii.patchouli.api.IComponentProcessor;
 import vazkii.patchouli.api.IVariable;
 import vazkii.patchouli.api.IVariableProvider;
@@ -17,7 +18,7 @@ public class GlyphProcessor implements IComponentProcessor {
     GlyphRecipe recipe;
 
     @Override
-    public void setup(IVariableProvider variables) {
+    public void setup(Level level, IVariableProvider variables) {
         RecipeManager manager = Minecraft.getInstance().level.getRecipeManager();
         String recipeID = variables.get("recipe").asString();
         try {
@@ -27,7 +28,7 @@ public class GlyphProcessor implements IComponentProcessor {
     }
 
     @Override
-    public IVariable process(String s) {
+    public IVariable process(Level level,  String s) {
         if (recipe == null)
             return null;
 

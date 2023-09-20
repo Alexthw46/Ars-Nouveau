@@ -2,6 +2,7 @@ package com.hollingsworth.arsnouveau.api.spell;
 
 import com.hollingsworth.arsnouveau.api.ANFakePlayer;
 import com.hollingsworth.arsnouveau.api.event.SpellDamageEvent;
+import com.hollingsworth.arsnouveau.api.perk.PerkAttributes;
 import com.hollingsworth.arsnouveau.api.util.LootUtil;
 import com.hollingsworth.arsnouveau.common.spell.augment.AugmentFortune;
 import net.minecraft.resources.ResourceLocation;
@@ -12,7 +13,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.storage.loot.LootContext;
+import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
 import net.minecraftforge.common.MinecraftForge;
@@ -36,13 +37,13 @@ public interface IDamageEffect {
      * @param entity       Target
      * @param source       DamageType
      * @param baseDamage   Starting damage
-     * //TODO @return true if Damage is dealt, false if damage was canceled or reduced to 0
      */
-    default void attemptDamage(Level world, @NotNull LivingEntity shooter, SpellStats stats, SpellContext spellContext, SpellResolver resolver, Entity entity, DamageSource source, float baseDamage) {
+    default boolean attemptDamage(Level world, @NotNull LivingEntity shooter, SpellStats stats, SpellContext spellContext, SpellResolver resolver, Entity entity, DamageSource source, float baseDamage) {
         if (!canDamage(shooter, stats, spellContext, resolver, entity))
-            return; //false;
+            return false;
         ServerLevel server = (ServerLevel) world;
-        float totalDamage = (float) (baseDamage + stats.getDamageModifier());
+        float totalDamage = (float) (baseDamage + stats.getDamageModifier() + (shooter.getAttributes().hasAttribute(PerkAttributes.SPELL_DAMAGE_BONUS.get()) ?
+                shooter.getAttributeValue(PerkAttributes.SPELL_DAMAGE_BONUS.get()) : 0));
 
         SpellDamageEvent.Pre preDamage = new SpellDamageEvent.Pre(source, shooter, entity, totalDamage, spellContext);
         MinecraftForge.EVENT_BUS.post(preDamage);
@@ -50,27 +51,29 @@ public interface IDamageEffect {
         source = preDamage.damageSource;
         totalDamage = preDamage.damage;
         if (totalDamage <= 0 || preDamage.isCanceled())
-            return; // false;
+            return false;
 
         if (!entity.hurt(source, totalDamage)) {
-            return; //false;
+            return false;
         }
+
         shooter.setLastHurtMob(entity);
 
         SpellDamageEvent.Post postDamage = new SpellDamageEvent.Post(source, shooter, entity, totalDamage, spellContext);
         MinecraftForge.EVENT_BUS.post(postDamage);
 
-        if (entity instanceof LivingEntity mob && mob.getHealth() <= 0 && !mob.isRemoved() && stats.hasBuff(AugmentFortune.INSTANCE)) {
+        if (entity instanceof
+                    LivingEntity mob && mob.getHealth() <= 0 && !mob.isRemoved() && stats.hasBuff(AugmentFortune.INSTANCE)) {
             Player playerContext = shooter instanceof Player player ? player : ANFakePlayer.getPlayer(server);
             int looting = stats.getBuffCount(AugmentFortune.INSTANCE);
-            LootContext.Builder lootContext = LootUtil.getLootingContext(server, shooter, mob, looting, DamageSource.playerAttack(playerContext));
+            LootParams lootContext = LootUtil.getLootingContext(server, shooter, mob, looting, world.damageSources().playerAttack(playerContext)).create(LootContextParamSets.ENTITY);
             ResourceLocation lootTable = mob.getLootTable();
-            LootTable loottable = server.getServer().getLootTables().get(lootTable);
-            List<ItemStack> items = loottable.getRandomItems(lootContext.create(LootContextParamSets.ENTITY));
+            LootTable loottable = server.getServer().getLootData().getLootTable(lootTable);
+            List<ItemStack> items = loottable.getRandomItems(lootContext);
             items.forEach(mob::spawnAtLocation);
         }
 
-        //return true;
+        return true;
     }
 
     /**
@@ -79,8 +82,7 @@ public interface IDamageEffect {
      * @return Player-Based Damage Source, will use Ars FakePlayer if the source is not a Player
      */
     default DamageSource buildDamageSource(Level world, LivingEntity shooter) {
-        shooter = !(shooter instanceof Player) ? ANFakePlayer.getPlayer((ServerLevel) world) : shooter;
-        return DamageSource.playerAttack((Player) shooter);
+        return world.damageSources().playerAttack(!(shooter instanceof Player player) ? ANFakePlayer.getPlayer((ServerLevel) world) : player);
     }
 
 }

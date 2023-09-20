@@ -1,6 +1,6 @@
 package com.hollingsworth.arsnouveau.client;
 
-import com.hollingsworth.arsnouveau.client.util.ColorPos;
+import com.hollingsworth.arsnouveau.client.particle.ColorPos;
 import com.mojang.blaze3d.pipeline.TextureTarget;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.core.BlockPos;
@@ -28,7 +28,10 @@ public class ClientInfo {
 
     public static TextureTarget skyRenderTarget;
     public static ShaderInstance skyShader;
+    public static ShaderInstance blameShader;
+    public static ShaderInstance rainbowShader;
 
+    public static boolean isSupporter = false;
 
     public static Component[] storageTooltip = new Component[0];
     public static void setTooltip(Component... string) {

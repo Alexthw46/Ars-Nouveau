@@ -3,7 +3,7 @@ package com.hollingsworth.arsnouveau.common.event;
 import com.hollingsworth.arsnouveau.ArsNouveau;
 import com.hollingsworth.arsnouveau.api.mana.IManaCap;
 import com.hollingsworth.arsnouveau.api.util.ManaUtil;
-import com.hollingsworth.arsnouveau.common.capability.CapabilityRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.CapabilityRegistry;
 import com.hollingsworth.arsnouveau.common.network.Networking;
 import com.hollingsworth.arsnouveau.common.network.PacketUpdateMana;
 import com.hollingsworth.arsnouveau.setup.config.ServerConfig;
@@ -28,7 +28,7 @@ public class ManaCapEvents {
         if (mana == null)
             return;
         // Force sync mana to client because client caps vanish on world change
-        boolean shouldIgnoreMax = e.player.getLevel().getGameTime() % 60 == 0;
+        boolean shouldIgnoreMax = e.player.level().getGameTime() % 60 == 0;
         if (mana.getCurrentMana() != mana.getMaxMana() || shouldIgnoreMax) {
             double regenPerSecond = ManaUtil.getManaRegen(e.player) / Math.max(1, ((int) MEAN_TPS / ServerConfig.REGEN_INTERVAL.get()));
             mana.addMana(regenPerSecond);

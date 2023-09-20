@@ -33,16 +33,16 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import org.jetbrains.annotations.NotNull;
-import software.bernie.geckolib3.core.IAnimatable;
-import software.bernie.geckolib3.core.manager.AnimationData;
-import software.bernie.geckolib3.core.manager.AnimationFactory;
-import software.bernie.geckolib3.util.GeckoLibUtil;
+import software.bernie.geckolib.animatable.GeoItem;
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.util.GeckoLibUtil;
 
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.function.Consumer;
 
-public class ScryCaster extends ModItem implements ICasterTool, IAnimatable {
+public class ScryCaster extends ModItem implements ICasterTool, GeoItem {
 
     public ScryCaster(Properties properties) {
         super(properties);
@@ -69,21 +69,8 @@ public class ScryCaster extends ModItem implements ICasterTool, IAnimatable {
 
     @Override
     public InteractionResultHolder<ItemStack> use(Level pLevel, Player pPlayer, InteractionHand pUsedHand) {
-        if(pLevel.isClientSide)
-            return new InteractionResultHolder<>(InteractionResult.SUCCESS, pPlayer.getItemInHand(pUsedHand));
-
         ItemStack stack = pPlayer.getItemInHand(pUsedHand);
-        ScryCaster.Data data = new Data(stack);
         ISpellCaster caster = getSpellCaster(stack);
-        if(data.scryPos == null){
-            PortUtil.sendMessage(pPlayer, Component.translatable("ars_nouveau.scry_caster.no_pos"));
-            return super.use(pLevel, pPlayer, pUsedHand);
-        }
-
-        if(!caster.getSpell().isValid()){
-            PortUtil.sendMessage(pPlayer, Component.translatable("ars_nouveau.invalid_spell"));
-            super.use(pLevel, pPlayer, pUsedHand);
-        }
         return caster.castSpell(pLevel, (LivingEntity) pPlayer, pUsedHand, Component.translatable("ars_nouveau.invalid_spell"));
     }
 
@@ -120,13 +107,13 @@ public class ScryCaster extends ModItem implements ICasterTool, IAnimatable {
             }
         });
     }
-    AnimationFactory factory = GeckoLibUtil.createFactory(this);
+    AnimatableInstanceCache factory = GeckoLibUtil.createInstanceCache(this);
 
     @Override
-    public void registerControllers(AnimationData data) {}
+    public void registerControllers(AnimatableManager.ControllerRegistrar data) {}
 
     @Override
-    public AnimationFactory getFactory() {
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
         return factory;
     }
 
@@ -153,7 +140,7 @@ public class ScryCaster extends ModItem implements ICasterTool, IAnimatable {
             }
             Player player = entity instanceof Player thisPlayer ? thisPlayer : ANFakePlayer.getPlayer((ServerLevel) worldIn);
             IWrappedCaster wrappedCaster = entity instanceof Player pCaster ? new PlayerCaster(pCaster) : new LivingCaster(entity);
-            SpellResolver resolver = getSpellResolver(new SpellContext(worldIn, spell, entity, wrappedCaster, stack), worldIn, (LivingEntity) player, handIn);
+            SpellResolver resolver = getSpellResolver(new SpellContext(worldIn, spell, entity, wrappedCaster, stack), worldIn, player, handIn);
             ITurretBehavior behavior = BasicSpellTurret.TURRET_BEHAVIOR_MAP.get(spell.getCastMethod());
             if(behavior == null){
                 PortUtil.sendMessage(entity, Component.translatable("ars_nouveau.scry_caster.invalid_behavior"));

@@ -1,7 +1,9 @@
 package com.hollingsworth.arsnouveau.common.block.tile;
 
 import com.hollingsworth.arsnouveau.api.client.ITooltipProvider;
+import com.hollingsworth.arsnouveau.api.item.IWandable;
 import com.hollingsworth.arsnouveau.api.util.NBTUtil;
+import com.hollingsworth.arsnouveau.client.particle.ParticleColor;
 import com.hollingsworth.arsnouveau.client.particle.ParticleUtil;
 import com.hollingsworth.arsnouveau.common.block.ITickable;
 import com.hollingsworth.arsnouveau.common.block.ScribesBlock;
@@ -11,7 +13,7 @@ import com.hollingsworth.arsnouveau.common.entity.EntityFlyingItem;
 import com.hollingsworth.arsnouveau.common.network.Networking;
 import com.hollingsworth.arsnouveau.common.network.PacketOneShotAnimation;
 import com.hollingsworth.arsnouveau.common.util.PortUtil;
-import com.hollingsworth.arsnouveau.setup.BlockRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.BlockRegistry;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -34,14 +36,15 @@ import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.wrapper.InvWrapper;
 import org.jetbrains.annotations.NotNull;
-import software.bernie.geckolib3.core.IAnimatable;
-import software.bernie.geckolib3.core.PlayState;
-import software.bernie.geckolib3.core.builder.AnimationBuilder;
-import software.bernie.geckolib3.core.controller.AnimationController;
-import software.bernie.geckolib3.core.event.predicate.AnimationEvent;
-import software.bernie.geckolib3.core.manager.AnimationData;
-import software.bernie.geckolib3.core.manager.AnimationFactory;
-import software.bernie.geckolib3.util.GeckoLibUtil;
+import software.bernie.geckolib.animatable.GeoBlockEntity;
+import software.bernie.geckolib.core.animatable.GeoAnimatable;
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.core.animation.AnimationController;
+import software.bernie.geckolib.core.animation.AnimationState;
+import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.core.object.PlayState;
+import software.bernie.geckolib.util.GeckoLibUtil;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -49,7 +52,7 @@ import java.util.List;
 
 import static net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER;
 
-public class ScribesTile extends ModdedTile implements IAnimatable, ITickable, Container, ITooltipProvider, IAnimationListener {
+public class ScribesTile extends ModdedTile implements GeoBlockEntity, ITickable, Container, ITooltipProvider, IAnimationListener, IWandable {
     private final LazyOptional<IItemHandler> itemHandler = LazyOptional.of(() -> new InvWrapper(this));
     private ItemStack stack = ItemStack.EMPTY;
     boolean synced;
@@ -58,7 +61,7 @@ public class ScribesTile extends ModdedTile implements IAnimatable, ITickable, C
     ResourceLocation recipeID; // Cached for after load
     public boolean crafting;
     public int craftingTicks;
-
+    public boolean autoYoink = true;
 
     public ScribesTile(BlockPos pos, BlockState state) {
         super(BlockRegistry.SCRIBES_TABLE_TILE, pos, state);
@@ -92,14 +95,15 @@ public class ScribesTile extends ModdedTile implements IAnimatable, ITickable, C
                     copyStack.setCount(1);
                     consumedStacks.add(copyStack);
                     e.getItem().shrink(1);
-                    ParticleUtil.spawnTouchPacket(level, e.getOnPos(), ParticleUtil.defaultParticleColorWrapper());
+                    ParticleUtil.spawnTouchPacket(level, e.getOnPos(), ParticleColor.defaultParticleColor());
                     updateBlock();
                     foundStack = true;
                     break;
                 }
             }
-            if (!foundStack && level.getGameTime() % 20 == 0)
-                checkInventories();
+            if (!foundStack && level.getGameTime() % 20 == 0 && autoYoink) {
+                takeNearby();
+            }
 
             if (getRemainingRequired().isEmpty() && !crafting) {
                 crafting = true;
@@ -113,7 +117,7 @@ public class ScribesTile extends ModdedTile implements IAnimatable, ITickable, C
             setChanged();
         }
         if (!level.isClientSide && crafting && craftingTicks == 0 && recipe != null) {
-            level.addFreshEntity(new ItemEntity(level, getX(), getY() + 1, getZ(), recipe.output.copy()));
+            level.addFreshEntity(new ItemEntity(level, getX() + 0.5, getY() + 1.1, getZ() + 0.5, recipe.output.copy()));
             recipe = null;
             recipeID = new ResourceLocation("");
             crafting = false;
@@ -122,7 +126,7 @@ public class ScribesTile extends ModdedTile implements IAnimatable, ITickable, C
         }
     }
 
-    public void checkInventories() {
+    public void takeNearby() {
         for (BlockPos bPos : BlockPos.betweenClosed(worldPosition.north(6).east(6).below(2), worldPosition.south(6).west(6).above(2))) {
             if (level.getBlockEntity(bPos) != null && level.getBlockEntity(bPos).getCapability(ITEM_HANDLER, null).isPresent()) {
                 IItemHandler handler = level.getBlockEntity(bPos).getCapability(ITEM_HANDLER, null).orElse(null);
@@ -151,7 +155,7 @@ public class ScribesTile extends ModdedTile implements IAnimatable, ITickable, C
             return false;
         ItemStack copyStack = stack.split(1);
         consumedStacks.add(copyStack);
-        ParticleUtil.spawnTouchPacket(level, getBlockPos().above(), ParticleUtil.defaultParticleColorWrapper());
+        ParticleUtil.spawnTouchPacket(level, getBlockPos().above(), ParticleColor.defaultParticleColor());
         updateBlock();
         return true;
     }
@@ -261,6 +265,12 @@ public class ScribesTile extends ModdedTile implements IAnimatable, ITickable, C
     }
 
     @Override
+    public void onWanded(Player playerEntity) {
+        autoYoink = !autoYoink;
+        updateBlock();
+    }
+
+    @Override
     public void load(CompoundTag compound) {
         super.load(compound);
         stack = ItemStack.of((CompoundTag) compound.get("itemStack"));
@@ -272,6 +282,7 @@ public class ScribesTile extends ModdedTile implements IAnimatable, ITickable, C
         this.consumedStacks = NBTUtil.readItems(compound, "consumed");
         this.craftingTicks = compound.getInt("craftingTicks");
         this.crafting = compound.getBoolean("crafting");
+        this.autoYoink = !compound.contains("autoYoink") || compound.getBoolean("autoYoink");
     }
 
     @Override
@@ -289,9 +300,10 @@ public class ScribesTile extends ModdedTile implements IAnimatable, ITickable, C
         NBTUtil.writeItems(compound, "consumed", consumedStacks);
         compound.putInt("craftingTicks", craftingTicks);
         compound.putBoolean("crafting", crafting);
+        compound.putBoolean("autoYoink", autoYoink);
     }
 
-    private <E extends BlockEntity & IAnimatable> PlayState idlePredicate(AnimationEvent<E> event) {
+    private <E extends BlockEntity & GeoAnimatable> PlayState idlePredicate(AnimationState<E> event) {
         return PlayState.CONTINUE;
     }
 
@@ -300,14 +312,14 @@ public class ScribesTile extends ModdedTile implements IAnimatable, ITickable, C
         if (controller == null) {
             return;
         }
-        controller.markNeedsReload();
-        controller.setAnimation(new AnimationBuilder().addAnimation("create_glyph"));
+        controller.forceAnimationReset();
+        controller.setAnimation(RawAnimation.begin().thenPlay("create_glyph"));
     }
 
     @Override
-    public void registerControllers(AnimationData data) {
+    public void registerControllers(AnimatableManager.ControllerRegistrar data) {
         this.controller = new AnimationController<>(this, "controller", 1, this::idlePredicate);
-        data.addAnimationController(controller);
+        data.add(controller);
     }
 
     @Override
@@ -315,11 +327,11 @@ public class ScribesTile extends ModdedTile implements IAnimatable, ITickable, C
         return super.getRenderBoundingBox().inflate(2);
     }
 
-    AnimationFactory factory = GeckoLibUtil.createFactory(this);
+    AnimatableInstanceCache factory = GeckoLibUtil.createInstanceCache(this);
     AnimationController<ScribesTile> controller;
 
     @Override
-    public AnimationFactory getFactory() {
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
         return factory;
     }
 
@@ -398,6 +410,9 @@ public class ScribesTile extends ModdedTile implements IAnimatable, ITickable, C
         if(recipe != null){
             tooltip.add(Component.translatable("ars_nouveau.crafting", recipe.output.getHoverName()));
             tooltip.add(Component.translatable("ars_nouveau.scribes_table.throw_items").withStyle(ChatFormatting.GOLD));
+        }
+        if(!autoYoink){
+            tooltip.add(Component.translatable("ars_nouveau.scribes_table.auto_take_disabled").withStyle(ChatFormatting.GOLD));
         }
     }
 

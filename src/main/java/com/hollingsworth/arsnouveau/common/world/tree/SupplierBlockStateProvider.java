@@ -1,7 +1,7 @@
 package com.hollingsworth.arsnouveau.common.world.tree;
 
 import com.hollingsworth.arsnouveau.ArsNouveau;
-import com.hollingsworth.arsnouveau.setup.BlockRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.BlockRegistry;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.resources.ResourceLocation;
@@ -22,7 +22,7 @@ public class SupplierBlockStateProvider extends AbstractSupplierBlockStateProvid
 
     @Override
     protected BlockStateProviderType<?> type() {
-        return BlockRegistry.stateProviderType;
+        return BlockRegistry.stateProviderType.get();
     }
 
 }

@@ -9,34 +9,31 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.core.Direction;
-import software.bernie.geckolib3.geo.render.built.GeoModel;
-import software.bernie.geckolib3.model.AnimatedGeoModel;
-
-import javax.annotation.Nullable;
+import software.bernie.geckolib.cache.object.BakedGeoModel;
+import software.bernie.geckolib.model.GeoModel;
 
 public class BasicTurretRenderer extends ArsGeoBlockRenderer<BasicSpellTurretTile> {
-    public static AnimatedGeoModel model = new GenericModel("basic_spell_turret");
+    public static GeoModel model = new GenericModel("basic_spell_turret");
 
     public BasicTurretRenderer(BlockEntityRendererProvider.Context rendererDispatcherIn) {
         this(rendererDispatcherIn, model);
     }
 
-    public BasicTurretRenderer(BlockEntityRendererProvider.Context rendererDispatcherIn, AnimatedGeoModel<BasicSpellTurretTile> modelProvider) {
+    public BasicTurretRenderer(BlockEntityRendererProvider.Context rendererDispatcherIn, GeoModel<BasicSpellTurretTile> modelProvider) {
         super(rendererDispatcherIn, modelProvider);
     }
 
     @Override
-    public void render(GeoModel model, BasicSpellTurretTile animatable, float partialTicks, RenderType type, PoseStack matrixStackIn, @Nullable MultiBufferSource renderTypeBuffer, @Nullable VertexConsumer vertexBuilder, int packedLightIn, int packedOverlayIn, float red, float green, float blue, float alpha) {
-        matrixStackIn.pushPose();
+    public void actuallyRender(PoseStack poseStack, BasicSpellTurretTile animatable, BakedGeoModel model, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
+        poseStack.pushPose();
         Direction direction = animatable.getBlockState().getValue(BasicSpellTurret.FACING);
         if (direction == Direction.UP) {
-            matrixStackIn.translate(0, -0.5, -0.5);
+            poseStack.translate(0, 0.5, -0.5);
         } else if (direction == Direction.DOWN) {
-            matrixStackIn.translate(0, -0.5, 0.5);
+            poseStack.translate(0, 0.5, 0.5);
         }
-        super.render(model, animatable, partialTicks, type, matrixStackIn, renderTypeBuffer, vertexBuilder, packedLightIn, packedOverlayIn, red, green, blue, alpha);
-
-        matrixStackIn.popPose();
+        super.actuallyRender(poseStack, animatable, model, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
+        poseStack.popPose();
     }
 
     public static GenericItemBlockRenderer getISTER() {

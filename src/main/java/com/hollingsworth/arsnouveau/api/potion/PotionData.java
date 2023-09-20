@@ -1,6 +1,5 @@
 package com.hollingsworth.arsnouveau.api.potion;
 
-import net.minecraft.core.Registry;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
@@ -8,11 +7,13 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.Potion;
 import net.minecraft.world.item.alchemy.PotionUtils;
 import net.minecraft.world.item.alchemy.Potions;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -54,7 +55,11 @@ public class PotionData implements Cloneable{
     }
 
     public ItemStack asPotionStack(){
-        ItemStack potionStack = new ItemStack(Items.POTION);
+        return asPotionStack(Items.POTION);
+    }
+
+    public ItemStack asPotionStack(Item item){
+        ItemStack potionStack = new ItemStack(item);
         if(this.getPotion() == Potions.EMPTY)
             return potionStack;
         PotionUtils.setPotion(potionStack, this.getPotion());
@@ -76,7 +81,7 @@ public class PotionData implements Cloneable{
 
     public CompoundTag toTag(){
         CompoundTag tag = new CompoundTag();
-        tag.putString("Potion", Registry.POTION.getKey(getPotion()).toString());
+        tag.putString("Potion", ForgeRegistries.POTIONS.getKey(getPotion()).toString());
         if (!getCustomEffects().isEmpty()) {
             ListTag listnbt = new ListTag();
 
@@ -87,7 +92,7 @@ public class PotionData implements Cloneable{
             tag.put("CustomPotionEffects", listnbt);
         }
         ListTag potionTagList = new ListTag();
-        List<String> potionNames = new ArrayList<>(getIncludedPotions().stream().map(potion -> Registry.POTION.getKey(potion).toString()).toList());
+        List<String> potionNames = new ArrayList<>(getIncludedPotions().stream().map(potion -> ForgeRegistries.POTIONS.getKey(potion).toString()).toList());
         for(String potion : potionNames){
             potionTagList.add(StringTag.valueOf(potion));
         }

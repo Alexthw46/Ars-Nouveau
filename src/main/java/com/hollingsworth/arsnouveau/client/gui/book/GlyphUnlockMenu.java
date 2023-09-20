@@ -1,26 +1,27 @@
 package com.hollingsworth.arsnouveau.client.gui.book;
 
 import com.hollingsworth.arsnouveau.ArsNouveau;
-import com.hollingsworth.arsnouveau.api.ArsNouveauAPI;
+import com.hollingsworth.arsnouveau.api.registry.GlyphRegistry;
 import com.hollingsworth.arsnouveau.api.spell.AbstractSpellPart;
 import com.hollingsworth.arsnouveau.client.gui.GlyphRecipeTooltip;
 import com.hollingsworth.arsnouveau.client.gui.NoShadowTextField;
 import com.hollingsworth.arsnouveau.client.gui.buttons.*;
 import com.hollingsworth.arsnouveau.common.block.tile.ScribesTile;
-import com.hollingsworth.arsnouveau.common.capability.CapabilityRegistry;
 import com.hollingsworth.arsnouveau.common.capability.IPlayerCap;
 import com.hollingsworth.arsnouveau.common.crafting.recipes.GlyphRecipe;
 import com.hollingsworth.arsnouveau.common.network.Networking;
 import com.hollingsworth.arsnouveau.common.network.PacketSetScribeRecipe;
+import com.hollingsworth.arsnouveau.setup.registry.CapabilityRegistry;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
-import com.mojang.math.Matrix4f;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.Widget;
+import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.screens.inventory.PageButton;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
+import net.minecraft.client.gui.screens.inventory.tooltip.DefaultTooltipPositioner;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.core.BlockPos;
@@ -30,6 +31,7 @@ import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
+import org.joml.Matrix4f;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -70,9 +72,13 @@ public class GlyphUnlockMenu extends BaseBook {
 
     public GlyphUnlockMenu(BlockPos pos) {
         super();
-        allParts = new ArrayList<>(ArsNouveauAPI.getInstance().getSpellpartMap().values().stream().filter(AbstractSpellPart::shouldShowInUnlock).toList());
+        allParts = new ArrayList<>(GlyphRegistry.getSpellpartMap().values().stream().filter(AbstractSpellPart::shouldShowInUnlock).toList());
         this.displayedGlyphs = new ArrayList<>(allParts);
         this.scribesPos = pos;
+    }
+
+    public static void open(BlockPos scribePos) {
+        Minecraft.getInstance().setScreen(new GlyphUnlockMenu(scribePos));
     }
 
     SelectableButton all;
@@ -90,14 +96,14 @@ public class GlyphUnlockMenu extends BaseBook {
         searchBar.setBordered(false);
         searchBar.setTextColor(12694931);
         searchBar.onClear = (val) -> {
-            this.onSearchChanged("", filterSelected);
+            this.onSearchChanged("");
             return null;
         };
         if (searchBar.getValue().isEmpty())
             searchBar.setSuggestion(Component.translatable("ars_nouveau.spell_book_gui.search").getString());
-        searchBar.setResponder((val) -> this.onSearchChanged(val, filterSelected));
+        searchBar.setResponder((val) -> this.onSearchChanged(val));
         addRenderableWidget(searchBar);
-        addRenderableWidget(new CreateSpellButton(this, bookRight - 71, bookBottom - 13, this::onSelectClick));
+        addRenderableWidget(new GuiImageButton(bookRight - 71, bookBottom - 13, 50, 12, new ResourceLocation(ArsNouveau.MODID, "textures/gui/create_icon.png"), this::onSelectClick));
         this.nextButton = addRenderableWidget(new PageButton(bookRight - 20, bookBottom - 10, true, this::onPageIncrease, true));
         this.previousButton = addRenderableWidget(new PageButton(bookLeft - 5, bookBottom - 10, false, this::onPageDec, true));
         updateNextPageButtons();
@@ -114,15 +120,15 @@ public class GlyphUnlockMenu extends BaseBook {
         }
 
         all = (SelectableButton) new SelectableButton(bookRight - 8, bookTop + 22, 0, 0, 23, 20, 23, 20, new ResourceLocation(ArsNouveau.MODID, "textures/gui/filter_tab_all.png"),
-                new ResourceLocation(ArsNouveau.MODID, "textures/gui/filter_tab_all_selected.png"), (b) -> this.setFilter(Filter.ALL, (SelectableButton) b, Component.translatable("ars_nouveau.all_glyphs").getString())).withTooltip(this, Component.translatable("ars_nouveau.all_glyphs"));
+                new ResourceLocation(ArsNouveau.MODID, "textures/gui/filter_tab_all_selected.png"), (b) -> this.setFilter(Filter.ALL, (SelectableButton) b, Component.translatable("ars_nouveau.all_glyphs").getString())).withTooltip(Component.translatable("ars_nouveau.all_glyphs"));
         all.isSelected = true;
         tier1 = (SelectableButton) new SelectableButton(bookRight - 8, bookTop + 46, 0, 0, 23, 20, 23, 20, new ResourceLocation(ArsNouveau.MODID, "textures/gui/filter_tab_tier1.png"),
-                new ResourceLocation(ArsNouveau.MODID, "textures/gui/filter_tab_tier1_selected.png"), (b) -> this.setFilter(Filter.TIER1, (SelectableButton) b, Component.translatable("ars_nouveau.tier", 1).getString())).withTooltip(this, Component.translatable("ars_nouveau.tier", 1));
+                new ResourceLocation(ArsNouveau.MODID, "textures/gui/filter_tab_tier1_selected.png"), (b) -> this.setFilter(Filter.TIER1, (SelectableButton) b, Component.translatable("ars_nouveau.tier", 1).getString())).withTooltip(Component.translatable("ars_nouveau.tier", 1));
 
         tier2 = (SelectableButton) new SelectableButton(bookRight - 8, bookTop + 70, 0, 0, 23, 20, 23, 20, new ResourceLocation(ArsNouveau.MODID, "textures/gui/filter_tab_tier2.png"),
-                new ResourceLocation(ArsNouveau.MODID, "textures/gui/filter_tab_tier2_selected.png"), (b) -> this.setFilter(Filter.TIER2, (SelectableButton) b, Component.translatable("ars_nouveau.tier", 2).getString())).withTooltip(this, Component.translatable("ars_nouveau.tier", 2));
+                new ResourceLocation(ArsNouveau.MODID, "textures/gui/filter_tab_tier2_selected.png"), (b) -> this.setFilter(Filter.TIER2, (SelectableButton) b, Component.translatable("ars_nouveau.tier", 2).getString())).withTooltip(Component.translatable("ars_nouveau.tier", 2));
         tier3 = (SelectableButton) new SelectableButton(bookRight - 8, bookTop + 94, 0, 0, 23, 20, 23, 20, new ResourceLocation(ArsNouveau.MODID, "textures/gui/filter_tab_tier3.png"),
-                new ResourceLocation(ArsNouveau.MODID, "textures/gui/filter_tab_tier3_selected.png"), (b) -> this.setFilter(Filter.TIER3, (SelectableButton) b, Component.translatable("ars_nouveau.tier", 3).getString())).withTooltip(this, Component.translatable("ars_nouveau.tier", 3));
+                new ResourceLocation(ArsNouveau.MODID, "textures/gui/filter_tab_tier3_selected.png"), (b) -> this.setFilter(Filter.TIER3, (SelectableButton) b, Component.translatable("ars_nouveau.tier", 3).getString())).withTooltip(Component.translatable("ars_nouveau.tier", 3));
         filterButtons.add(all);
         filterButtons.add(tier2);
         filterButtons.add(tier1);
@@ -140,7 +146,7 @@ public class GlyphUnlockMenu extends BaseBook {
         this.filterSelected = filter;
         button.isSelected = true;
         this.orderingTitle = displayTitle;
-        onSearchChanged(this.searchBar.value, filterSelected);
+        onSearchChanged(this.searchBar.value);
         resetPageState();
     }
 
@@ -150,7 +156,6 @@ public class GlyphUnlockMenu extends BaseBook {
             Minecraft.getInstance().setScreen(null);
         }
     }
-
 
     public void updateNextPageButtons() {
         if (displayedGlyphs.size() < maxPerPage) {
@@ -162,11 +167,7 @@ public class GlyphUnlockMenu extends BaseBook {
         }
     }
 
-    public static void open(BlockPos scribePos) {
-        Minecraft.getInstance().setScreen(new GlyphUnlockMenu(scribePos));
-    }
-
-    public void onSearchChanged(String str, Filter filter) {
+    public void onSearchChanged(String str) {
         previousString = str;
         if (!str.isEmpty()) {
             searchBar.setSuggestion("");
@@ -178,10 +179,10 @@ public class GlyphUnlockMenu extends BaseBook {
                 }
             }
 
-            for (Widget w : renderables) {
+            for (Renderable w : renderables) {
                 if (w instanceof GlyphButton glyphButton) {
                     if (glyphButton.abstractSpellPart.getRegistryName() != null) {
-                        AbstractSpellPart part = api.getSpellpartMap().get(glyphButton.abstractSpellPart.getRegistryName());
+                        AbstractSpellPart part = GlyphRegistry.getSpellpartMap().get(glyphButton.abstractSpellPart.getRegistryName());
                         if (part != null) {
                             glyphButton.visible = part.getLocaleName().toLowerCase().contains(searchBar.value.toLowerCase());
                         }
@@ -192,7 +193,7 @@ public class GlyphUnlockMenu extends BaseBook {
             // Reset our book on clear
             searchBar.setSuggestion(Component.translatable("ars_nouveau.spell_book_gui.search").getString());
             displayedGlyphs = allParts;
-            for (Widget w : renderables) {
+            for (Renderable w : renderables) {
                 if (w instanceof GlyphButton) {
                     ((GlyphButton) w).visible = true;
                 }
@@ -250,10 +251,10 @@ public class GlyphUnlockMenu extends BaseBook {
             }
             int xOffset = 20 * ((adjustedXPlaced) % PER_ROW) + (nextPage ? 134 : 0);
             int yPlace = adjustedRowsPlaced * 18 + yStart;
-            UnlockGlyphButton cell = new UnlockGlyphButton(this, xStart + xOffset, yPlace, false, part);
+            UnlockGlyphButton cell = new UnlockGlyphButton(xStart + xOffset, yPlace, false, part, this::onGlyphClick);
             IPlayerCap cap = CapabilityRegistry.getPlayerDataCap(Minecraft.getInstance().player).orElse(null);
             if (cap != null) {
-                if (cap.knowsGlyph(part) || api.getDefaultStartingSpells().contains(part)) {
+                if (cap.knowsGlyph(part) || GlyphRegistry.getDefaultStartingSpells().contains(part)) {
                     cell.playerKnows = true;
                 }
             }
@@ -332,39 +333,45 @@ public class GlyphUnlockMenu extends BaseBook {
     }
 
     @Override
-    public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         this.hoveredRecipe = null;
-        super.render(matrixStack, mouseX, mouseY, partialTicks);
+        if(getHoveredRenderable(mouseX, mouseY) instanceof UnlockGlyphButton button){
+            this.hoveredRecipe = button.recipe;
+        }
+        super.render(graphics, mouseX, mouseY, partialTicks);
     }
 
     @Override
-    public void drawBackgroundElements(PoseStack stack, int mouseX, int mouseY, float partialTicks) {
-        super.drawBackgroundElements(stack, mouseX, mouseY, partialTicks);
+    public void drawBackgroundElements(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+        super.drawBackgroundElements(graphics, mouseX, mouseY, partialTicks);
 
-        minecraft.font.draw(stack, orderingTitle, tier1Row > 7 ? 154 : 20, 5 + 18 * (tier1Row + (tier1Row == 1 ? 0 : 1)), -8355712);
+        graphics.drawString(font, orderingTitle, tier1Row > 7 ? 154 : 20, 5 + 18 * (tier1Row + (tier1Row == 1 ? 0 : 1)), -8355712, false);
 
-        drawFromTexture(new ResourceLocation(ArsNouveau.MODID, "textures/gui/create_paper.png"), 216, 179, 0, 0, 56, 15, 56, 15, stack);
+        graphics.blit(new ResourceLocation(ArsNouveau.MODID, "textures/gui/create_paper.png"), 216, 179, 0, 0, 56, 15, 56, 15);
 
-        drawFromTexture(new ResourceLocation(ArsNouveau.MODID, "textures/gui/search_paper.png"), 203, 0, 0, 0, 72, 15, 72, 15, stack);
-        minecraft.font.draw(stack, Component.translatable("ars_nouveau.spell_book_gui.select"), 233, 183, -8355712);
+        graphics.blit(new ResourceLocation(ArsNouveau.MODID, "textures/gui/search_paper.png"), 203, 0, 0, 0, 72, 15, 72, 15);
+        graphics.drawString(font, Component.translatable("ars_nouveau.spell_book_gui.select"), 233, 183, -8355712, false);
     }
 
-    public void drawTooltip(PoseStack stack, int mouseX, int mouseY) {
-        if (tooltip != null && !tooltip.isEmpty()) {
-            if (hoveredRecipe != null) {
-                MutableComponent component = Component.translatable("ars_nouveau.levels_required", ScribesTile.getLevelsFromExp(hoveredRecipe.exp)).withStyle(Style.EMPTY.withColor(ChatFormatting.GREEN));
-                tooltip.add(component);
-            }
-            List<ClientTooltipComponent> components = new ArrayList<>(net.minecraftforge.client.ForgeHooksClient.gatherTooltipComponents(ItemStack.EMPTY, tooltip, mouseX, width, height, this.font, this.font));
-            if (hoveredRecipe != null)
-                components.add(new GlyphRecipeTooltip(hoveredRecipe.inputs));
-            renderTooltipInternal(stack, components, mouseX, mouseY);
+    public void drawTooltip(GuiGraphics stack, int mouseX, int mouseY) {
+        List<Component> tooltip = new ArrayList<>();
+        super.collectTooltips(stack, mouseX, mouseY, tooltip);
+        if (hoveredRecipe != null) {
+            MutableComponent component = Component.translatable("ars_nouveau.levels_required", ScribesTile.getLevelsFromExp(hoveredRecipe.exp)).withStyle(Style.EMPTY.withColor(ChatFormatting.GREEN));
+            tooltip.add(component);
         }
+        List<ClientTooltipComponent> components = new ArrayList<>(net.minecraftforge.client.ForgeHooksClient.gatherTooltipComponents(ItemStack.EMPTY, tooltip, mouseX, width, height, this.font));
+        if (hoveredRecipe != null)
+            components.add(new GlyphRecipeTooltip(hoveredRecipe.inputs));
+        renderTooltipInternal(stack, components, mouseX, mouseY);
+
     }
 
-    public void renderTooltipInternal(PoseStack pPoseStack, List<ClientTooltipComponent> pClientTooltipComponents, int pMouseX, int pMouseY) {
+    public void renderTooltipInternal(GuiGraphics graphics, List<ClientTooltipComponent> pClientTooltipComponents, int pMouseX, int pMouseY) {
+
         if (!pClientTooltipComponents.isEmpty()) {
-            net.minecraftforge.client.event.RenderTooltipEvent.Pre preEvent = net.minecraftforge.client.ForgeHooksClient.onRenderTooltipPre(ItemStack.EMPTY, pPoseStack, pMouseX, pMouseY, width, height, pClientTooltipComponents, this.font, this.font);
+            PoseStack pPoseStack = graphics.pose();
+            net.minecraftforge.client.event.RenderTooltipEvent.Pre preEvent = net.minecraftforge.client.ForgeHooksClient.onRenderTooltipPre(ItemStack.EMPTY, graphics, pMouseX, pMouseY, width, height, pClientTooltipComponents, this.font, DefaultTooltipPositioner.INSTANCE);
             if (preEvent.isCanceled()) return;
             int i = 0;
             int j = pClientTooltipComponents.size() == 1 ? -2 : 0;
@@ -387,32 +394,27 @@ public class GlyphUnlockMenu extends BaseBook {
             if (k2 + j + 6 > this.height) {
                 k2 = this.height - j - 6;
             }
-
             pPoseStack.pushPose();
-            float f = this.itemRenderer.blitOffset;
-            this.itemRenderer.blitOffset = 400.0F;
             Tesselator tesselator = Tesselator.getInstance();
             BufferBuilder bufferbuilder = tesselator.getBuilder();
             RenderSystem.setShader(GameRenderer::getPositionColorShader);
             bufferbuilder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
             Matrix4f matrix4f = pPoseStack.last().pose();
-            net.minecraftforge.client.event.RenderTooltipEvent.Color colorEvent = net.minecraftforge.client.ForgeHooksClient.onRenderTooltipColor(ItemStack.EMPTY, pPoseStack, j2, k2, preEvent.getFont(), pClientTooltipComponents);
-            fillGradient(matrix4f, bufferbuilder, j2 - 3, k2 - 4, j2 + i + 3, k2 - 3, 400, colorEvent.getBackgroundStart(), colorEvent.getBackgroundStart());
-            fillGradient(matrix4f, bufferbuilder, j2 - 3, k2 + j + 3, j2 + i + 3, k2 + j + 4, 400, colorEvent.getBackgroundEnd(), colorEvent.getBackgroundEnd());
-            fillGradient(matrix4f, bufferbuilder, j2 - 3, k2 - 3, j2 + i + 3, k2 + j + 3, 400, colorEvent.getBackgroundStart(), colorEvent.getBackgroundEnd());
-            fillGradient(matrix4f, bufferbuilder, j2 - 4, k2 - 3, j2 - 3, k2 + j + 3, 400, colorEvent.getBackgroundStart(), colorEvent.getBackgroundEnd());
-            fillGradient(matrix4f, bufferbuilder, j2 + i + 3, k2 - 3, j2 + i + 4, k2 + j + 3, 400, colorEvent.getBackgroundStart(), colorEvent.getBackgroundEnd());
-            fillGradient(matrix4f, bufferbuilder, j2 - 3, k2 - 3 + 1, j2 - 3 + 1, k2 + j + 3 - 1, 400, colorEvent.getBorderStart(), colorEvent.getBorderEnd());
-            fillGradient(matrix4f, bufferbuilder, j2 + i + 2, k2 - 3 + 1, j2 + i + 3, k2 + j + 3 - 1, 400, colorEvent.getBorderStart(), colorEvent.getBorderEnd());
-            fillGradient(matrix4f, bufferbuilder, j2 - 3, k2 - 3, j2 + i + 3, k2 - 3 + 1, 400, colorEvent.getBorderStart(), colorEvent.getBorderStart());
-            fillGradient(matrix4f, bufferbuilder, j2 - 3, k2 + j + 2, j2 + i + 3, k2 + j + 3, 400, colorEvent.getBorderEnd(), colorEvent.getBorderEnd());
+            net.minecraftforge.client.event.RenderTooltipEvent.Color colorEvent = net.minecraftforge.client.ForgeHooksClient.onRenderTooltipColor(ItemStack.EMPTY, graphics, j2, k2, preEvent.getFont(), pClientTooltipComponents);
+            graphics.fillGradient( j2 - 3, k2 - 4, j2 + i + 3, k2 - 3, 400, colorEvent.getBackgroundStart(), colorEvent.getBackgroundStart());
+            graphics.fillGradient(j2 - 3, k2 + j + 3, j2 + i + 3, k2 + j + 4, 400, colorEvent.getBackgroundEnd(), colorEvent.getBackgroundEnd());
+            graphics.fillGradient(j2 - 3, k2 - 3, j2 + i + 3, k2 + j + 3, 400, colorEvent.getBackgroundStart(), colorEvent.getBackgroundEnd());
+            graphics.fillGradient(j2 - 4, k2 - 3, j2 - 3, k2 + j + 3, 400, colorEvent.getBackgroundStart(), colorEvent.getBackgroundEnd());
+            graphics.fillGradient(j2 + i + 3, k2 - 3, j2 + i + 4, k2 + j + 3, 400, colorEvent.getBackgroundStart(), colorEvent.getBackgroundEnd());
+            graphics.fillGradient(j2 - 3, k2 - 3 + 1, j2 - 3 + 1, k2 + j + 3 - 1, 400, colorEvent.getBorderStart(), colorEvent.getBorderEnd());
+            graphics.fillGradient(j2 + i + 2, k2 - 3 + 1, j2 + i + 3, k2 + j + 3 - 1, 400, colorEvent.getBorderStart(), colorEvent.getBorderEnd());
+            graphics.fillGradient(j2 - 3, k2 - 3, j2 + i + 3, k2 - 3 + 1, 400, colorEvent.getBorderStart(), colorEvent.getBorderStart());
+            graphics.fillGradient(j2 - 3, k2 + j + 2, j2 + i + 3, k2 + j + 3, 400, colorEvent.getBorderEnd(), colorEvent.getBorderEnd());
             RenderSystem.enableDepthTest();
-            RenderSystem.disableTexture();
             RenderSystem.enableBlend();
             RenderSystem.defaultBlendFunc();
             BufferUploader.drawWithShader(bufferbuilder.end());
             RenderSystem.disableBlend();
-            RenderSystem.enableTexture();
             MultiBufferSource.BufferSource multibuffersource$buffersource = MultiBufferSource.immediate(Tesselator.getInstance().getBuilder());
             pPoseStack.translate(0.0D, 0.0D, 400.0D);
             int l1 = k2;
@@ -424,16 +426,17 @@ public class GlyphUnlockMenu extends BaseBook {
             }
 
             multibuffersource$buffersource.endBatch();
-            pPoseStack.popPose();
             l1 = k2;
 
+            pPoseStack.translate(0,0,600);
             for (int l2 = 0; l2 < pClientTooltipComponents.size(); ++l2) {
                 ClientTooltipComponent clienttooltipcomponent2 = pClientTooltipComponents.get(l2);
-                clienttooltipcomponent2.renderImage(preEvent.getFont(), j2, l1, pPoseStack, this.itemRenderer, 400);
+                clienttooltipcomponent2.renderImage(preEvent.getFont(), j2, l1, graphics);
                 l1 += clienttooltipcomponent2.getHeight() + (l2 == 0 ? 2 : 0);
             }
+            pPoseStack.popPose();
 
-            this.itemRenderer.blitOffset = f;
+//            this.itemRenderer.blitOffset = f;
         }
     }
 }

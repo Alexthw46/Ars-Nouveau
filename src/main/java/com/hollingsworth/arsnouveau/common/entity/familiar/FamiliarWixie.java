@@ -6,7 +6,7 @@ import com.hollingsworth.arsnouveau.api.potion.PotionData;
 import com.hollingsworth.arsnouveau.client.particle.ParticleUtil;
 import com.hollingsworth.arsnouveau.common.block.tile.IAnimationListener;
 import com.hollingsworth.arsnouveau.common.entity.EntityWixie;
-import com.hollingsworth.arsnouveau.common.entity.ModEntities;
+import com.hollingsworth.arsnouveau.setup.registry.ModEntities;
 import com.hollingsworth.arsnouveau.common.network.Networking;
 import com.hollingsworth.arsnouveau.common.network.PacketAnimEntity;
 import com.hollingsworth.arsnouveau.common.util.PortUtil;
@@ -32,9 +32,9 @@ import net.minecraft.world.level.Level;
 import net.minecraftforge.common.Tags;
 import net.minecraftforge.common.brewing.BrewingRecipe;
 import net.minecraftforge.event.entity.living.MobEffectEvent;
-import software.bernie.geckolib3.core.PlayState;
-import software.bernie.geckolib3.core.builder.AnimationBuilder;
-import software.bernie.geckolib3.core.event.predicate.AnimationEvent;
+import software.bernie.geckolib.core.animation.AnimationState;
+import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.core.object.PlayState;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -110,7 +110,7 @@ public class FamiliarWixie extends FlyingFamiliarEntity implements IAnimationLis
     }
 
     @Override
-    public PlayState walkPredicate(AnimationEvent<?> event) {
+    public PlayState walkPredicate(AnimationState event) {
         return PlayState.CONTINUE;
     }
 
@@ -124,8 +124,8 @@ public class FamiliarWixie extends FlyingFamiliarEntity implements IAnimationLis
         if(controller == null)
             return;
         if (arg == EntityWixie.Animations.CAST.ordinal()) {
-            controller.markNeedsReload();
-            controller.setAnimation(new AnimationBuilder().addAnimation("cast"));
+            controller.forceAnimationReset();
+            controller.setAnimation(RawAnimation.begin().thenPlay("cast"));
         }
     }
 

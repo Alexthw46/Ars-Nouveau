@@ -36,8 +36,7 @@ public class IntangibleAirRenderer implements BlockEntityRenderer<IntangibleAirT
         public static final RenderType RenderBlock = create("IntangibleRenderBlock",
                 DefaultVertexFormat.BLOCK, VertexFormat.Mode.QUADS, 256, false, false,
                 RenderType.CompositeState.builder()
-//                    .setShaderState(SMOOTH_SHADE)
-                        .setShaderState(ShaderStateShard.BLOCK_SHADER)
+                        .setShaderState(ShaderStateShard.RENDERTYPE_CRUMBLING_SHADER)
                         .setLightmapState(LIGHTMAP)
                         .setTextureState(BLOCK_SHEET_MIPPED)
                         .setLayeringState(VIEW_OFFSET_Z_LAYERING)
@@ -69,7 +68,6 @@ public class IntangibleAirRenderer implements BlockEntityRenderer<IntangibleAirT
                 f1 = 1f;
                 f2 = 1f;
             }
-            // TODO: check this?
             builder.putBulkData(matrixEntry, bakedquad, f, f1, f2, alpha, combinedLightsIn, combinedOverlayIn, true);
         }
     }
@@ -94,7 +92,6 @@ public class IntangibleAirRenderer implements BlockEntityRenderer<IntangibleAirT
 
         for (Direction direction : Direction.values()) {
             if (!(tileEntityIn.getLevel().getBlockState(tileEntityIn.getBlockPos().relative(direction)).getBlock() instanceof IntangibleAirBlock)) {
-                //TODO: Check
                 renderModelBrightnessColorQuads(matrixStackIn.last(), bufferIn.getBuffer(DummyRender.RenderBlock), f, f1, f2, (float) scale, ibakedmodel.getQuads(renderState, direction,
                         RandomSource.create(Mth.getSeed(tileEntityIn.getBlockPos())), ModelData.EMPTY, null), combinedLightIn, combinedOverlayIn);
             }

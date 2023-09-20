@@ -2,7 +2,8 @@ package com.hollingsworth.arsnouveau.common.entity;
 
 import com.hollingsworth.arsnouveau.common.block.tile.IAnimationListener;
 import com.hollingsworth.arsnouveau.common.entity.goal.chimera.WildenSummon;
-import com.hollingsworth.arsnouveau.setup.Config;
+import com.hollingsworth.arsnouveau.setup.config.Config;
+import com.hollingsworth.arsnouveau.setup.registry.ModEntities;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -20,19 +21,21 @@ import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import software.bernie.geckolib3.core.IAnimatable;
-import software.bernie.geckolib3.core.PlayState;
-import software.bernie.geckolib3.core.builder.AnimationBuilder;
-import software.bernie.geckolib3.core.controller.AnimationController;
-import software.bernie.geckolib3.core.event.predicate.AnimationEvent;
-import software.bernie.geckolib3.core.manager.AnimationData;
-import software.bernie.geckolib3.core.manager.AnimationFactory;
-import software.bernie.geckolib3.util.GeckoLibUtil;
+import software.bernie.geckolib.animatable.GeoEntity;
+import software.bernie.geckolib.core.animatable.GeoAnimatable;
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.core.animation.AnimationController;
+import software.bernie.geckolib.core.animation.AnimationState;
+import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.core.object.PlayState;
+import software.bernie.geckolib.util.GeckoLibUtil;
 
-public class WildenHunter extends Monster implements IAnimatable, IAnimationListener {
+
+public class WildenHunter extends Monster implements GeoEntity, IAnimationListener {
 
     public static final EntityDataAccessor<String> ANIM_STATE = SynchedEntityData.defineId(WildenHunter.class, EntityDataSerializers.STRING);
-    AnimationFactory manager = GeckoLibUtil.createFactory(this);
+    AnimatableInstanceCache manager = GeckoLibUtil.createInstanceCache(this);
 
     public WildenHunter(EntityType<? extends Monster> type, Level worldIn) {
         super(type, worldIn);
@@ -124,8 +127,8 @@ public class WildenHunter extends Monster implements IAnimatable, IAnimationList
             if (controller == null)
                 return;
             if (arg == Animations.HOWL.ordinal()) {
-                controller.markNeedsReload();
-                controller.setAnimation(new AnimationBuilder().addAnimation("howl_master").addAnimation("idle"));
+                controller.forceAnimationReset();
+                controller.setAnimation(RawAnimation.begin().thenPlay("howl_master").thenPlay("idle"));
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -133,7 +136,7 @@ public class WildenHunter extends Monster implements IAnimatable, IAnimationList
 
     }
 
-    private PlayState attackPredicate(AnimationEvent<?> event) {
+    private PlayState attackPredicate(AnimationState<?> event) {
         return PlayState.CONTINUE;
     }
 
@@ -143,38 +146,38 @@ public class WildenHunter extends Monster implements IAnimatable, IAnimationList
     AnimationController<WildenHunter> idleController;
 
     @Override
-    public void registerControllers(AnimationData animationData) {
+    public void registerControllers(AnimatableManager.ControllerRegistrar animatableManager) {
         controller = new AnimationController<>(this, "attackController", 1, this::attackPredicate);
         runController = new AnimationController<>(this, "runController", 1, this::runPredicate);
         idleController = new AnimationController<>(this, "idleController", 1, this::idlePredicate);
-        animationData.addAnimationController(controller);
-        animationData.addAnimationController(runController);
-        animationData.addAnimationController(idleController);
+        animatableManager.add(controller);
+        animatableManager.add(runController);
+        animatableManager.add(idleController);
     }
 
-    private <T extends IAnimatable> PlayState runPredicate(AnimationEvent<T> tAnimationEvent) {
+    private <T extends GeoAnimatable> PlayState runPredicate(AnimationState<T> tAnimationState) {
         if(this.getEntityData().get(ANIM_STATE).equals(Animations.HOWL.name())){
             return PlayState.STOP;
         }
-        if(tAnimationEvent.isMoving()){
-            tAnimationEvent.getController().setAnimation(new AnimationBuilder().addAnimation("run"));
+        if(tAnimationState.isMoving()){
+            tAnimationState.getController().setAnimation(RawAnimation.begin().thenPlay("run"));
             return PlayState.CONTINUE;
         }
         return PlayState.STOP;
     }
 
-    private <T extends IAnimatable> PlayState idlePredicate(AnimationEvent<T> tAnimationEvent) {
+    private <T extends GeoAnimatable> PlayState idlePredicate(AnimationState<T> tAnimationState) {
         if(this.getEntityData().get(ANIM_STATE).equals(Animations.HOWL.name())){
             return PlayState.STOP;
         }
-        if(tAnimationEvent.isMoving()){
+        if(tAnimationState.isMoving()){
             return PlayState.STOP;
         }
-        tAnimationEvent.getController().setAnimation(new AnimationBuilder().addAnimation("idle"));
+        tAnimationState.getController().setAnimation(RawAnimation.begin().thenPlay("idle"));
         return PlayState.CONTINUE;
     }
     @Override
-    public AnimationFactory getFactory() {
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
         return manager;
     }
 

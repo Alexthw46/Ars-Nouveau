@@ -25,5 +25,6 @@
     [
       "poof_mob"
     ]
-  ]
+  ],
+  "sends_telemetry_event": false
 }

@@ -1,5 +1,6 @@
 package com.hollingsworth.arsnouveau.common.lib;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class LibBlockNames {
@@ -76,7 +77,9 @@ public class LibBlockNames {
     public final static String POTION_MELDER_BLOCK = "potion_melder";
 
     public final static String SCONCE = "sconce";
-
+    public final static String SOURCESTONE_SCONCE = "sourcestone_sconce";
+    public final static String POLISHED_SCONCE = "polished_sconce";
+    public final static String ARCHWOOD_SCONCE = "archwood_sconce";
     public static final String SOURCESTONE = "sourcestone";
     public static final String SOURCESTONE_MOSAIC = "sourcestone_mosaic";
     public static final String SOURCESTONE_BASKET = "sourcestone_basketweave";
@@ -164,6 +167,17 @@ public class LibBlockNames {
             GILDED_SOURCESTONE_MOSAIC, GILDED_SOURCESTONE_BASKET, GILDED_SOURCESTONE_ALTERNATING, GILDED_SOURCESTONE_LARGE_BRICKS, GILDED_SOURCESTONE_SMALL_BRICKS,
             SMOOTH_GILDED_SOURCESTONE_MOSAIC, SMOOTH_GILDED_SOURCESTONE_BASKET, SMOOTH_GILDED_SOURCESTONE_ALTERNATING, SMOOTH_GILDED_SOURCESTONE_LARGE_BRICKS, SMOOTH_GILDED_SOURCESTONE_SMALL_BRICKS,
     };
+
+    public static final List<String> DECORATIVE_STAIRS = new ArrayList<>(DECORATIVE_SOURCESTONE.length);
+    public static final List<String> DECORATIVE_SLABS = new ArrayList<>(DECORATIVE_SOURCESTONE.length);
+    static {
+        for(String s : DECORATIVE_SOURCESTONE) {
+            DECORATIVE_STAIRS.add(s + "_stairs");
+        }
+        for(String s : DECORATIVE_SOURCESTONE) {
+            DECORATIVE_SLABS.add(s + "_slab");
+        }
+    }
 
     public static final List<String> DIRECTIONAL_SOURCESTONE = List.of(GILDED_SOURCESTONE_LARGE_BRICKS, SMOOTH_GILDED_SOURCESTONE_LARGE_BRICKS);
 

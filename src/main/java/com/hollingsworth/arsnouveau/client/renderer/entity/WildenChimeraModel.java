@@ -3,14 +3,15 @@ package com.hollingsworth.arsnouveau.client.renderer.entity;
 import com.hollingsworth.arsnouveau.ArsNouveau;
 import com.hollingsworth.arsnouveau.common.entity.WildenChimera;
 import net.minecraft.resources.ResourceLocation;
-import software.bernie.geckolib3.core.event.predicate.AnimationEvent;
-import software.bernie.geckolib3.core.processor.IBone;
-import software.bernie.geckolib3.model.AnimatedGeoModel;
-import software.bernie.geckolib3.model.provider.data.EntityModelData;
+import software.bernie.geckolib.constant.DataTickets;
+import software.bernie.geckolib.core.animatable.model.CoreGeoBone;
+import software.bernie.geckolib.core.animation.AnimationState;
+import software.bernie.geckolib.model.GeoModel;
+import software.bernie.geckolib.model.data.EntityModelData;
 
 import javax.annotation.Nullable;
 
-public class WildenChimeraModel extends AnimatedGeoModel<WildenChimera> {
+public class WildenChimeraModel extends GeoModel<WildenChimera> {
 
     private static final ResourceLocation TEXTURE = new ResourceLocation(ArsNouveau.MODID, "textures/entity/wilden_chimera.png");
     public static final ResourceLocation NORMAL_MODEL = new ResourceLocation(ArsNouveau.MODID, "geo/wilden_chimera.geo.json");
@@ -19,29 +20,29 @@ public class WildenChimeraModel extends AnimatedGeoModel<WildenChimera> {
 
 
     @Override
-    public void setCustomAnimations(WildenChimera entity, int uniqueID, @Nullable AnimationEvent customPredicate) {
+    public void setCustomAnimations(WildenChimera entity, long uniqueID, @Nullable AnimationState customPredicate) {
         super.setCustomAnimations(entity, uniqueID, customPredicate);
 
-        IBone head = this.getAnimationProcessor().getBone("head");
-        EntityModelData extraData = (EntityModelData) customPredicate.getExtraDataOfType(EntityModelData.class).get(0);
+        CoreGeoBone head = this.getAnimationProcessor().getBone("head");
+        EntityModelData extraData = (EntityModelData) customPredicate.getExtraData().get(DataTickets.ENTITY_MODEL_DATA);
         if(!entity.isFlying()){
-            head.setRotationY(extraData.netHeadYaw * 0.012453292F);
-            head.setRotationX(extraData.headPitch * 0.037453292F);
+            head.setRotY(extraData.netHeadYaw() * 0.012453292F);
+            head.setRotX(extraData.headPitch() * 0.037453292F);
         }
 
         boolean useBigWings = entity.hasWings() && (entity.isFlying() || (entity.hasWings() && entity.isRamPrep()));
 
-        this.getBone("wings_folded").setHidden(!entity.hasWings() || useBigWings);
+        this.getBone("wings_folded").get().setHidden(!entity.hasWings() || useBigWings);
 
-        this.getBone("wings_extended_right").setHidden(!useBigWings);
-        this.getBone("wings_extended_left").setHidden(!useBigWings);
-        this.getBone("wings_extended_right2").setHidden(!useBigWings);
-        this.getBone("wings_extended_left2").setHidden(!useBigWings);
+        this.getBone("wings_extended_right").get().setHidden(!useBigWings);
+        this.getBone("wings_extended_left").get().setHidden(!useBigWings);
+        this.getBone("wings_extended_right2").get().setHidden(!useBigWings);
+        this.getBone("wings_extended_left2").get().setHidden(!useBigWings);
 
-        this.getBone("spikes_extended").setHidden(!entity.isDefensive() || !entity.hasSpikes());
-        this.getBone("spikes_retracted").setHidden(!entity.hasSpikes() || entity.isDefensive());
-        this.getBone("fins").setHidden(!entity.hasSpikes());
-        this.getBone("horns").setHidden(!entity.hasHorns());
+        this.getBone("spikes_extended").get().setHidden(!entity.isDefensive() || !entity.hasSpikes());
+        this.getBone("spikes_retracted").get().setHidden(!entity.hasSpikes() || entity.isDefensive());
+        this.getBone("fins").get().setHidden(!entity.hasSpikes());
+        this.getBone("horns").get().setHidden(!entity.hasHorns());
     }
 
     @Override

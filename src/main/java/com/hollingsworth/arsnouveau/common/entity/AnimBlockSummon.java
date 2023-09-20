@@ -4,12 +4,15 @@ import com.hollingsworth.arsnouveau.api.entity.IDispellable;
 import com.hollingsworth.arsnouveau.api.entity.ISummon;
 import com.hollingsworth.arsnouveau.client.particle.ParticleColor;
 import com.hollingsworth.arsnouveau.client.particle.ParticleUtil;
+import com.hollingsworth.arsnouveau.common.block.MageBlock;
 import com.hollingsworth.arsnouveau.common.entity.goal.ConditionalLeapGoal;
 import com.hollingsworth.arsnouveau.common.entity.goal.ConditionalMeleeGoal;
-import com.hollingsworth.arsnouveau.setup.BlockRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.BlockRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.ModEntities;
 import net.minecraft.Util;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -32,26 +35,26 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import software.bernie.geckolib3.core.IAnimatable;
-import software.bernie.geckolib3.core.PlayState;
-import software.bernie.geckolib3.core.builder.AnimationBuilder;
-import software.bernie.geckolib3.core.controller.AnimationController;
-import software.bernie.geckolib3.core.manager.AnimationData;
-import software.bernie.geckolib3.core.manager.AnimationFactory;
-import software.bernie.geckolib3.util.GeckoLibUtil;
+import software.bernie.geckolib.animatable.GeoEntity;
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.core.animation.AnimationController;
+import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.core.object.PlayState;
+import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.Optional;
 import java.util.UUID;
 
-public class AnimBlockSummon extends TamableAnimal implements IAnimatable, ISummon, IDispellable {
+public class AnimBlockSummon extends TamableAnimal implements GeoEntity, ISummon, IDispellable {
 
     public BlockState blockState;
     public int color;
     private int ticksLeft;
-    protected static final EntityDataAccessor<Integer> AGE = SynchedEntityData.defineId(AnimBlockSummon.class, EntityDataSerializers.INT);
-    protected static final EntityDataAccessor<Boolean> CAN_WALK = SynchedEntityData.defineId(AnimBlockSummon.class, EntityDataSerializers.BOOLEAN);
+    public static final EntityDataAccessor<Integer> AGE = SynchedEntityData.defineId(AnimBlockSummon.class, EntityDataSerializers.INT);
+    public static final EntityDataAccessor<Boolean> CAN_WALK = SynchedEntityData.defineId(AnimBlockSummon.class, EntityDataSerializers.BOOLEAN);
     public boolean isAlternateSpawn;
-
+    public boolean dropItem = true;
     public AnimBlockSummon(EntityType<? extends TamableAnimal> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         isAlternateSpawn = random.nextBoolean();
@@ -145,10 +148,12 @@ public class AnimBlockSummon extends TamableAnimal implements IAnimatable, ISumm
         EnchantedFallingBlock fallingBlock = new EnchantedFallingBlock(level, blockPosition(), blockState);
         fallingBlock.setOwner(this.getOwner());
         fallingBlock.setDeltaMovement(this.getDeltaMovement());
-        if (blockState.getBlock() == BlockRegistry.MAGE_BLOCK) {
-            fallingBlock.setColor(ParticleColor.fromInt(color));
+        fallingBlock.setColor(ParticleColor.fromInt(color));
+        fallingBlock.dropItem = this.dropItem;
+        if (blockState.getBlock() instanceof MageBlock) {
             fallingBlock.dropItem = false;
         }
+
         level.addFreshEntity(fallingBlock);
     }
 
@@ -225,39 +230,39 @@ public class AnimBlockSummon extends TamableAnimal implements IAnimatable, ISumm
     }
 
     @Override
-    public void registerControllers(AnimationData data) {
-        data.setResetSpeedInTicks(0);
+    public void registerControllers(AnimatableManager.ControllerRegistrar data) {
         String spawnAnim = "spawn";
-        data.addAnimationController(new AnimationController<>(this, spawnAnim, 0, (e) -> {
+        data.add(new AnimationController<>(this, spawnAnim, 0, (e) -> {
             if (!entityData.get(CAN_WALK)) {
-                e.getController().setAnimation(new AnimationBuilder().addAnimation(spawnAnim));
+                e.getController().setAnimation(RawAnimation.begin().thenPlay(spawnAnim));
                 return PlayState.CONTINUE;
             }
             return PlayState.STOP;
         }));
-        data.addAnimationController(new AnimationController<>(this, "run", 20, (e) -> {
+
+        data.add(new AnimationController<>(this, "run", 1, (e) -> {
             if (e.isMoving() && entityData.get(CAN_WALK)) {
-                e.getController().setAnimation(new AnimationBuilder().addAnimation("run"));
+                e.getController().setAnimation(RawAnimation.begin().thenPlay("run"));
                 return PlayState.CONTINUE;
             }
             return PlayState.STOP;
         }));
     }
 
-    final AnimationFactory factory = GeckoLibUtil.createFactory(this);
+    final AnimatableInstanceCache factory = GeckoLibUtil.createInstanceCache(this);
 
     @Override
-    public AnimationFactory getFactory() {
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
         return factory;
     }
 
     @Override
-    public Packet<?> getAddEntityPacket() {
+    public Packet<ClientGamePacketListener> getAddEntityPacket() {
         return new ClientboundAddEntityPacket(this, Block.getId(this.getBlockState()));
     }
 
     public BlockState getBlockState() {
-        return blockState != null ? blockState : BlockRegistry.MAGE_BLOCK.defaultBlockState();
+        return blockState != null ? blockState : BlockRegistry.MAGE_BLOCK.get().defaultBlockState();
     }
 
     @Override
@@ -295,6 +300,7 @@ public class AnimBlockSummon extends TamableAnimal implements IAnimatable, ISumm
         this.blockState = Block.stateById(pCompound.getInt("blockState"));
         this.getEntityData().set(AGE, pCompound.getInt("ticksAlive"));
         this.getEntityData().set(CAN_WALK, pCompound.getBoolean("canWalk"));
+        this.dropItem = !pCompound.contains("dropItem") || pCompound.getBoolean("dropItem");
     }
 
     @Override
@@ -305,6 +311,7 @@ public class AnimBlockSummon extends TamableAnimal implements IAnimatable, ISumm
         pCompound.putInt("blockState", Block.getId(blockState));
         pCompound.putInt("ticksAlive", this.getEntityData().get(AGE));
         pCompound.putBoolean("canWalk", this.getEntityData().get(CAN_WALK));
+        pCompound.putBoolean("dropItem", this.dropItem);
     }
 
     public int getColor() {

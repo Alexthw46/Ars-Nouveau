@@ -11,7 +11,8 @@ import com.hollingsworth.arsnouveau.common.block.tile.WixieCauldronTile;
 import com.hollingsworth.arsnouveau.common.entity.goal.wixie.CompleteCraftingGoal;
 import com.hollingsworth.arsnouveau.common.entity.goal.wixie.FindNextItemGoal;
 import com.hollingsworth.arsnouveau.common.entity.goal.wixie.FindPotionGoal;
-import com.hollingsworth.arsnouveau.setup.ItemsRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.ItemsRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.ModEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -37,37 +38,38 @@ import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.Tags;
-import software.bernie.geckolib3.core.IAnimatable;
-import software.bernie.geckolib3.core.PlayState;
-import software.bernie.geckolib3.core.builder.AnimationBuilder;
-import software.bernie.geckolib3.core.controller.AnimationController;
-import software.bernie.geckolib3.core.event.predicate.AnimationEvent;
-import software.bernie.geckolib3.core.manager.AnimationData;
-import software.bernie.geckolib3.core.manager.AnimationFactory;
-import software.bernie.geckolib3.util.GeckoLibUtil;
+import software.bernie.geckolib.animatable.GeoEntity;
+import software.bernie.geckolib.core.animatable.GeoAnimatable;
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.core.animation.AnimationController;
+import software.bernie.geckolib.core.animation.AnimationState;
+import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.core.object.PlayState;
+import software.bernie.geckolib.util.GeckoLibUtil;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
 
-public class EntityWixie extends AbstractFlyingCreature implements IAnimatable, IAnimationListener, IDispellable, IVariantColorProvider<EntityWixie> {
-    AnimationFactory manager = GeckoLibUtil.createFactory(this);
+public class EntityWixie extends AbstractFlyingCreature implements GeoEntity, IAnimationListener, IDispellable, IVariantColorProvider<EntityWixie> {
+    AnimatableInstanceCache manager = GeckoLibUtil.createInstanceCache(this);
     public static final EntityDataAccessor<String> COLOR = SynchedEntityData.defineId(EntityWixie.class, EntityDataSerializers.STRING);
 
     public BlockPos cauldronPos;
     public int inventoryBackoff;
 
-    private <P extends IAnimatable> PlayState idlePredicate(AnimationEvent<P> event) {
+    private <P extends GeoAnimatable> PlayState idlePredicate(AnimationState<P> event) {
         if (getNavigation().isInProgress())
             return PlayState.STOP;
-        event.getController().setAnimation(new AnimationBuilder().addAnimation("idle"));
+        event.getController().setAnimation(RawAnimation.begin().thenPlay("idle"));
         return PlayState.CONTINUE;
     }
 
-    private <P extends IAnimatable> PlayState castPredicate(AnimationEvent<P> event) {
+    private <P extends GeoAnimatable> PlayState castPredicate(AnimationState<P> event) {
         return PlayState.CONTINUE;
     }
 
-    private <P extends IAnimatable> PlayState summonPredicate(AnimationEvent<P> event) {
+    private <P extends GeoAnimatable> PlayState summonPredicate(AnimationState<P> event) {
         return PlayState.CONTINUE;
     }
 
@@ -85,20 +87,20 @@ public class EntityWixie extends AbstractFlyingCreature implements IAnimatable, 
     AnimationController<?> castController;
 
     @Override
-    public void registerControllers(AnimationData animationData) {
-        animationData.addAnimationController(new AnimationController<>(this, "idleController", 20, this::idlePredicate));
+    public void registerControllers(AnimatableManager.ControllerRegistrar animatableManager) {
+        animatableManager.add(new AnimationController<>(this, "idleController", 20, this::idlePredicate));
         castController = new AnimationController<>(this, "castController", 1, this::castPredicate);
         summonController = new AnimationController<>(this, "summonController", 1, this::summonPredicate);
-        animationData.addAnimationController(castController);
-        animationData.addAnimationController(summonController);
+        animatableManager.add(castController);
+        animatableManager.add(summonController);
     }
 
     @Override
-    public AnimationFactory getFactory() {
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
         return manager;
     }
 
-    protected EntityWixie(EntityType<? extends AbstractFlyingCreature> type, Level worldIn) {
+    public EntityWixie(EntityType<? extends AbstractFlyingCreature> type, Level worldIn) {
         super(type, worldIn);
         this.moveControl = new FlyingMoveControl(this, 10, true);
     }
@@ -132,7 +134,7 @@ public class EntityWixie extends AbstractFlyingCreature implements IAnimatable, 
         super.tick();
         SummonUtil.healOverTime(this);
         if (!level.isClientSide && (cauldronPos == null || !(level.getBlockEntity(cauldronPos) instanceof WixieCauldronTile)))
-            this.hurt(DamageSource.playerAttack(ANFakePlayer.getPlayer((ServerLevel) level)), 99);
+            this.hurt(level.damageSources().playerAttack(ANFakePlayer.getPlayer((ServerLevel) level)), 99);
         if (!level.isClientSide && inventoryBackoff > 0) {
             inventoryBackoff--;
         }
@@ -197,11 +199,11 @@ public class EntityWixie extends AbstractFlyingCreature implements IAnimatable, 
     @Override
     public void startAnimation(int arg) {
         if (arg == Animations.CAST.ordinal() && castController != null) {
-            castController.markNeedsReload();
-            castController.setAnimation(new AnimationBuilder().addAnimation("cast"));
+            castController.forceAnimationReset();
+            castController.setAnimation(RawAnimation.begin().thenPlay("cast"));
         } else if (arg == Animations.SUMMON_ITEM.ordinal() && summonController != null) {
-            summonController.markNeedsReload();
-            summonController.setAnimation(new AnimationBuilder().addAnimation("summon_item"));
+            summonController.forceAnimationReset();
+            summonController.setAnimation(RawAnimation.begin().thenPlay("summon_item"));
         }
     }
 

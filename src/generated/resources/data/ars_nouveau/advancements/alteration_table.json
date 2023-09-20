@@ -33,5 +33,6 @@
     [
       "has_alteration_table"
     ]
-  ]
+  ],
+  "sends_telemetry_event": false
 }

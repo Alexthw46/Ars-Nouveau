@@ -3,7 +3,11 @@ package com.hollingsworth.arsnouveau.common.network;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.core.*;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
+import net.minecraft.core.QuartPos;
+import net.minecraft.core.SectionPos;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.Mth;
@@ -27,7 +31,7 @@ public class ChangeBiomePacket {
 
     public ChangeBiomePacket(FriendlyByteBuf buf) {
         this.pos = new BlockPos(buf.readInt(), 0, buf.readInt());
-        this.biomeId = ResourceKey.create(Registry.BIOME_REGISTRY, buf.readResourceLocation());
+        this.biomeId = ResourceKey.create(Registries.BIOME, buf.readResourceLocation());
     }
 
     public void encode(FriendlyByteBuf buf) {
@@ -46,7 +50,7 @@ public class ChangeBiomePacket {
                     ClientLevel world = Minecraft.getInstance().level;
                     LevelChunk chunkAt = (LevelChunk) world.getChunk(message.pos);
 
-                    Holder<Biome> biome = world.registryAccess().registryOrThrow(Registry.BIOME_REGISTRY).getHolderOrThrow(message.biomeId);
+                    Holder<Biome> biome = world.registryAccess().registryOrThrow(Registries.BIOME).getHolderOrThrow(message.biomeId);
 
                     int minY = QuartPos.fromBlock(world.getMinBuildHeight());
                     int maxY = minY + QuartPos.fromBlock(world.getHeight()) - 1;
@@ -56,10 +60,10 @@ public class ChangeBiomePacket {
 
                     for (LevelChunkSection section : chunkAt.getSections()) {
                         for (int sy = 0; sy < 16; sy += 4) {
-                            int y = Mth.clamp(QuartPos.fromBlock(section.bottomBlockY() + sy), minY, maxY);
+                            int y = Mth.clamp(QuartPos.fromBlock(chunkAt.getMinSection() + sy), minY, maxY);
                             if (section.getBiomes() instanceof PalettedContainer<Holder<Biome>> container)
                                 container.set(x & 3, y & 3, z & 3, biome);
-                            SectionPos pos = SectionPos.of(message.pos.getX() >> 4, (section.bottomBlockY() >> 4) + sy, message.pos.getZ() >> 4);
+                            SectionPos pos = SectionPos.of(message.pos.getX() >> 4, (chunkAt.getMinSection() >> 4) + sy, message.pos.getZ() >> 4);
                             world.setSectionDirtyWithNeighbors(pos.x(), pos.y(), pos.z());
                         }
                     }

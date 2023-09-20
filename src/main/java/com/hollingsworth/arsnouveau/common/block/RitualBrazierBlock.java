@@ -1,6 +1,6 @@
 package com.hollingsworth.arsnouveau.common.block;
 
-import com.hollingsworth.arsnouveau.api.ArsNouveauAPI;
+import com.hollingsworth.arsnouveau.api.registry.RitualRegistry;
 import com.hollingsworth.arsnouveau.api.util.BlockUtil;
 import com.hollingsworth.arsnouveau.common.block.tile.RitualBrazierTile;
 import net.minecraft.core.BlockPos;
@@ -18,6 +18,7 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.level.material.PushReaction;
+import net.minecraft.world.level.pathfinder.PathComputationType;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -57,7 +58,7 @@ public class RitualBrazierBlock extends TickableModBlock {
     ).reduce((v1, v2) -> Shapes.join(v1, v2, BooleanOp.OR)).get();
 
     public RitualBrazierBlock() {
-        super(defaultProperties().noOcclusion().lightLevel((b) -> b.getValue(LIT) ? 15 : 0));
+        super(defaultProperties().noOcclusion().pushReaction(PushReaction.BLOCK).lightLevel((b) -> b.getValue(LIT) ? 15 : 0));
         registerDefaultState(defaultBlockState().setValue(LIT, false));
     }
 
@@ -78,11 +79,6 @@ public class RitualBrazierBlock extends TickableModBlock {
     }
 
     @Override
-    public PushReaction getPistonPushReaction(BlockState p_149656_1_) {
-        return PushReaction.BLOCK;
-    }
-
-    @Override
     public void neighborChanged(BlockState state, Level world, BlockPos pos, Block blockIn, BlockPos fromPos, boolean isMoving) {
         super.neighborChanged(state, world, pos, blockIn, fromPos, isMoving);
         if (!world.isClientSide() && world.getBlockEntity(pos) instanceof RitualBrazierTile tile) {
@@ -99,7 +95,7 @@ public class RitualBrazierBlock extends TickableModBlock {
         super.playerWillDestroy(worldIn, pos, state, player);
         if (worldIn.getBlockEntity(pos) instanceof RitualBrazierTile tile) {
             if (tile.ritual != null && !tile.ritual.isRunning() && !tile.ritual.isDone()) {
-                worldIn.addFreshEntity(new ItemEntity(worldIn, pos.getX(), pos.getY(), pos.getZ(), new ItemStack(ArsNouveauAPI.getInstance().getRitualItemMap().get(tile.ritual.getRegistryName()))));
+                worldIn.addFreshEntity(new ItemEntity(worldIn, pos.getX(), pos.getY(), pos.getZ(), new ItemStack(RitualRegistry.getRitualItemMap().get(tile.ritual.getRegistryName()))));
             }
 
         }
@@ -118,5 +114,10 @@ public class RitualBrazierBlock extends TickableModBlock {
     @Override
     public VoxelShape getShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
         return shape;
+    }
+
+    @Override
+    public boolean isPathfindable(BlockState pState, BlockGetter pLevel, BlockPos pPos, PathComputationType pType) {
+        return false;
     }
 }

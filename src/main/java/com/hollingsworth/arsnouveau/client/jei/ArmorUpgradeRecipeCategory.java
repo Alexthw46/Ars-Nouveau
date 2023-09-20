@@ -1,11 +1,10 @@
 package com.hollingsworth.arsnouveau.client.jei;
 
-import com.hollingsworth.arsnouveau.api.ArsNouveauAPI;
 import com.hollingsworth.arsnouveau.api.enchanting_apparatus.ArmorUpgradeRecipe;
 import com.hollingsworth.arsnouveau.api.perk.ArmorPerkHolder;
 import com.hollingsworth.arsnouveau.api.perk.IPerkProvider;
+import com.hollingsworth.arsnouveau.api.registry.PerkRegistry;
 import com.hollingsworth.arsnouveau.common.armor.AnimatedMagicArmor;
-import com.mojang.blaze3d.vertex.PoseStack;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
 import mezz.jei.api.helpers.IGuiHelper;
@@ -14,6 +13,7 @@ import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.RecipeType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -35,7 +35,7 @@ public class ArmorUpgradeRecipeCategory extends EnchantingApparatusRecipeCategor
         List<Ingredient> inputs = provider.input();
         double angleBetweenEach = 360.0 / inputs.size();
 
-        List<ItemStack> stacks = ArsNouveauAPI.getInstance().getPerkProviderItems().stream().filter(item -> item instanceof AnimatedMagicArmor ama && ama.getMinTier() < recipe.tier).map(Item::getDefaultInstance).toList();
+        List<ItemStack> stacks = PerkRegistry.getPerkProviderItems().stream().filter(item -> item instanceof AnimatedMagicArmor ama && ama.getMinTier() < recipe.tier).map(Item::getDefaultInstance).toList();
         List<ItemStack> outputs = new ArrayList<>();
 
         if (!focuses.isEmpty()){
@@ -50,7 +50,7 @@ public class ArmorUpgradeRecipeCategory extends EnchantingApparatusRecipeCategor
         }
         for (ItemStack stack: stacks){
             ItemStack copy = stack.copy();
-            IPerkProvider<ItemStack> perkProvider = ArsNouveauAPI.getInstance().getPerkProvider(stack.getItem());
+            IPerkProvider<ItemStack> perkProvider = PerkRegistry.getPerkProvider(stack.getItem());
             if (perkProvider != null) {
                 if (perkProvider.getPerkHolder(stack) instanceof ArmorPerkHolder armorPerkHolder) {
                     armorPerkHolder.setTier(recipe.tier-1);
@@ -81,11 +81,11 @@ public class ArmorUpgradeRecipeCategory extends EnchantingApparatusRecipeCategor
     }
 
     @Override
-    public void draw(ArmorUpgradeRecipe recipe, @NotNull IRecipeSlotsView slotsView, PoseStack matrixStack, double mouseX, double mouseY) {
+    public void draw(ArmorUpgradeRecipe recipe, @NotNull IRecipeSlotsView slotsView, GuiGraphics graphics, double mouseX, double mouseY) {
         Font renderer = Minecraft.getInstance().font;
-        renderer.draw(matrixStack, Component.translatable("ars_nouveau.tier", 1 + recipe.tier), 0.0f, 0.0f, 10);
+        graphics.drawString(renderer, Component.translatable("ars_nouveau.tier", 1 + recipe.tier), 0, 0, 10,false);
 
         if (recipe.consumesSource())
-            renderer.draw(matrixStack, Component.translatable("ars_nouveau.source", recipe.sourceCost), 0.0f, 100f, 10);
+            graphics.drawString(renderer, Component.translatable("ars_nouveau.source", recipe.sourceCost), 0, 100, 10,false);
     }
 }

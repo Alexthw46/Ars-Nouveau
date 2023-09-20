@@ -4,8 +4,8 @@ import com.hollingsworth.arsnouveau.client.particle.ParticleColor;
 import com.hollingsworth.arsnouveau.common.datagen.ItemTagProvider;
 import com.hollingsworth.arsnouveau.common.network.Networking;
 import com.hollingsworth.arsnouveau.common.network.PacketANEffect;
-import com.hollingsworth.arsnouveau.setup.BlockRegistry;
-import com.hollingsworth.arsnouveau.setup.ItemsRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.BlockRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.ItemsRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -13,16 +13,15 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.AABB;
 import net.minecraftforge.common.ForgeHooks;
 import net.minecraftforge.common.Tags;
-import software.bernie.geckolib3.core.IAnimatable;
+import software.bernie.geckolib.core.animatable.GeoAnimatable;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class VolcanicSourcelinkTile extends SourcelinkTile implements IAnimatable {
+public class VolcanicSourcelinkTile extends SourcelinkTile implements GeoAnimatable {
 
     public VolcanicSourcelinkTile(BlockPos pos, BlockState state) {
         super(BlockRegistry.VOLCANIC_TILE, pos, state);
@@ -49,7 +48,7 @@ public class VolcanicSourcelinkTile extends SourcelinkTile implements IAnimatabl
                         level.addFreshEntity(new ItemEntity(level, i.getX(), i.getY(), i.getZ(), containerItem));
                     }
                     Networking.sendToNearby(level, getBlockPos(),
-                            new PacketANEffect(PacketANEffect.EffectType.BURST, i.blockPosition(), new ParticleColor.IntWrapper(255, 0, 0)));
+                            new PacketANEffect(PacketANEffect.EffectType.BURST, i.blockPosition(), new ParticleColor(255, 0, 0)));
                     return;
                 }
             }
@@ -61,7 +60,7 @@ public class VolcanicSourcelinkTile extends SourcelinkTile implements IAnimatabl
                     i.removeItem(0, 1);
                     i.setItem(0, containerItem);
                     Networking.sendToNearby(level, getBlockPos(),
-                            new PacketANEffect(PacketANEffect.EffectType.BURST, i.getBlockPos().above(), new ParticleColor.IntWrapper(255, 0, 0)));
+                            new PacketANEffect(PacketANEffect.EffectType.BURST, i.getBlockPos().above(), new ParticleColor(255, 0, 0)));
                 }
             }
         }
@@ -99,13 +98,6 @@ public class VolcanicSourcelinkTile extends SourcelinkTile implements IAnimatabl
         if (level.isClientSide)
             return;
         AtomicBoolean set = new AtomicBoolean(false);
-        BlockPos.withinManhattanStream(worldPosition, 1, 0, 1).forEach(p -> {
-            if (!set.get() && level.getBlockState(p).isAir() && (level.getFluidState(p.below()).getType() == Fluids.LAVA || level.getFluidState(p.below()).getType() == Fluids.FLOWING_LAVA)) {
-                level.setBlockAndUpdate(p, BlockRegistry.LAVA_LILY.getState(level, p));
-                set.set(true);
-            }
-        });
-
 
         BlockPos magmaPos = getBlockInArea(Blocks.MAGMA_BLOCK, 1);
         if (magmaPos != null && progress >= 200) {

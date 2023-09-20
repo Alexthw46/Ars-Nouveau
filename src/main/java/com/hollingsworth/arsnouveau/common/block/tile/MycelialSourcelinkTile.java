@@ -5,7 +5,7 @@ import com.hollingsworth.arsnouveau.common.datagen.BlockTagProvider;
 import com.hollingsworth.arsnouveau.common.datagen.ItemTagProvider;
 import com.hollingsworth.arsnouveau.common.network.Networking;
 import com.hollingsworth.arsnouveau.common.network.PacketANEffect;
-import com.hollingsworth.arsnouveau.setup.BlockRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.BlockRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.food.FoodProperties;
@@ -45,7 +45,7 @@ public class MycelialSourcelinkTile extends SourcelinkTile {
                         level.addFreshEntity(new ItemEntity(level, i.getX(), i.getY(), i.getZ(), containerItem));
                     }
                     Networking.sendToNearby(level, getBlockPos(),
-                            new PacketANEffect(PacketANEffect.EffectType.BURST, i.blockPosition(), new ParticleColor.IntWrapper(255, 255, 255)));
+                            new PacketANEffect(PacketANEffect.EffectType.BURST, i.blockPosition(), new ParticleColor(255, 255, 255)));
                 }
             }
             for (ArcanePedestalTile i : getSurroundingPedestals()) {
@@ -56,7 +56,7 @@ public class MycelialSourcelinkTile extends SourcelinkTile {
                     i.removeItem(0, 1);
                     i.setItem(0, containerItem);
                     Networking.sendToNearby(level, getBlockPos(),
-                            new PacketANEffect(PacketANEffect.EffectType.BURST, i.getBlockPos().above(), new ParticleColor.IntWrapper(255, 255, 255)));
+                            new PacketANEffect(PacketANEffect.EffectType.BURST, i.getBlockPos().above(), new ParticleColor(255, 255, 255)));
                 }
             }
         }
@@ -65,7 +65,9 @@ public class MycelialSourcelinkTile extends SourcelinkTile {
     public int getSourceValue(ItemStack i) {
         if (i.getItem().isEdible()) {
             int mana = 0;
-            FoodProperties food = i.getItem().getFoodProperties();
+            FoodProperties food = i.getItem().getFoodProperties(i, null);
+            if(food == null)
+                return 0;
             mana += 11 * food.getNutrition();
             mana += 30 * food.getSaturationModifier();
             progress += 1;

@@ -3,9 +3,9 @@ package com.hollingsworth.arsnouveau.client.renderer.item;
 import com.hollingsworth.arsnouveau.ArsNouveau;
 import com.hollingsworth.arsnouveau.common.items.Wand;
 import net.minecraft.resources.ResourceLocation;
-import software.bernie.geckolib3.model.AnimatedGeoModel;
+import software.bernie.geckolib.model.GeoModel;
 
-public class WandModel extends AnimatedGeoModel<Wand> {
+public class WandModel extends GeoModel<Wand> {
 
     @Override
     public ResourceLocation getModelResource(Wand wand) {
@@ -14,7 +14,7 @@ public class WandModel extends AnimatedGeoModel<Wand> {
 
     @Override
     public ResourceLocation getTextureResource(Wand wand) {
-        return new ResourceLocation(ArsNouveau.MODID, "textures/items/wand.png");
+        return new ResourceLocation(ArsNouveau.MODID, "textures/item/wand.png");
     }
 
     @Override

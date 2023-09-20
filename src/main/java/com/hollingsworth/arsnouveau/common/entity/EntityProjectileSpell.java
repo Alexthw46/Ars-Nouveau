@@ -1,6 +1,7 @@
 package com.hollingsworth.arsnouveau.common.entity;
 
 import com.hollingsworth.arsnouveau.api.block.IPrismaticBlock;
+import com.hollingsworth.arsnouveau.api.event.SpellProjectileHitEvent;
 import com.hollingsworth.arsnouveau.api.spell.SpellResolver;
 import com.hollingsworth.arsnouveau.client.particle.GlowParticleData;
 import com.hollingsworth.arsnouveau.common.lib.EntityTags;
@@ -9,12 +10,17 @@ import com.hollingsworth.arsnouveau.common.network.PacketANEffect;
 import com.hollingsworth.arsnouveau.common.spell.augment.AugmentPierce;
 import com.hollingsworth.arsnouveau.common.spell.augment.AugmentSensitive;
 import com.hollingsworth.arsnouveau.common.spell.method.MethodProjectile;
-import com.hollingsworth.arsnouveau.setup.BlockRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.BlockRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.ModEntities;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -24,11 +30,12 @@ import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.TargetBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.material.Material;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.entity.IEntityAdditionalSpawnData;
 import net.minecraftforge.network.NetworkHooks;
 import net.minecraftforge.network.PlayMessages;
 
@@ -36,17 +43,20 @@ import javax.annotation.Nullable;
 import java.util.HashSet;
 import java.util.Set;
 
-public class EntityProjectileSpell extends ColoredProjectile {
+public class EntityProjectileSpell extends ColoredProjectile implements IEntityAdditionalSpawnData {
 
     public int age;
     public SpellResolver spellResolver;
     public int pierceLeft;
+    //to use if you want the bounce augment indipendent from the pierce augment
+    //public int bouncesLeft;
     public int numSensitive;
+
     public boolean isNoGravity = true;
     public boolean canTraversePortals = true;
     public int prismRedirect;
     @Deprecated
-    public int expireTime = 60*20;
+    public int expireTime = 60 * 20;
 
     public Set<BlockPos> hitList = new HashSet<>();
 
@@ -102,7 +112,6 @@ public class EntityProjectileSpell extends ColoredProjectile {
         Vec3 thisPosition = this.position();
         Vec3 nextPosition = getNextHitPosition();
         traceAnyHit(getHitResult(), thisPosition, nextPosition);
-
         tickNextPosition();
 
         if (level.isClientSide && this.age > getParticleDelay()) {
@@ -138,8 +147,8 @@ public class EntityProjectileSpell extends ColoredProjectile {
             this.hasImpulse = true;
         }
         if (raytraceresult != null && raytraceresult.getType() == HitResult.Type.MISS && raytraceresult instanceof BlockHitResult blockHitResult
-                && canTraversePortals()) {
-            BlockRegistry.PORTAL_BLOCK.onProjectileHit(level, level.getBlockState(new BlockPos(raytraceresult.getLocation())),
+            && canTraversePortals()) {
+            BlockRegistry.PORTAL_BLOCK.get().onProjectileHit(level, level.getBlockState(BlockPos.containing(raytraceresult.getLocation())),
                     blockHitResult, this);
 
         }
@@ -149,7 +158,7 @@ public class EntityProjectileSpell extends ColoredProjectile {
      * Override this to transform the hit result before resolving.
      */
     public @Nullable HitResult transformHitResult(@Nullable HitResult hitResult) {
-        if(hitResult instanceof BlockHitResult hitResult1){
+        if (hitResult instanceof BlockHitResult hitResult1) {
             return new BlockHitResult(hitResult1.getLocation(), hitResult1.getDirection(), hitResult1.getBlockPos(), false);
         }
         return hitResult;
@@ -167,15 +176,16 @@ public class EntityProjectileSpell extends ColoredProjectile {
      * Moves the projectile to the next position
      */
     public void tickNextPosition() {
+
         Vec3 vec3d = this.getDeltaMovement();
         double x = this.getX() + vec3d.x;
         double y = this.getY() + vec3d.y;
         double z = this.getZ() + vec3d.z;
         if (!this.isNoGravity()) {
-            Vec3 vec3d1 = this.getDeltaMovement();
-            this.setDeltaMovement(vec3d1.x, vec3d1.y, vec3d1.z);
+            setDeltaMovement(vec3d.x * 0.96, (vec3d.y > 0 ? vec3d.y * 0.97 : vec3d.y) - 0.03f, vec3d.z * 0.96);
         }
         this.setPos(x, y, z);
+
     }
 
     public int getParticleDelay() {
@@ -237,6 +247,10 @@ public class EntityProjectileSpell extends ColoredProjectile {
         super.setRemoved(reason);
     }
 
+    public EntityProjectileSpell setGravity(boolean noGravity) {
+        isNoGravity = !noGravity;
+        return this;
+    }
 
     @Override
     public boolean isNoGravity() {
@@ -256,44 +270,84 @@ public class EntityProjectileSpell extends ColoredProjectile {
         }
     }
 
+    public boolean canBounce() {
+        return !isNoGravity() && pierceLeft > 0;
+    }
+
+    public void bounce(BlockHitResult blockHitResult) {
+        Direction direction = blockHitResult.getDirection();
+        float factor = -0.9F;
+        // bounce off the block according to the face hit and reduce momentum
+        switch (direction) {
+            case UP, DOWN -> {
+                Vec3 vel = getDeltaMovement();
+                setDeltaMovement(vel.x(), factor * vel.y(), vel.z());
+            }
+            case EAST, WEST -> {
+                Vec3 vel = getDeltaMovement();
+                setDeltaMovement(factor * vel.x(), vel.y(), vel.z());
+            }
+            case NORTH, SOUTH -> {
+                Vec3 vel = getDeltaMovement();
+                setDeltaMovement(vel.x(), vel.y(), factor * vel.z());
+            }
+        }
+    }
+
     @Override
     protected void onHit(HitResult result) {
         result = transformHitResult(result);
-        if (!level.isClientSide && result instanceof EntityHitResult entityHitResult) {
-            if (entityHitResult.getEntity().equals(this.getOwner())) return;
-            if (this.spellResolver != null) {
-                this.spellResolver.onResolveEffect(level, result);
-                Networking.sendToNearby(level, new BlockPos(result.getLocation()), new PacketANEffect(PacketANEffect.EffectType.BURST,
-                        new BlockPos(result.getLocation()), getParticleColorWrapper()));
+
+        if (!level.isClientSide) {
+
+            SpellProjectileHitEvent event = new SpellProjectileHitEvent(this, result);
+            MinecraftForge.EVENT_BUS.post(event);
+            if (event.isCanceled()) {
+                return;
+            }
+
+            if (result instanceof EntityHitResult entityHitResult) {
+                if (entityHitResult.getEntity().equals(this.getOwner())) return;
+                if (this.spellResolver != null) {
+                    this.spellResolver.onResolveEffect(level, result);
+                    Networking.sendToNearby(level, BlockPos.containing(result.getLocation()), new PacketANEffect(PacketANEffect.EffectType.BURST,
+                            BlockPos.containing(result.getLocation()), getParticleColor()));
+                    attemptRemoval();
+                }
+            }
+
+            if (result instanceof BlockHitResult blockraytraceresult && !this.isRemoved() && !hitList.contains(blockraytraceresult.getBlockPos())) {
+
+                BlockState state = level.getBlockState(blockraytraceresult.getBlockPos());
+
+                if (state.getBlock() instanceof IPrismaticBlock prismaticBlock) {
+                    prismaticBlock.onHit((ServerLevel) level, blockraytraceresult.getBlockPos(), this);
+                    return;
+                }
+
+                if (state.is(BlockTags.PORTALS)) {
+                    state.getBlock().entityInside(state, level, blockraytraceresult.getBlockPos(), this);
+                    return;
+                }
+
+                if (state.getBlock() instanceof TargetBlock) {
+                    this.onHitBlock(blockraytraceresult);
+                }
+
+                if (canBounce()) {
+                    bounce(blockraytraceresult);
+                    pierceLeft--; //to replace with bounce field eventually
+                    if (numSensitive > 1) return;
+                }
+
+                if (this.spellResolver != null) {
+                    this.hitList.add(blockraytraceresult.getBlockPos());
+                    this.spellResolver.onResolveEffect(this.level, blockraytraceresult);
+                }
+                Networking.sendToNearby(level, ((BlockHitResult) result).getBlockPos(), new PacketANEffect(PacketANEffect.EffectType.BURST,
+                        BlockPos.containing(result.getLocation()).below(), getParticleColor()));
                 attemptRemoval();
             }
-        }
-
-        if (!level.isClientSide && result instanceof BlockHitResult blockraytraceresult && !this.isRemoved() && !hitList.contains(blockraytraceresult.getBlockPos())) {
-
-            BlockState state = level.getBlockState(blockraytraceresult.getBlockPos());
-
-            if (state.getBlock() instanceof IPrismaticBlock prismaticBlock) {
-                prismaticBlock.onHit((ServerLevel) level, blockraytraceresult.getBlockPos(), this);
-                return;
-            }
-
-            if (state.getMaterial() == Material.PORTAL) {
-                state.getBlock().entityInside(state, level, blockraytraceresult.getBlockPos(), this);
-                return;
-            }
-
-            if (state.getBlock() instanceof TargetBlock) {
-                this.onHitBlock(blockraytraceresult);
-            }
-
-            if (this.spellResolver != null) {
-                this.hitList.add(blockraytraceresult.getBlockPos());
-                this.spellResolver.onResolveEffect(this.level, blockraytraceresult);
-            }
-            Networking.sendToNearby(level, ((BlockHitResult) result).getBlockPos(), new PacketANEffect(PacketANEffect.EffectType.BURST,
-                    new BlockPos(result.getLocation()).below(), getParticleColorWrapper()));
-            attemptRemoval();
         }
     }
 
@@ -307,8 +361,18 @@ public class EntityProjectileSpell extends ColoredProjectile {
     }
 
     @Override
-    public Packet<?> getAddEntityPacket() {
+    public Packet<ClientGamePacketListener> getAddEntityPacket() {
         return NetworkHooks.getEntitySpawningPacket(this);
+    }
+
+    public void writeSpawnData(FriendlyByteBuf buffer) {
+        buffer.writeBoolean(isNoGravity);
+        buffer.writeInt(numSensitive);
+    }
+
+    public void readSpawnData(FriendlyByteBuf additionalData) {
+        isNoGravity = additionalData.readBoolean();
+        numSensitive = additionalData.readInt();
     }
 
     public void recreateFromPacket(ClientboundAddEntityPacket pPacket) {

@@ -1,7 +1,7 @@
 package com.hollingsworth.arsnouveau.api.spell;
 
-import com.hollingsworth.arsnouveau.api.ArsNouveauAPI;
 import com.hollingsworth.arsnouveau.api.particle.ParticleColorRegistry;
+import com.hollingsworth.arsnouveau.api.registry.GlyphRegistry;
 import com.hollingsworth.arsnouveau.api.sound.ConfiguredSpellSound;
 import com.hollingsworth.arsnouveau.client.particle.ParticleColor;
 import net.minecraft.nbt.CompoundTag;
@@ -14,23 +14,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Spell implements Cloneable {
-    @Deprecated(forRemoval = true)
-    public static final Spell EMPTY = new Spell();
 
     public List<AbstractSpellPart> recipe = new ArrayList<>();
     public String name = "";
     public ParticleColor color = ParticleColor.defaultParticleColor();
     public ConfiguredSpellSound sound = ConfiguredSpellSound.DEFAULT;
 
-    /**
-     * The discount removed from the casting cost of the spell.
-     * This value is not saved, but is set to 0 after each cast.
-     */
-    private int discount = 0;
-
-
     public Spell(List<AbstractSpellPart> recipe) {
-        this.recipe = recipe == null ? new ArrayList<>() : recipe; // Safe check for tiles initializing a null
+        this.recipe = recipe == null ? new ArrayList<>() : new ArrayList<>(recipe); // Safe check for tiles initializing a null
     }
 
     public Spell() {
@@ -112,51 +103,22 @@ public class Spell implements Cloneable {
         return (int) getAugments(startPosition, caster).stream().filter(a -> a.equals(augment)).count();
     }
 
-
-    /**
-     * Returns the cost of casting this spell with discounts.
-     * Does not reset the discount value.
-     * THIS SHOULD NOT BE USED FOR EXPENDING MANA.
-     */
-    public int getDiscountedCost() {
-        return Math.max(0, getNoDiscountCost() - discount);
-    }
-
-    /**
-     * Returns the original cost of casting this spell without discounts.
-     * THIS SHOULD NOT BE USED FOR EXPENDING MANA.
-     */
-    public int getNoDiscountCost() {
+    public int getCost(){
         int cost = 0;
-        if (recipe == null)
-            return cost;
-        for (AbstractSpellPart spell : recipe) {
-            cost += spell.getCastingCost();
+        AbstractSpellPart augmentedPart = null;
+        for(AbstractSpellPart part : recipe){
+            if(part == null)
+                continue;
+            if(!(part instanceof AbstractAugment))
+                augmentedPart = part;
+
+            if(augmentedPart != null && part instanceof AbstractAugment augment) {
+                cost += augment.getCostForPart(augmentedPart);
+            }else {
+                cost += part.getCastingCost();
+            }
         }
-        cost = Math.max(0, cost);
         return cost;
-    }
-
-    /**
-     * Returns the final cost of the spell with all discounts applied.
-     * This will reset the discount to 0, so this should only be used before expending mana.
-     */
-    public int getFinalCostAndReset() {
-        int cost = getDiscountedCost();
-        discount = 0;
-        return cost;
-    }
-
-    public void addDiscount(int discount) {
-        this.discount += discount;
-    }
-
-    public void setDiscount(int discount) {
-        this.discount = discount;
-    }
-
-    public int getDiscount() {
-        return discount;
     }
 
     public boolean isEmpty() {
@@ -189,7 +151,7 @@ public class Spell implements Cloneable {
         int size = recipeTag.getInt("size");
         for (int i = 0; i < size; i++) {
             ResourceLocation registryName = new ResourceLocation(recipeTag.getString("part" + i));
-            AbstractSpellPart part = ArsNouveauAPI.getInstance().getSpellpartMap().get(registryName);
+            AbstractSpellPart part = GlyphRegistry.getSpellpartMap().get(registryName);
             if (part != null)
                 spell.recipe.add(part);
         }

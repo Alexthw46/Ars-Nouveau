@@ -6,13 +6,15 @@ import net.minecraft.world.level.Level;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Mod.EventBusSubscriber(modid = ArsNouveau.MODID)
 public class SourceManager {
-    private Map<String, Set<ISpecialSourceProvider>> posMap = new HashMap<>();
+    private Map<String, Set<ISpecialSourceProvider>> posMap = new ConcurrentHashMap<>();
 
     public void addInterface(Level world, ISpecialSourceProvider pos) {
         String key = world.dimension().location().toString();
@@ -22,14 +24,18 @@ public class SourceManager {
         posMap.get(key).add(pos);
     }
 
-    public Set<ISpecialSourceProvider> getSetForLevel(Level world){
+    public @NotNull Set<ISpecialSourceProvider> getSetForLevel(Level world){
         String key = world.dimension().location().toString();
         return posMap.computeIfAbsent(key, k -> new HashSet<>());
     }
 
+    public Set<ISpecialSourceProvider> getCopySetForLevel(Level world){
+        return new HashSet<>(getSetForLevel(world));
+    }
+
     @Nullable
     public ISpecialSourceProvider takeSourceNearby(BlockPos pos, Level world, int range, int amount){
-        for(ISpecialSourceProvider sourceInterface : getSetForLevel(world)){
+        for(ISpecialSourceProvider sourceInterface : getCopySetForLevel(world)){
             if(sourceInterface.isValid() && sourceInterface.getCurrentPos().closerThan(pos, range)){
                 sourceInterface.getSource().removeSource(amount);
                 return sourceInterface;
@@ -40,7 +46,7 @@ public class SourceManager {
 
     @Nullable
     public ISpecialSourceProvider hasSourceNearby(BlockPos pos, Level world, int range, int amount){
-        for(ISpecialSourceProvider sourceInterface : getSetForLevel(world)){
+        for(ISpecialSourceProvider sourceInterface : getCopySetForLevel(world)){
             if(sourceInterface.isValid() && sourceInterface.getCurrentPos().closerThan(pos, range) && sourceInterface.getSource().getSource() >= amount){
                 return sourceInterface;
             }
@@ -50,7 +56,7 @@ public class SourceManager {
 
     public List<ISpecialSourceProvider> canGiveSourceNearby(BlockPos pos, Level world, int range){
         List<ISpecialSourceProvider> list = new ArrayList<>();
-        for(ISpecialSourceProvider sourceInterface : getSetForLevel(world)){
+        for(ISpecialSourceProvider sourceInterface : getCopySetForLevel(world)){
             if(sourceInterface.isValid() && sourceInterface.getCurrentPos().closerThan(pos, range) && sourceInterface.getSource().canAcceptSource()){
                 list.add(sourceInterface);
             }
@@ -60,7 +66,7 @@ public class SourceManager {
 
     public List<ISpecialSourceProvider> canTakeSourceNearby(BlockPos pos, Level world, int range){
         List<ISpecialSourceProvider> list = new ArrayList<>();
-        for(ISpecialSourceProvider sourceInterface : getSetForLevel(world)){
+        for(ISpecialSourceProvider sourceInterface : getCopySetForLevel(world)){
             if(sourceInterface.isValid() && sourceInterface.getCurrentPos().closerThan(pos, range) && sourceInterface.getSource().getSource() >= 0){
                 list.add(sourceInterface);
             }
@@ -70,7 +76,16 @@ public class SourceManager {
 
     public void tick(Level level){
         if(level.getGameTime() % 60 == 0){
-            getSetForLevel(level).removeIf(iSourceInterface -> !iSourceInterface.isValid());
+            Set<ISpecialSourceProvider> stale = new HashSet<>();
+            for(ISpecialSourceProvider iSourceInterface : getSetForLevel(level)){
+                if(!iSourceInterface.isValid()){
+                    stale.add(iSourceInterface);
+                }
+            }
+            Set<ISpecialSourceProvider> set = getSetForLevel(level);
+            for(ISpecialSourceProvider iSourceInterface : stale){
+                set.remove(iSourceInterface);
+            }
         }
     }
 

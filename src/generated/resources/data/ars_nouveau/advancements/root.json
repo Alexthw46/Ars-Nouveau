@@ -33,5 +33,6 @@
     [
       "ars_nouveau:worn_notebook"
     ]
-  ]
+  ],
+  "sends_telemetry_event": false
 }

@@ -3,11 +3,8 @@ package com.hollingsworth.arsnouveau.common.items;
 import com.hollingsworth.arsnouveau.api.item.ICasterTool;
 import com.hollingsworth.arsnouveau.api.spell.ISpellCaster;
 import com.hollingsworth.arsnouveau.api.spell.Spell;
-import com.hollingsworth.arsnouveau.api.util.ManaUtil;
-import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.Style;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
@@ -17,8 +14,6 @@ import net.minecraft.world.level.Level;
 
 import javax.annotation.Nullable;
 import java.util.List;
-
-import net.minecraft.world.item.Item.Properties;
 
 public class CasterTome extends ModItem implements ICasterTool {
 
@@ -40,13 +35,7 @@ public class CasterTome extends ModItem implements ICasterTool {
         ItemStack stack = playerIn.getItemInHand(handIn);
         ISpellCaster caster = getSpellCaster(stack);
         Spell spell = caster.getSpell();
-        // Let even a new player cast 1 charge of a tome
-        if (spell.getDiscountedCost() > ManaUtil.getMaxMana(playerIn)) {
-            spell.addDiscount(spell.getDiscountedCost() - ManaUtil.getMaxMana(playerIn));
-        } else {
-            spell.addDiscount(spell.getDiscountedCost() / 2);
-        }
-        return caster.castSpell(worldIn, playerIn, handIn, Component.translatable(""), spell);
+        return caster.castSpell(worldIn, playerIn, handIn, Component.empty(), spell);
     }
 
     @Override
@@ -55,9 +44,8 @@ public class CasterTome extends ModItem implements ICasterTool {
             return;
         ISpellCaster caster = getSpellCaster(stack);
         Spell spell = caster.getSpell();
-        tooltip2.add(Component.literal(spell.getDisplayString()));
-        if (!caster.getFlavorText().isEmpty())
-            tooltip2.add(Component.literal(caster.getFlavorText()).withStyle(Style.EMPTY.withItalic(true).withColor(ChatFormatting.BLUE)));
+
+        getInformation(stack, worldIn, tooltip2, flagIn);
 
         tooltip2.add(Component.translatable("tooltip.ars_nouveau.caster_tome"));
         super.appendHoverText(stack, worldIn, tooltip2, flagIn);

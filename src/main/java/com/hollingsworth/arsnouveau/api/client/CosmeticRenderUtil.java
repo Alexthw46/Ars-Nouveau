@@ -9,8 +9,9 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
-import software.bernie.geckolib3.geo.render.built.GeoBone;
-import software.bernie.geckolib3.util.RenderUtils;
+import software.bernie.geckolib.cache.object.GeoBone;
+import software.bernie.geckolib.util.RenderUtils;
+
 
 public class CosmeticRenderUtil {
 
@@ -27,7 +28,7 @@ public class CosmeticRenderUtil {
         Vec3 scaling = cosmetic.getScaling(entity);
         matrix.translate(translations.x, translations.y, translations.z);
         matrix.scale((float) scaling.x, (float) scaling.y, (float) scaling.z);
-        Minecraft.getInstance().getItemRenderer().renderStatic(stack, cosmetic.getTransformType(), packedLightIn, OverlayTexture.NO_OVERLAY, matrix, buffer, (int) entity.getOnPos().asLong());
+        Minecraft.getInstance().getItemRenderer().renderStatic(stack, cosmetic.getTransformType(), packedLightIn, OverlayTexture.NO_OVERLAY, matrix, buffer, entity.level, (int) entity.getOnPos().asLong());
 
         matrix.popPose();
     }

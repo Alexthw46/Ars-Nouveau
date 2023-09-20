@@ -1,11 +1,12 @@
 package com.hollingsworth.arsnouveau.common.entity.goal.carbuncle;
 
 import com.hollingsworth.arsnouveau.ArsNouveau;
-import com.hollingsworth.arsnouveau.common.block.SummonBed;
-import com.hollingsworth.arsnouveau.common.entity.ChangeableBehavior;
+import com.hollingsworth.arsnouveau.api.entity.ChangeableBehavior;
+import com.hollingsworth.arsnouveau.common.datagen.BlockTagProvider;
 import com.hollingsworth.arsnouveau.common.entity.Starbuncle;
 import com.hollingsworth.arsnouveau.common.util.PortUtil;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -16,6 +17,8 @@ import net.minecraft.world.entity.ai.goal.OpenDoorGoal;
 import net.minecraft.world.entity.ai.goal.WrappedGoal;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import org.jetbrains.annotations.Nullable;
 
 public class StarbyBehavior extends ChangeableBehavior {
@@ -30,14 +33,25 @@ public class StarbyBehavior extends ChangeableBehavior {
         goals.add(new WrappedGoal(1, new OpenDoorGoal(starbuncle, true)));
     }
 
-    public boolean canGoToBed(){
+    public boolean canGoToBed() {
         return true;
     }
 
+    public boolean isBedPowered() {
+        if (starbuncle.data.bedPos == null || !starbuncle.level.isLoaded(starbuncle.data.bedPos)) {
+            return false;
+        }
+        BlockState state = starbuncle.level.getBlockState(starbuncle.data.bedPos);
+        if (!state.is(BlockTagProvider.SUMMON_SLEEPABLE)) {
+            return false;
+        }
+        return state.hasProperty(BlockStateProperties.POWERED) && state.getValue(BlockStateProperties.POWERED);
+    }
+
     @Override
-    public void onFinishedConnectionFirst(@Nullable BlockPos storedPos, @Nullable LivingEntity storedEntity, Player playerEntity) {
-        super.onFinishedConnectionFirst(storedPos, storedEntity, playerEntity);
-        if (storedPos != null && playerEntity.level.getBlockState(storedPos).getBlock() instanceof SummonBed) {
+    public void onFinishedConnectionFirst(@Nullable BlockPos storedPos, @Nullable Direction side, @Nullable LivingEntity storedEntity, Player playerEntity) {
+        super.onFinishedConnectionFirst(storedPos, side, storedEntity, playerEntity);
+        if (storedPos != null && playerEntity.level.getBlockState(storedPos).is(BlockTagProvider.SUMMON_SLEEPABLE)) {
             PortUtil.sendMessage(playerEntity, Component.translatable("ars_nouveau.starbuncle.set_bed"));
             starbuncle.data.bedPos = storedPos.immutable();
         }
@@ -48,7 +62,7 @@ public class StarbyBehavior extends ChangeableBehavior {
         return new ResourceLocation(ArsNouveau.MODID, "starby");
     }
 
-    public void syncTag(){
+    public void syncTag() {
         starbuncle.syncBehavior();
     }
 

@@ -1,6 +1,6 @@
 package com.hollingsworth.arsnouveau.common.block.tile;
 
-import com.hollingsworth.arsnouveau.setup.BlockRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.BlockRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.IntTag;
@@ -12,7 +12,7 @@ public class TempLightTile extends LightTile{
     public double lengthModifier;
 
     public TempLightTile(BlockPos pos, BlockState state) {
-        super(BlockRegistry.T_LIGHT_TILE, pos, state);
+        super(BlockRegistry.T_LIGHT_TILE.get(), pos, state);
     }
 
     @Override

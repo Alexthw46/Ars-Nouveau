@@ -1,6 +1,6 @@
 package com.hollingsworth.arsnouveau.common.items;
 
-import com.hollingsworth.arsnouveau.api.RegistryHelper;
+import com.hollingsworth.arsnouveau.setup.registry.RegistryHelper;
 import com.hollingsworth.arsnouveau.api.item.IScribeable;
 import com.hollingsworth.arsnouveau.api.nbt.ItemstackData;
 import com.hollingsworth.arsnouveau.common.util.PortUtil;
@@ -50,8 +50,6 @@ public abstract class ItemScroll extends ModItem implements IScribeable {
         HIGH,
         HIGHEST
     }
-    @Deprecated(forRemoval = true)
-    public static String ITEM_PREFIX = "item_";
 
     @Override
     public boolean onScribe(Level world, BlockPos pos, Player player, InteractionHand handIn, ItemStack thisStack) {
@@ -79,7 +77,7 @@ public abstract class ItemScroll extends ModItem implements IScribeable {
             if (tag == null || tag.isEmpty())
                 return;
             for (String s : tag.getAllKeys()) {
-                if (s.contains(ITEM_PREFIX)) {
+                if (s.contains("item_")) {
                     items.add(ItemStack.of(tag.getCompound(s)));
                 }
             }
@@ -100,11 +98,11 @@ public abstract class ItemScroll extends ModItem implements IScribeable {
         }
 
         public boolean containsStack(ItemStack stack){
-            return items.stream().anyMatch(s -> s.sameItem(stack));
+            return items.stream().anyMatch(s -> ItemStack.isSameItem(s, stack));
         }
 
         public boolean remove(ItemStack stack){
-            boolean didRemove = items.removeIf(s -> s.sameItem(stack));
+            boolean didRemove = items.removeIf(s -> ItemStack.isSameItem(s, stack));
             writeItem();
             return didRemove;
         }
@@ -120,7 +118,7 @@ public abstract class ItemScroll extends ModItem implements IScribeable {
         }
 
         public String getItemKey(ItemStack stack) {
-            return ITEM_PREFIX + RegistryHelper.getRegistryName(stack.getItem()).toString();
+            return "item_" + RegistryHelper.getRegistryName(stack.getItem()).toString();
         }
 
         @Override

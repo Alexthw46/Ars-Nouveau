@@ -1,8 +1,9 @@
 {
   "type": "minecraft:crafting_shapeless",
+  "category": "misc",
   "ingredients": [
     {
-      "item": "ars_nouveau:source_berry"
+      "item": "ars_nouveau:sourceberry_bush"
     }
   ],
   "result": {

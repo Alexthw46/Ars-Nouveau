@@ -2,6 +2,7 @@ package com.hollingsworth.arsnouveau.common.entity;
 
 import com.hollingsworth.arsnouveau.api.entity.ISummon;
 import com.hollingsworth.arsnouveau.common.entity.goal.FollowSummonerGoal;
+import com.hollingsworth.arsnouveau.setup.registry.ModEntities;
 import net.minecraft.Util;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -11,7 +12,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.damagesource.EntityDamageSource;
+import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
@@ -154,7 +155,7 @@ public class SummonSkeleton extends Skeleton implements IFollowingSummon, ISummo
 
     @Override
     public boolean hurt(DamageSource pSource, float pAmount) {
-        if (pSource instanceof EntityDamageSource eSource && eSource.getEntity() instanceof ISummon summon){
+        if (pSource.is(DamageTypes.MOB_ATTACK) && pSource.getEntity() instanceof ISummon summon){
             if (summon.getOwnerID() != null && summon.getOwnerID().equals(this.getOwnerID())) return false;
         }
         return super.hurt(pSource, pAmount);
@@ -167,7 +168,7 @@ public class SummonSkeleton extends Skeleton implements IFollowingSummon, ISummo
         super.tick();
         if (--this.limitedLifeTicks <= 0) {
             this.limitedLifeTicks = 20;
-            this.hurt(DamageSource.STARVE, 20.0F);
+            this.hurt(level.damageSources().starve(), 20.0F);
         }
     }
 

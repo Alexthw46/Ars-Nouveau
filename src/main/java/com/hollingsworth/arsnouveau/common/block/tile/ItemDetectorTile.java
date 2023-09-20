@@ -4,11 +4,11 @@ import com.hollingsworth.arsnouveau.api.client.ITooltipProvider;
 import com.hollingsworth.arsnouveau.api.item.IWandable;
 import com.hollingsworth.arsnouveau.api.util.BlockUtil;
 import com.hollingsworth.arsnouveau.client.particle.ParticleColor;
-import com.hollingsworth.arsnouveau.client.util.ColorPos;
+import com.hollingsworth.arsnouveau.client.particle.ColorPos;
 import com.hollingsworth.arsnouveau.common.block.ITickable;
 import com.hollingsworth.arsnouveau.common.items.ItemScroll;
 import com.hollingsworth.arsnouveau.common.util.PortUtil;
-import com.hollingsworth.arsnouveau.setup.BlockRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.BlockRegistry;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -75,7 +75,7 @@ public class ItemDetectorTile extends ModdedTile implements ITickable, IWandable
                 return stack.getCount();
             }
         }
-        if (!ItemStack.isSame(stack, filterStack) || !ItemStack.tagMatches(stack, filterStack)) {
+        if (!ItemStack.isSameItem(stack, filterStack) || !ItemStack.matches(stack, filterStack)) {
             return 0;
         }
         return (filterStack.isEmpty() && stack.isEmpty()) ? 1 : stack.getCount();

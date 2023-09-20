@@ -1,17 +1,16 @@
 package com.hollingsworth.arsnouveau.common.datagen;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.hollingsworth.arsnouveau.api.ArsNouveauAPI;
+
+import com.hollingsworth.arsnouveau.ArsNouveau;
 import com.hollingsworth.arsnouveau.api.enchanting_apparatus.*;
-import com.hollingsworth.arsnouveau.common.enchantment.EnchantmentRegistry;
+import com.hollingsworth.arsnouveau.api.registry.PerkRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.EnchantmentRegistry;
 import com.hollingsworth.arsnouveau.common.items.PerkItem;
 import com.hollingsworth.arsnouveau.common.perk.*;
-import com.hollingsworth.arsnouveau.setup.BlockRegistry;
-import com.hollingsworth.arsnouveau.setup.ItemsRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.BlockRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.ItemsRegistry;
 import net.minecraft.data.CachedOutput;
 import net.minecraft.data.DataGenerator;
-import net.minecraft.data.DataProvider;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.Item;
@@ -22,41 +21,32 @@ import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraftforge.common.Tags;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.hollingsworth.arsnouveau.api.RegistryHelper.getRegistryName;
+import static com.hollingsworth.arsnouveau.setup.registry.RegistryHelper.getRegistryName;
 
-public class ApparatusRecipeProvider implements DataProvider {
-    public final DataGenerator generator;
-    public static final Gson GSON = (new GsonBuilder()).setPrettyPrinting().create();
-    public static final Logger LOGGER = LogManager.getLogger();
+public class ApparatusRecipeProvider extends SimpleDataProvider {
 
     public ApparatusRecipeProvider(DataGenerator generatorIn) {
-        this.generator = generatorIn;
+        super(generatorIn);
     }
 
-    public List<EnchantingApparatusRecipe> recipes = new ArrayList<>();
-
     @Override
-    public void run(CachedOutput cache) throws IOException {
+    public void collectJsons(CachedOutput pOutput) {
         addEntries();
-        Path output = this.generator.getOutputFolder();
         for (IEnchantingRecipe g : recipes) {
             if (g instanceof EnchantingApparatusRecipe recipe) {
                 Path path = getRecipePath(output, recipe.getId().getPath());
-                DataProvider.saveStable(cache, recipe.asRecipe(), path);
+                saveStable(pOutput, recipe.asRecipe(), path);
             }
         }
-
     }
 
+    public List<EnchantingApparatusRecipe> recipes = new ArrayList<>();
     public ApparatusRecipeBuilder builder() {
         return ApparatusRecipeBuilder.builder();
     }
@@ -115,6 +105,7 @@ public class ApparatusRecipeProvider implements DataProvider {
                 .withResult(ItemsRegistry.STARBUNCLE_CHARM)
                 .withReagent(ItemsRegistry.STARBUNCLE_SHARD)
                 .withPedestalItem(4, Ingredient.of(Tags.Items.INGOTS_GOLD))
+                .keepNbtOfReagent(true)
                 .build());
 
         addRecipe(builder()
@@ -995,20 +986,20 @@ public class ApparatusRecipeProvider implements DataProvider {
                 .build());
 
 
-        makeArmor(ItemsRegistry.NOVICE_BOOTS, Items.GOLDEN_BOOTS);
-        makeArmor(ItemsRegistry.NOVICE_LEGGINGS, Items.GOLDEN_LEGGINGS);
-        makeArmor(ItemsRegistry.NOVICE_ROBES, Items.GOLDEN_CHESTPLATE);
-        makeArmor(ItemsRegistry.NOVICE_HOOD, Items.GOLDEN_HELMET);
+        makeArmor(ItemsRegistry.SORCERER_BOOTS, Items.GOLDEN_BOOTS);
+        makeArmor(ItemsRegistry.SORCERER_LEGGINGS, Items.GOLDEN_LEGGINGS);
+        makeArmor(ItemsRegistry.SORCERER_ROBES, Items.GOLDEN_CHESTPLATE);
+        makeArmor(ItemsRegistry.SORCERER_HOOD, Items.GOLDEN_HELMET);
 
-        makeArmor(ItemsRegistry.APPRENTICE_HOOD, Items.IRON_HELMET);
-        makeArmor(ItemsRegistry.APPRENTICE_ROBES, Items.IRON_CHESTPLATE);
-        makeArmor(ItemsRegistry.APPRENTICE_LEGGINGS, Items.IRON_LEGGINGS);
-        makeArmor(ItemsRegistry.APPRENTICE_BOOTS, Items.IRON_BOOTS);
+        makeArmor(ItemsRegistry.ARCANIST_HOOD, Items.IRON_HELMET);
+        makeArmor(ItemsRegistry.ARCANIST_ROBES, Items.IRON_CHESTPLATE);
+        makeArmor(ItemsRegistry.ARCANIST_LEGGINGS, Items.IRON_LEGGINGS);
+        makeArmor(ItemsRegistry.ARCANIST_BOOTS, Items.IRON_BOOTS);
 
-        makeArmor(ItemsRegistry.ARCHMAGE_BOOTS, Items.DIAMOND_BOOTS);
-        makeArmor(ItemsRegistry.ARCHMAGE_LEGGINGS, Items.DIAMOND_LEGGINGS);
-        makeArmor(ItemsRegistry.ARCHMAGE_ROBES, Items.DIAMOND_CHESTPLATE);
-        makeArmor(ItemsRegistry.ARCHMAGE_HOOD, Items.DIAMOND_HELMET);
+        makeArmor(ItemsRegistry.BATTLEMAGE_BOOTS, Items.DIAMOND_BOOTS);
+        makeArmor(ItemsRegistry.BATTLEMAGE_LEGGINGS, Items.DIAMOND_LEGGINGS);
+        makeArmor(ItemsRegistry.BATTLEMAGE_ROBES, Items.DIAMOND_CHESTPLATE);
+        makeArmor(ItemsRegistry.BATTLEMAGE_HOOD, Items.DIAMOND_HELMET);
 
         addRecipe(builder().withResult(getPerkItem(IgnitePerk.INSTANCE.getRegistryName()))
                 .withReagent(ItemsRegistry.BLANK_THREAD)
@@ -1063,6 +1054,15 @@ public class ApparatusRecipeProvider implements DataProvider {
         addRecipe(builder().withResult(BlockRegistry.CRAFTING_LECTERN)
                 .withReagent(Blocks.LECTERN)
                 .withPedestalItem(4, Tags.Items.CHESTS).build());
+
+        addRecipe(builder()
+                .withResult(ItemsRegistry.WARP_SCROLL,2)
+                .withReagent(ItemsRegistry.WARP_SCROLL)
+                .withPedestalItem(ItemsRegistry.WARP_SCROLL)
+                .keepNbtOfReagent(true)
+                .withSourceCost(1000)
+                .withId(new ResourceLocation(ArsNouveau.MODID, "warp_scroll_copy"))
+                .build());
     }
 
     public void makeArmor(ItemLike outputItem, ItemLike armorItem) {
@@ -1074,7 +1074,7 @@ public class ApparatusRecipeProvider implements DataProvider {
     }
 
     public PerkItem getPerkItem(ResourceLocation id) {
-        return ArsNouveauAPI.getInstance().getPerkItemMap().get(id);
+        return PerkRegistry.getPerkItemMap().get(id);
     }
 
     public void addRecipe(EnchantingApparatusRecipe recipe) {

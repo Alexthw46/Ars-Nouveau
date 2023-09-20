@@ -1,7 +1,7 @@
 package com.hollingsworth.arsnouveau.client.gui.book;
 
 import com.hollingsworth.arsnouveau.ArsNouveau;
-import com.hollingsworth.arsnouveau.api.ArsNouveauAPI;
+import com.hollingsworth.arsnouveau.api.registry.SpellSoundRegistry;
 import com.hollingsworth.arsnouveau.api.sound.ConfiguredSpellSound;
 import com.hollingsworth.arsnouveau.api.sound.SpellSound;
 import com.hollingsworth.arsnouveau.client.gui.BookSlider;
@@ -9,9 +9,9 @@ import com.hollingsworth.arsnouveau.client.gui.buttons.GuiImageButton;
 import com.hollingsworth.arsnouveau.client.gui.buttons.SoundButton;
 import com.hollingsworth.arsnouveau.common.network.Networking;
 import com.hollingsworth.arsnouveau.common.network.PacketSetSound;
-import com.hollingsworth.arsnouveau.setup.SoundRegistry;
-import com.mojang.blaze3d.vertex.PoseStack;
+import com.hollingsworth.arsnouveau.setup.registry.SoundRegistry;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
@@ -59,7 +59,7 @@ public class SoundScreen extends BaseBook {
         testButton.soundDisabled = true;
         addRenderableWidget(testButton);
 
-        selectedButton = new SoundButton(this, bookLeft + 69, bookTop + 131, selectedSound, (b) -> {
+        selectedButton = new SoundButton(bookLeft + 69, bookTop + 131, selectedSound, (b) -> {
             ((SoundButton) b).sound = SoundRegistry.EMPTY_SPELL_SOUND;
             selectedSound = SoundRegistry.EMPTY_SPELL_SOUND;
         });
@@ -75,7 +75,7 @@ public class SoundScreen extends BaseBook {
         int adjustedRowsPlaced = 0;
         int yStart = bookTop + 22;
         int adjustedXPlaced = 0;
-        List<SpellSound> sounds = ArsNouveauAPI.getInstance().getSpellSoundsRegistry().values().stream().toList();
+        List<SpellSound> sounds = SpellSoundRegistry.getSpellSoundsRegistry().values().stream().toList();
         for (int i = 0; i < sounds.size(); i++) {
             SpellSound part = sounds.get(i);
 
@@ -94,7 +94,7 @@ public class SoundScreen extends BaseBook {
             int xOffset = 20 * ((adjustedXPlaced) % PER_ROW) + (nextPage ? 134 : 0);
             int yPlace = adjustedRowsPlaced * 18 + yStart;
 
-            SoundButton cell = new SoundButton(this, xStart + xOffset, yPlace, part, this::onSoundClick);
+            SoundButton cell = new SoundButton(xStart + xOffset, yPlace, part, this::onSoundClick);
             addRenderableWidget(cell);
             adjustedXPlaced++;
         }
@@ -120,18 +120,12 @@ public class SoundScreen extends BaseBook {
     }
 
     @Override
-    public void drawBackgroundElements(PoseStack stack, int mouseX, int mouseY, float partialTicks) {
-        super.drawBackgroundElements(stack, mouseX, mouseY, partialTicks);
-        drawFromTexture(new ResourceLocation(ArsNouveau.MODID, "textures/gui/sound_slider_gilding.png"), 22, 47, 0, 0, 112, 104, 112, 104, stack);
+    public void drawBackgroundElements(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+        super.drawBackgroundElements(graphics, mouseX, mouseY, partialTicks);
+        graphics.blit(new ResourceLocation(ArsNouveau.MODID, "textures/gui/sound_slider_gilding.png"), 22, 47, 0, 0, 112, 104, 112, 104);
         int color = -8355712;
-        minecraft.font.draw(stack, Component.translatable("ars_nouveau.sounds.title").getString(), 51, 24, color);
-        minecraft.font.draw(stack, Component.translatable("ars_nouveau.color_gui.save").getString(), 37, 160, color);
-        minecraft.font.draw(stack, Component.translatable("ars_nouveau.sounds.test").getString(), 102, 160, color);
-
-    }
-
-    @Override
-    public void drawForegroundElements(int mouseX, int mouseY, float partialTicks) {
-        super.drawForegroundElements(mouseX, mouseY, partialTicks);
+        graphics.drawString(font, Component.translatable("ars_nouveau.sounds.title").getString(), 51, 24, color, false);
+        graphics.drawString(font, Component.translatable("ars_nouveau.color_gui.save").getString(), 37, 160, color, false);
+        graphics.drawString(font, Component.translatable("ars_nouveau.sounds.test").getString(), 102, 160, color, false);
     }
 }

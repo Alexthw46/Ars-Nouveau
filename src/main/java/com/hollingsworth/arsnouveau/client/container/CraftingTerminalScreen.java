@@ -2,7 +2,8 @@ package com.hollingsworth.arsnouveau.client.container;
 
 import com.hollingsworth.arsnouveau.ArsNouveau;
 import com.hollingsworth.arsnouveau.client.gui.buttons.GuiImageButton;
-import com.mojang.blaze3d.vertex.PoseStack;
+import com.hollingsworth.arsnouveau.setup.config.Config;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.recipebook.GhostRecipe;
 import net.minecraft.client.gui.screens.recipebook.RecipeBookComponent;
@@ -17,16 +18,21 @@ import org.lwjgl.glfw.GLFW;
 
 public class CraftingTerminalScreen extends AbstractStorageTerminalScreen<CraftingTerminalMenu> implements RecipeUpdateListener {
 	private static final ResourceLocation gui = new ResourceLocation(ArsNouveau.MODID, "textures/gui/crafting_terminal.png");
+	private static final ResourceLocation gui_expanded = new ResourceLocation(ArsNouveau.MODID, "textures/gui/crafting_terminal_expanded.png");
 	private final RecipeBookComponent recipeBookGui;
 	private boolean widthTooNarrow;
 	private static final ResourceLocation RECIPE_BUTTON_TEXTURE = new ResourceLocation(ArsNouveau.MODID, "textures/gui/recipe_book.png");
 	private static final ResourceLocation CLEAR_CRAFT_TEXTURE = new ResourceLocation(ArsNouveau.MODID, "textures/gui/craft_clear.png");
+	private static final ResourceLocation EXPAND_TEXTURE = new ResourceLocation(ArsNouveau.MODID, "textures/gui/expand_inventory.png");
+	private static final ResourceLocation COLLAPSE_TEXTURE = new ResourceLocation(ArsNouveau.MODID, "textures/gui/collapse_inventory.png");
 	private EditBox recipeBookSearch;
 	private GhostRecipe ghostRecipe;
 
 	public GuiImageButton btnClr;
 
 	public GuiImageButton btnRecipeBook;
+	public GuiImageButton btnExpand;
+	public GuiImageButton btnCollapse;
 
 	public CraftingTerminalScreen(CraftingTerminalMenu screenContainer, Inventory inv, Component titleIn) {
 		super(screenContainer, inv, titleIn);
@@ -42,7 +48,7 @@ public class CraftingTerminalScreen extends AbstractStorageTerminalScreen<Crafti
 
 	@Override
 	public ResourceLocation getGui() {
-		return gui;
+		return expanded ? gui_expanded : gui;
 	}
 
 	@Override
@@ -67,9 +73,15 @@ public class CraftingTerminalScreen extends AbstractStorageTerminalScreen<Crafti
 		addRenderableWidget(recipeBookGui);
 		this.setInitialFocus(this.recipeBookGui);
 		int recipeButtonY = this.height / 2 - 34;
+		int collapseButtonY = this.height / 2 + 23;
 		btnClr = new GuiImageButton(leftPos + 86, recipeButtonY, 0,0,9,9,9,9, CLEAR_CRAFT_TEXTURE, b -> clearGrid());
+		btnExpand = new GuiImageButton(leftPos + 86, recipeButtonY - 12, 0,0,14,3,14, 3, EXPAND_TEXTURE, b -> expandScreen());
+		btnCollapse = new GuiImageButton(leftPos + 86, collapseButtonY, 0,0,14,3,14, 3, COLLAPSE_TEXTURE, b -> collapseScreen());
+		btnCollapse.visible = this.expanded;
+		btnExpand.visible = !this.expanded;
 		addRenderableWidget(btnClr);
-
+		addRenderableWidget(btnCollapse);
+		addRenderableWidget(btnExpand);
 		btnRecipeBook = addRenderableWidget(new GuiImageButton( this.leftPos + 98, recipeButtonY , 0, 0, 9, 9, 9,9, RECIPE_BUTTON_TEXTURE, (thisButton) -> {
 			this.recipeBookGui.initVisuals();
 			recipeBookSearch = recipeBookGui.searchBox;
@@ -78,20 +90,52 @@ public class CraftingTerminalScreen extends AbstractStorageTerminalScreen<Crafti
 			this.leftPos = this.recipeBookGui.updateScreenPosition(this.width, this.imageWidth);
 			((GuiImageButton)thisButton).setPosition(this.leftPos + 98, recipeButtonY);
 
-			super.searchField.setX(this.leftPos + 114);
+			super.searchField.setX(this.leftPos + 115);
 			btnClr.setX(this.leftPos + 86);
 			buttonSortingType.setX(leftPos - 18);
 			buttonDirection.setX(leftPos - 18);
 			buttonSearchType.setX(leftPos - 18);
+
+			btnCollapse.setX(leftPos + 86);
+			btnExpand.setX(leftPos + 86);
 		}));
 		if(recipeBookGui.isVisible()) {
 			buttonSortingType.setX(leftPos - 18);
 			buttonDirection.setX(leftPos - 18);
 			buttonSearchType.setX(leftPos - 18);
-			super.searchField.setX(this.leftPos + 114);
+			super.searchField.setX(this.leftPos + 115);
 			recipeBookSearch = recipeBookGui.searchBox;
+			btnCollapse.setX(leftPos + 86);
+			btnExpand.setX(leftPos + 86);
 		}
+		btnRecipeBook.visible = Config.SHOW_RECIPE_BOOK.get();
 		onPacket();
+	}
+
+	@Override
+	protected void onPacket() {
+		super.onPacket();
+		SortSettings s = menu.terminalData;
+		if (s != null) {
+			btnCollapse.visible = this.expanded;
+			btnExpand.visible = !this.expanded;
+			btnClr.visible = !this.expanded;
+			btnRecipeBook.visible = !this.expanded && Config.SHOW_RECIPE_BOOK.get();
+		}
+	}
+	public void collapseScreen(){
+		rowCount = 3;
+		this.expanded = false;
+		sendUpdate();
+	}
+
+	public void expandScreen(){
+		rowCount = 7;
+		this.expanded = true;
+		if(this.recipeBookGui.isVisible()){
+			btnRecipeBook.onPress();
+		}
+		sendUpdate();
 	}
 
 	@Override
@@ -101,18 +145,18 @@ public class CraftingTerminalScreen extends AbstractStorageTerminalScreen<Crafti
 	}
 
 	@Override
-	public void render(PoseStack st, int mouseX, int mouseY, float partialTicks) {
-		this.renderBackground(st);
+	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+		this.renderBackground(graphics);
 		if (this.recipeBookGui.isVisible() && this.widthTooNarrow) {
-			this.renderBg(st, partialTicks, mouseX, mouseY);
-			this.recipeBookGui.render(st, mouseX, mouseY, partialTicks);
+			this.renderBg(graphics, partialTicks, mouseX, mouseY);
+			this.recipeBookGui.render(graphics, mouseX, mouseY, partialTicks);
 		} else {
-			this.recipeBookGui.render(st, mouseX, mouseY, partialTicks);
-			super.render(st, mouseX, mouseY, partialTicks);
-			this.recipeBookGui.renderGhostRecipe(st, this.leftPos, this.topPos, true, partialTicks);
+			this.recipeBookGui.render(graphics, mouseX, mouseY, partialTicks);
+			super.render(graphics, mouseX, mouseY, partialTicks);
+			this.recipeBookGui.renderGhostRecipe(graphics, this.leftPos, this.topPos, true, partialTicks);
 		}
-		this.renderTooltip(st, mouseX, mouseY);
-		this.recipeBookGui.renderTooltip(st, this.leftPos, this.topPos, mouseX, mouseY);
+		this.renderTooltip(graphics, mouseX, mouseY);
+		this.recipeBookGui.renderTooltip(graphics, this.leftPos, this.topPos, mouseX, mouseY);
 		this.setInitialFocus(this.recipeBookGui);
 	}
 
@@ -174,7 +218,7 @@ public class CraftingTerminalScreen extends AbstractStorageTerminalScreen<Crafti
 			}
 			if(itemstack != null) {
 				super.searchField.setValue(itemstack.getHoverName().getString());
-				super.searchField.setFocus(false);
+				super.searchField.setFocused(false);
 				return true;
 			}
 		}

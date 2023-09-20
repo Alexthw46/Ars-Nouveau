@@ -21,6 +21,7 @@ import net.minecraft.world.level.pathfinder.PathFinder;
 import net.minecraft.world.level.pathfinder.WalkNodeEvaluator;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
@@ -91,7 +92,7 @@ public class MinecoloniesAdvancedPathNavigate extends AbstractAdvancedPathNaviga
         this.nodeEvaluator.setCanFloat(true);
         getPathingOptions().setCanSwim(true);
 
-        stuckHandler = PathingStuckHandler.createStuckHandler().withTakeDamageOnStuck(0.0F).withTeleportSteps(6).withTeleportOnFullStuck();
+        stuckHandler = PathingStuckHandler.createStuckHandler().withTeleportSteps(6).withTeleportOnFullStuck();
     }
 
     @Override
@@ -190,7 +191,7 @@ public class MinecoloniesAdvancedPathNavigate extends AbstractAdvancedPathNaviga
             } else if (this.path != null && !this.path.isDone()) {
                 Vec3 vector3d = this.getTempMobPos();
                 Vec3 vector3d1 = this.path.getNextEntityPos(this.mob);
-                if (vector3d.y > vector3d1.y && !this.mob.isOnGround() && Mth.floor(vector3d.x) == Mth.floor(vector3d1.x) && Mth.floor(vector3d.z) == Mth.floor(vector3d1.z)) {
+                if (vector3d.y > vector3d1.y && !this.mob.onGround() && Mth.floor(vector3d.x) == Mth.floor(vector3d1.x) && Mth.floor(vector3d.z) == Mth.floor(vector3d1.z)) {
                     this.path.advance();
                 }
             }
@@ -198,7 +199,7 @@ public class MinecoloniesAdvancedPathNavigate extends AbstractAdvancedPathNaviga
             DebugPackets.sendPathFindingPacket(this.level, this.mob, this.path, this.maxDistanceToWaypoint);
             if (!this.isDone()) {
                 Vec3 vector3d2 = this.path.getNextEntityPos(this.mob);
-                BlockPos blockpos = new BlockPos(vector3d2);
+                BlockPos blockpos = BlockPos.containing(vector3d2);
                 if (level.isLoaded(blockpos)) {
                     this.mob.getMoveControl()
                             .setWantedPosition(vector3d2.x,
@@ -307,7 +308,7 @@ public class MinecoloniesAdvancedPathNavigate extends AbstractAdvancedPathNaviga
     @Override
     protected boolean canMoveDirectly(Vec3 start, Vec3 end) {
         //  special path blocks go into the false as !specialPathBlocks
-        return getPathingOptions().getIsRoad().apply(level.getBlockState(new BlockPos(start.x, start.y - 1, start.z))) && super.canMoveDirectly(start, end);
+        return  super.canMoveDirectly(start, end);
     }
 
     public double getSpeedFactor() {
@@ -394,6 +395,7 @@ public class MinecoloniesAdvancedPathNavigate extends AbstractAdvancedPathNaviga
     }
 
     private boolean processCompletedCalculationResult() {
+        pathResult.getJob().synchToClient(mob);
         moveTo(pathResult.getPath(), getSpeedFactor());
         if (pathResult != null) {
             pathResult.setStatus(PathFindingStatus.IN_PROGRESS_FOLLOWING);
@@ -404,32 +406,24 @@ public class MinecoloniesAdvancedPathNavigate extends AbstractAdvancedPathNaviga
     private boolean handleLadders(int oldIndex) {
         //  Ladder Workaround
         if (!this.isDone()) {
-            final PathPointExtended pEx = (PathPointExtended) this.getPath().getNode(this.getPath().getNextNodeIndex());
+            @NotNull final PathPointExtended pEx = (PathPointExtended) this.getPath().getNode(this.getPath().getNextNodeIndex());
             final PathPointExtended pExNext = getPath().getNodeCount() > this.getPath().getNextNodeIndex() + 1
                     ? (PathPointExtended) this.getPath()
                     .getNode(this.getPath()
-                            .getNextNodeIndex() + 1)
-                    : null;
+                            .getNextNodeIndex() + 1) : null;
 
-            for (int i = this.path.getNextNodeIndex(); i < Math.min(this.path.getNodeCount(), this.path.getNextNodeIndex() + 3); i++) {
-                final PathPointExtended nextPoints = (PathPointExtended) this.getPath().getNode(i);
-                if (nextPoints.isOnLadder()) {
-                    Vec3 motion = this.mob.getDeltaMovement();
-                    double x = motion.x < -0.1 ? -0.1 : Math.min(motion.x, 0.1);
-                    double z = motion.x < -0.1 ? -0.1 : Math.min(motion.z, 0.1);
 
-                    this.ourEntity.setDeltaMovement(x, motion.y, z);
-                    break;
-                }
-            }
-
-            if (pEx.isOnLadder() && pExNext != null && (pEx.y != pExNext.y || mob.getY() > pEx.y)) {
+            final BlockPos pos = new BlockPos(pEx.x, pEx.y, pEx.z);
+            if (pEx.isOnLadder() && pExNext != null && (pEx.y != pExNext.y || mob.getY() > pEx.y) && level.getBlockState(pos).isLadder(level, pos, ourEntity)) {
                 return handlePathPointOnLadder(pEx);
             } else if (ourEntity.isInWater()) {
                 return handleEntityInWater(oldIndex, pEx);
-            } else if (level.random.nextInt(10) == 0) {
-                if (false) //  if you also want them to move faster on certain blocks here you check for it.
-                {
+            } else if (level.random.nextInt(20) == 0) {
+                if (!pEx.isOnLadder() && pExNext != null && pExNext.isOnLadder()) {
+                    speedModifier = getSpeedFactor() / 4.0;
+                } else if (false
+                //WorkerUtil.isPathBlock(level.getBlockState(findBlockUnderEntity(ourEntity)).getBlock())
+                ) {
                     speedModifier = ON_PATH_SPEED_MULTIPLIER * getSpeedFactor();
                 } else {
                     speedModifier = getSpeedFactor();
@@ -492,7 +486,7 @@ public class MinecoloniesAdvancedPathNavigate extends AbstractAdvancedPathNaviga
 
     private boolean handlePathPointOnLadder(final PathPointExtended pEx) {
         Vec3 vec3 = this.getPath().getNextEntityPos(this.ourEntity);
-        final BlockPos entityPos = new BlockPos(this.ourEntity.position());
+        final BlockPos entityPos = BlockPos.containing(this.ourEntity.position());
         if (vec3.distanceToSqr(ourEntity.getX(), vec3.y, ourEntity.getZ()) < Math.random() * 0.1) {
             //This way he is less nervous and gets up the ladder
             double newSpeed = 0.3;
@@ -584,7 +578,7 @@ public class MinecoloniesAdvancedPathNavigate extends AbstractAdvancedPathNaviga
 
         this.maxDistanceToWaypoint = 0.5F;
         boolean wentAhead = false;
-//        boolean isTracking = AbstractPathJob.trackingMap.containsValue(ourEntity.getUUID());
+        boolean isTracking = AbstractPathJob.DEBUG_DRAW;// AbstractPathJob.trackingMap.containsValue(ourEntity.getUUID());
 
         final HashSet<BlockPos> reached = new HashSet<>();
         // Look at multiple points, incase we're too fast
@@ -595,20 +589,18 @@ public class MinecoloniesAdvancedPathNavigate extends AbstractAdvancedPathNaviga
                     Math.abs(this.mob.getY() - next.y) <= 1.0D) {
                 this.path.advance();
                 wentAhead = true;
-//
-//                if (isTracking)
-//                {
-//                    final Node point = path.getNode(i);
-//                    reached.add(new BlockPos(point.x, point.y, point.z));
-//                }
+
+                if (isTracking) {
+                    final Node point = path.getNode(i);
+                    reached.add(new BlockPos(point.x, point.y, point.z));
+                }
             }
         }
 
-//        if (isTracking)
-//        {
-//            AbstractPathJob.synchToClient(reached, ourEntity);
-//            reached.clear();
-//        }
+        if (isTracking) {
+            AbstractPathJob.synchToClient(reached, ourEntity);
+            reached.clear();
+        }
 
         if (path.isDone()) {
             onPathFinish();
@@ -633,21 +625,19 @@ public class MinecoloniesAdvancedPathNavigate extends AbstractAdvancedPathNaviga
                 final Vec3 tempoPos = this.path.getEntityPosAtNode(this.mob, currentIndex);
                 if (mob.position().distanceTo(tempoPos) <= 1.0) {
                     this.path.setNextNodeIndex(currentIndex);
+                } else if (isTracking) {
+                    reached.add(BlockPos.containing(tempoPos.x, tempoPos.y, tempoPos.z));
                 }
-//                else if (isTracking)
-//                {
-//                    reached.add(new BlockPos(tempoPos.x, tempoPos.y, tempoPos.z));
-//                }
                 currentIndex--;
             }
         }
 
-//        if (isTracking)
-//        {
-//            AbstractPathJob.synchToClient(reached, ourEntity);
-//            reached.clear();
-//        }
+        if (isTracking) {
+            AbstractPathJob.synchToClient(reached, ourEntity);
+            reached.clear();
+        }
     }
+
 
     /**
      * Called upon reaching the path end, reset values

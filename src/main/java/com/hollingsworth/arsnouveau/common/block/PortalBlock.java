@@ -5,7 +5,7 @@ import com.hollingsworth.arsnouveau.common.block.tile.PortalTile;
 import com.hollingsworth.arsnouveau.common.datagen.BlockTagProvider;
 import com.hollingsworth.arsnouveau.common.items.DominionWand;
 import com.hollingsworth.arsnouveau.common.items.WarpScroll;
-import com.hollingsworth.arsnouveau.setup.BlockRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.BlockRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
@@ -29,7 +29,7 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
-import net.minecraft.world.level.material.Material;
+import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -53,7 +53,7 @@ public class PortalBlock extends TickableModBlock {
     }
 
     public PortalBlock() {
-        super(BlockBehaviour.Properties.of(Material.PORTAL).noCollission().strength(-1.0F, 3600000.0F).noLootTable());
+        super(BlockBehaviour.Properties.of().pushReaction(PushReaction.BLOCK).noCollission().strength(-1.0F, 3600000.0F).noLootTable());
         this.registerDefaultState(this.defaultBlockState().setValue(AXIS, Direction.Axis.X).setValue(ALTERNATE, false));
     }
 
@@ -302,7 +302,7 @@ public class PortalBlock extends TickableModBlock {
                     }
 
                     Block block = blockstate.getBlock();
-                    if (block == BlockRegistry.PORTAL_BLOCK) {
+                    if (block instanceof PortalBlock) {
                         ++this.portalBlockCount;
                     }
 
@@ -340,7 +340,7 @@ public class PortalBlock extends TickableModBlock {
 
         protected boolean canReplace(BlockState pos) {
             Block block = pos.getBlock();
-            return pos.isAir() || block == Blocks.FIRE || block == BlockRegistry.PORTAL_BLOCK;
+            return pos.isAir() || block == Blocks.FIRE || block instanceof PortalBlock;
         }
 
         public boolean isValid() {

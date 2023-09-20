@@ -25,5 +25,6 @@
     [
       "time_in_a_bottle"
     ]
-  ]
+  ],
+  "sends_telemetry_event": false
 }

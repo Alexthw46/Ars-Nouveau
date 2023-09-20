@@ -13,7 +13,8 @@ import com.hollingsworth.arsnouveau.common.block.tile.StorageLecternTile;
 import com.hollingsworth.arsnouveau.common.entity.goal.bookwyrm.RandomStorageVisitGoal;
 import com.hollingsworth.arsnouveau.common.entity.goal.bookwyrm.TransferGoal;
 import com.hollingsworth.arsnouveau.common.entity.goal.bookwyrm.TransferTask;
-import com.hollingsworth.arsnouveau.setup.ItemsRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.ItemsRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.ModEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -41,21 +42,20 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.Tags;
 import org.jetbrains.annotations.NotNull;
-import software.bernie.geckolib3.core.IAnimatable;
-import software.bernie.geckolib3.core.PlayState;
-import software.bernie.geckolib3.core.builder.AnimationBuilder;
-import software.bernie.geckolib3.core.controller.AnimationController;
-import software.bernie.geckolib3.core.event.predicate.AnimationEvent;
-import software.bernie.geckolib3.core.manager.AnimationData;
-import software.bernie.geckolib3.core.manager.AnimationFactory;
-import software.bernie.geckolib3.util.GeckoLibUtil;
+import software.bernie.geckolib.animatable.GeoEntity;
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.core.animation.AnimationController;
+import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.core.object.PlayState;
+import software.bernie.geckolib.util.GeckoLibUtil;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class EntityBookwyrm extends FlyingMob implements IDispellable, ITooltipProvider, IWandable, IAnimatable, IVariantColorProvider<EntityBookwyrm> {
+public class EntityBookwyrm extends FlyingMob implements IDispellable, ITooltipProvider, IWandable, GeoEntity, IVariantColorProvider<EntityBookwyrm> {
 
     public static final EntityDataAccessor<ItemStack> HELD_ITEM = SynchedEntityData.defineId(EntityBookwyrm.class, EntityDataSerializers.ITEM_STACK);
     public static final EntityDataAccessor<String> COLOR = SynchedEntityData.defineId(EntityBookwyrm.class, EntityDataSerializers.STRING);
@@ -63,14 +63,13 @@ public class EntityBookwyrm extends FlyingMob implements IDispellable, ITooltipP
     public BlockPos lecternPos;
     public int backoffTicks;
 
-    protected EntityBookwyrm(EntityType<? extends FlyingMob> p_i48568_1_, Level p_i48568_2_) {
+    public EntityBookwyrm(EntityType<? extends FlyingMob> p_i48568_1_, Level p_i48568_2_) {
         super(p_i48568_1_, p_i48568_2_);
         this.moveControl = new FlyingMoveControl(this, 10, true);
     }
 
     public EntityBookwyrm(Level p_i50190_2_) {
-        super(ModEntities.ENTITY_BOOKWYRM_TYPE.get(), p_i50190_2_);
-        this.moveControl = new FlyingMoveControl(this, 10, true);
+        this(ModEntities.ENTITY_BOOKWYRM_TYPE.get(), p_i50190_2_);
     }
 
     public EntityBookwyrm(Level world, BlockPos lecternPos) {
@@ -111,7 +110,7 @@ public class EntityBookwyrm extends FlyingMob implements IDispellable, ITooltipP
         if (level.getGameTime() % 20 == 0) {
             if (!(level.getBlockEntity(lecternPos) instanceof StorageLecternTile)) {
                 if (!level.isClientSide) {
-                    this.hurt(DamageSource.playerAttack(ANFakePlayer.getPlayer((ServerLevel) level)), 99);
+                    this.hurt(level.damageSources().playerAttack(ANFakePlayer.getPlayer((ServerLevel) level)), 99);
                 }
             }
         }
@@ -258,19 +257,17 @@ public class EntityBookwyrm extends FlyingMob implements IDispellable, ITooltipP
     }
 
     @Override
-    public void registerControllers(AnimationData data) {
-        data.addAnimationController(new AnimationController<>(this, "walkController", 1, this::idle));
+    public void registerControllers(AnimatableManager.ControllerRegistrar data) {
+        data.add(new AnimationController<>(this, "walkController", 1, event ->{
+            event.getController().setAnimation(RawAnimation.begin().thenPlay("fly"));
+            return PlayState.CONTINUE;
+        }));
     }
 
-    public PlayState idle(AnimationEvent<?> event) {
-        event.getController().setAnimation(new AnimationBuilder().addAnimation("fly"));
-        return PlayState.CONTINUE;
-    }
-
-    AnimationFactory factory = GeckoLibUtil.createFactory(this);
+    AnimatableInstanceCache factory = GeckoLibUtil.createInstanceCache(this);
 
     @Override
-    public AnimationFactory getFactory() {
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
         return factory;
     }
 

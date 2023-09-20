@@ -24,7 +24,9 @@ public class PacketOpenGlyphCraft {
     }
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(() -> GlyphUnlockMenu.open(scribePos));
+        ctx.get().enqueueWork(() ->{
+            GlyphUnlockMenu.open(scribePos);
+        });
         ctx.get().setPacketHandled(true);
     }
 

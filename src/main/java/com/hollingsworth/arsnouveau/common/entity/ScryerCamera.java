@@ -7,12 +7,14 @@ import com.hollingsworth.arsnouveau.common.block.ScryerCrystal;
 import com.hollingsworth.arsnouveau.common.block.tile.ScryerCrystalTile;
 import com.hollingsworth.arsnouveau.common.network.Networking;
 import com.hollingsworth.arsnouveau.common.network.PacketSetCameraView;
-import com.hollingsworth.arsnouveau.setup.BlockRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.BlockRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.ModEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.SectionPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -107,28 +109,11 @@ public class ScryerCamera extends Entity {
             if (this.toggleNightVisionCooldown > 0) {
                 --this.toggleNightVisionCooldown;
             }
-
-//            if (this.shouldProvideNightVision) {
-//                SecurityCraft.channel.sendToServer(new GiveNightVision());
-//            }
-        } else if (this.level.getBlockState(this.blockPosition()).getBlock() != BlockRegistry.SCRYERS_CRYSTAL) {
+        } else if (this.level.getBlockState(this.blockPosition()).getBlock() != BlockRegistry.SCRYERS_CRYSTAL.get()) {
             this.discard();
         }
 
     }
-
-//    public void toggleRedstonePower() {
-////        BlockPos pos = this.blockPosition();
-////        if (((IModuleInventory)this.level.getBlockEntity(pos)).hasModule(ModuleType.REDSTONE)) {
-////            SecurityCraft.channel.sendToServer(new SetCameraPowered(pos, !(Boolean)this.level.getBlockState(pos).getValue(SecurityCameraBlock.POWERED)));
-////        }
-//
-//    }
-//
-//    public void toggleNightVision() {
-//        this.toggleNightVisionCooldown = 30;
-//        this.shouldProvideNightVision = !this.shouldProvideNightVision;
-//    }
 
     public float getZoomAmount() {
         return this.zoomAmount;
@@ -190,7 +175,7 @@ public class ScryerCamera extends Entity {
     public void readAdditionalSaveData(CompoundTag tag) {
     }
 
-    public Packet<?> getAddEntityPacket() {
+    public Packet<ClientGamePacketListener> getAddEntityPacket() {
         return new ClientboundAddEntityPacket(this);
     }
 

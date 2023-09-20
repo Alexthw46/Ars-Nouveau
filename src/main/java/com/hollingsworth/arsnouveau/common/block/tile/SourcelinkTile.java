@@ -7,26 +7,28 @@ import com.hollingsworth.arsnouveau.api.util.BlockUtil;
 import com.hollingsworth.arsnouveau.api.util.SourceUtil;
 import com.hollingsworth.arsnouveau.client.particle.ParticleUtil;
 import com.hollingsworth.arsnouveau.common.block.ITickable;
+import com.hollingsworth.arsnouveau.common.util.RegistryWrapper;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.eventbus.api.Event;
-import software.bernie.geckolib3.core.IAnimatable;
-import software.bernie.geckolib3.core.PlayState;
-import software.bernie.geckolib3.core.builder.AnimationBuilder;
-import software.bernie.geckolib3.core.controller.AnimationController;
-import software.bernie.geckolib3.core.event.predicate.AnimationEvent;
-import software.bernie.geckolib3.core.manager.AnimationData;
-import software.bernie.geckolib3.core.manager.AnimationFactory;
-import software.bernie.geckolib3.util.GeckoLibUtil;
+import software.bernie.geckolib.animatable.GeoBlockEntity;
+import software.bernie.geckolib.core.animatable.GeoAnimatable;
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.core.animation.AnimationController;
+import software.bernie.geckolib.core.animation.AnimationState;
+import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.core.object.PlayState;
+import software.bernie.geckolib.util.GeckoLibUtil;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SourcelinkTile extends AbstractSourceMachine implements IAnimatable, ITickable {
+public class SourcelinkTile extends AbstractSourceMachine implements GeoBlockEntity, ITickable {
 
     int progress;
     public boolean isDisabled = false;
@@ -34,6 +36,10 @@ public class SourcelinkTile extends AbstractSourceMachine implements IAnimatable
 
     public SourcelinkTile(BlockEntityType<?> sourceLinkTile, BlockPos pos, BlockState state) {
         super(sourceLinkTile, pos, state);
+    }
+
+    public SourcelinkTile(RegistryWrapper<? extends BlockEntityType<?>> sourceLinkTile, BlockPos pos, BlockState state) {
+        super(sourceLinkTile.get(), pos, state);
     }
 
     @Override
@@ -91,14 +97,14 @@ public class SourcelinkTile extends AbstractSourceMachine implements IAnimatable
     }
 
     @Override
-    public void registerControllers(AnimationData data) {
-        data.addAnimationController(new AnimationController<>(this, "rotate_controller", 0, this::idlePredicate));
+    public void registerControllers(AnimatableManager.ControllerRegistrar data) {
+        data.add(new AnimationController<>(this, "rotate_controller", 0, this::idlePredicate));
     }
 
-    AnimationFactory factory = GeckoLibUtil.createFactory(this);
+    AnimatableInstanceCache factory = GeckoLibUtil.createInstanceCache(this);
 
     @Override
-    public AnimationFactory getFactory() {
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
         return factory;
     }
 
@@ -116,10 +122,10 @@ public class SourcelinkTile extends AbstractSourceMachine implements IAnimatable
         tag.putBoolean("disabled", isDisabled);
     }
 
-    private <E extends BlockEntity & IAnimatable> PlayState idlePredicate(AnimationEvent<E> event) {
+    private <E extends BlockEntity & GeoAnimatable> PlayState idlePredicate(AnimationState<E> event) {
         if (this.isDisabled)
             return PlayState.STOP;
-        event.getController().setAnimation(new AnimationBuilder().addAnimation("rotation"));
+        event.getController().setAnimation(RawAnimation.begin().thenPlay("rotation"));
         return PlayState.CONTINUE;
     }
 }

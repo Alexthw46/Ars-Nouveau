@@ -1,33 +1,28 @@
 package com.hollingsworth.arsnouveau;
 
-import com.hollingsworth.arsnouveau.api.ArsNouveauAPI;
 import com.hollingsworth.arsnouveau.api.registry.CasterTomeRegistry;
+import com.hollingsworth.arsnouveau.api.registry.RitualRegistry;
 import com.hollingsworth.arsnouveau.api.ritual.DispenserRitualBehavior;
 import com.hollingsworth.arsnouveau.client.container.CraftingTerminalScreen;
-import com.hollingsworth.arsnouveau.client.events.ClientHandler;
-import com.hollingsworth.arsnouveau.client.events.TextureEvent;
-import com.hollingsworth.arsnouveau.client.gui.book.BaseBook;
+import com.hollingsworth.arsnouveau.client.registry.ClientHandler;
 import com.hollingsworth.arsnouveau.common.advancement.ANCriteriaTriggers;
-import com.hollingsworth.arsnouveau.common.entity.DataSerializers;
-import com.hollingsworth.arsnouveau.common.entity.ModEntities;
 import com.hollingsworth.arsnouveau.common.entity.pathfinding.ClientEventHandler;
 import com.hollingsworth.arsnouveau.common.entity.pathfinding.FMLEventHandler;
 import com.hollingsworth.arsnouveau.common.entity.pathfinding.Pathfinding;
-import com.hollingsworth.arsnouveau.common.items.Glyph;
 import com.hollingsworth.arsnouveau.common.items.RitualTablet;
-import com.hollingsworth.arsnouveau.common.menu.MenuRegistry;
 import com.hollingsworth.arsnouveau.common.network.Networking;
-import com.hollingsworth.arsnouveau.common.potions.ModPotions;
-import com.hollingsworth.arsnouveau.common.spell.method.MethodProjectile;
 import com.hollingsworth.arsnouveau.common.world.Terrablender;
-import com.hollingsworth.arsnouveau.setup.*;
+import com.hollingsworth.arsnouveau.setup.ModSetup;
 import com.hollingsworth.arsnouveau.setup.config.ANModConfig;
+import com.hollingsworth.arsnouveau.setup.config.Config;
 import com.hollingsworth.arsnouveau.setup.config.ServerConfig;
+import com.hollingsworth.arsnouveau.setup.proxy.ClientProxy;
+import com.hollingsworth.arsnouveau.setup.proxy.IProxy;
+import com.hollingsworth.arsnouveau.setup.proxy.ServerProxy;
+import com.hollingsworth.arsnouveau.setup.registry.*;
+import com.hollingsworth.arsnouveau.setup.reward.Rewards;
 import net.minecraft.client.gui.screens.MenuScreens;
-import net.minecraft.core.NonNullList;
-import net.minecraft.network.syncher.EntityDataSerializers;
-import net.minecraft.world.item.CreativeModeTab;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.ComposterBlock;
 import net.minecraft.world.level.block.DispenserBlock;
@@ -60,37 +55,15 @@ public class ArsNouveau {
     public static boolean caelusLoaded = false;
     public static boolean terrablenderLoaded = false;
     public static boolean optifineLoaded = false;
-
-    public static CreativeModeTab itemGroup = new CreativeModeTab(CreativeModeTab.getGroupCountSafe(), MODID) {
-        @Override
-        public ItemStack makeIcon() {
-            return ItemsRegistry.CREATIVE_SPELLBOOK.get().getDefaultInstance();
-        }
-    };
-    public static CreativeModeTab glyphGroup = new CreativeModeTab(CreativeModeTab.getGroupCountSafe(), "ars_glyphs") {
-
-        @Override
-        public void fillItemList(NonNullList<ItemStack> pItems) {
-            super.fillItemList(pItems);
-            pItems.sort((ItemStack i1, ItemStack i2) -> {
-                if (i1.getItem() instanceof Glyph g1 && i2.getItem() instanceof Glyph g2) {
-                    return BaseBook.COMPARE_TYPE_THEN_NAME.compare(g1.spellPart, g2.spellPart);
-                } else {
-                    return -1;
-                }
-            });
-        }
-
-        @Override
-        public ItemStack makeIcon() {
-            return ArsNouveauAPI.getInstance().getGlyphItem(MethodProjectile.INSTANCE).getDefaultInstance();
-        }
-    };
+    public static boolean sodiumLoaded = false;
+    public static boolean patchouliLoaded = false;
 
     public ArsNouveau(){
         Mod.EventBusSubscriber.Bus.FORGE.bus().get().register(FMLEventHandler.class);
         caelusLoaded = ModList.get().isLoaded("caelus");
         terrablenderLoaded = ModList.get().isLoaded("terrablender");
+        sodiumLoaded = ModList.get().isLoaded("rubidium");
+        patchouliLoaded = ModList.get().isLoaded("patchouli");
         APIRegistry.setup();
         ANModConfig serverConfig = new ANModConfig(ModConfig.Type.SERVER, ServerConfig.SERVER_CONFIG, ModLoadingContext.get().getActiveContainer(),MODID + "-server");
         ModLoadingContext.get().getActiveContainer().addConfig(serverConfig);
@@ -106,8 +79,14 @@ public class ArsNouveau {
         modEventBus.addListener(this::clientSetup);
         modEventBus.addListener(this::sendImc);
         MinecraftForge.EVENT_BUS.register(this);
-        ModSetup.initGeckolib();
         ANCriteriaTriggers.init();
+        try {
+            Thread thread = new Thread(Rewards::init);
+            thread.setDaemon(true);
+            thread.start();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
     }
 
     public void setup(final FMLCommonSetupEvent event) {
@@ -115,13 +94,11 @@ public class ArsNouveau {
         Networking.registerMessages();
         event.enqueueWork(ModPotions::addRecipes);
         event.enqueueWork(ModEntities::registerPlacements);
-        event.enqueueWork(() -> {
-            EntityDataSerializers.registerSerializer(DataSerializers.VEC3);
-        });
+        event.enqueueWork(DataSerializers::init);
         if (terrablenderLoaded && Config.ARCHWOOD_FOREST_WEIGHT.get() > 0) {
             event.enqueueWork(Terrablender::registerBiomes);
         }
-        MinecraftForge.EVENT_BUS.addListener((ServerStartedEvent e) -> CasterTomeRegistry.reloadTomeData(e.getServer().getRecipeManager()));
+        MinecraftForge.EVENT_BUS.addListener((ServerStartedEvent e) -> CasterTomeRegistry.reloadTomeData(e.getServer().getRecipeManager(), e.getServer().getLevel(Level.OVERWORLD)));
     }
 
     public void postModLoadEvent(final FMLLoadCompleteEvent event) {
@@ -147,7 +124,7 @@ public class ArsNouveau {
                 flowerPot.addPlant(pot.getKey().get(), pot::getValue);
             }
 
-            for (RitualTablet tablet : ArsNouveauAPI.getInstance().getRitualItemMap().values()){
+            for (RitualTablet tablet : RitualRegistry.getRitualItemMap().values()){
                 DispenserBlock.registerBehavior(tablet, new DispenserRitualBehavior());
             }
 
@@ -156,7 +133,6 @@ public class ArsNouveau {
 
     public void clientSetup(final FMLClientSetupEvent event) {
         FMLJavaModLoadingContext.get().getModEventBus().addListener(ClientHandler::init);
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(TextureEvent::textEvent);
         event.enqueueWork(() ->{
             MenuScreens.register(MenuRegistry.STORAGE.get(), CraftingTerminalScreen::new);
         });

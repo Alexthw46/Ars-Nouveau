@@ -3,86 +3,75 @@ package com.hollingsworth.arsnouveau.client.renderer.entity;
 import com.hollingsworth.arsnouveau.ArsNouveau;
 import com.hollingsworth.arsnouveau.api.client.CosmeticRenderUtil;
 import com.hollingsworth.arsnouveau.api.item.ICosmeticItem;
+import com.hollingsworth.arsnouveau.client.registry.ShaderRegistry;
 import com.hollingsworth.arsnouveau.common.entity.Starbuncle;
+import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
-import software.bernie.geckolib3.geo.render.built.GeoBone;
-import software.bernie.geckolib3.renderers.geo.GeoEntityRenderer;
-import software.bernie.geckolib3.util.RenderUtils;
-
-import javax.annotation.Nullable;
+import software.bernie.geckolib.cache.object.BakedGeoModel;
+import software.bernie.geckolib.cache.object.GeoBone;
+import software.bernie.geckolib.renderer.GeoEntityRenderer;
+import software.bernie.geckolib.util.RenderUtils;
 
 public class StarbuncleRenderer extends GeoEntityRenderer<Starbuncle> {
-    private static final ResourceLocation ORANGE = new ResourceLocation(ArsNouveau.MODID, "textures/entity/carbuncle_orange.png");
-    private static final ResourceLocation PURPLE = new ResourceLocation(ArsNouveau.MODID, "textures/entity/carbuncle_purple.png");
-    private static final ResourceLocation GREEN = new ResourceLocation(ArsNouveau.MODID, "textures/entity/carbuncle_green.png");
-    private static final ResourceLocation WILD_TEXTURE = new ResourceLocation(ArsNouveau.MODID, "textures/entity/carbuncle_wild_orange.png");
+    public static MultiBufferSource.BufferSource cosmeticBuffer = MultiBufferSource.immediate(new BufferBuilder(256));
 
     public StarbuncleRenderer(EntityRendererProvider.Context manager) {
         super(manager, new StarbuncleModel());
-//        this.addLayer(new CarbuncleHeldItemLayer(this));
-//        this.addLayer(new ModelLayerRenderer(this, new CarbuncleShadesModel(this.getGeoModelProvider())));
     }
 
-    Starbuncle starbuncle;
-    MultiBufferSource buffer;
-    ResourceLocation text;
 
     @Override
-    protected void applyRotations(Starbuncle entityLiving, PoseStack matrixStackIn, float ageInTicks, float rotationYaw, float partialTicks) {
-        super.applyRotations(entityLiving, matrixStackIn, ageInTicks, rotationYaw, partialTicks);
+    public void renderFinal(PoseStack poseStack, Starbuncle animatable, BakedGeoModel model, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
+        super.renderFinal(poseStack, animatable, model, bufferSource, buffer, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
     }
 
     @Override
-    public void renderEarly(Starbuncle animatable, PoseStack stackIn, float ticks, MultiBufferSource renderTypeBuffer, VertexConsumer vertexBuilder, int packedLightIn, int packedOverlayIn, float red, float green, float blue, float partialTicks) {
-        this.starbuncle = animatable;
-        this.buffer = renderTypeBuffer;
-        this.text = this.getTextureLocation(animatable);
-        super.renderEarly(animatable, stackIn, ticks, renderTypeBuffer, vertexBuilder, packedLightIn, packedOverlayIn, red, green, blue, partialTicks);
-    }
-
-    @Override
-    public void render(Starbuncle entity, float entityYaw, float p_225623_3_, PoseStack matrixStack, MultiBufferSource iRenderTypeBuffer, int p_225623_6_) {
-        super.render(entity, entityYaw, p_225623_3_, matrixStack, iRenderTypeBuffer, p_225623_6_);
-    }
-
-    @Override
-    public void renderRecursively(GeoBone bone, PoseStack stack, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn, float red, float green, float blue, float alpha) {
+    public void renderRecursively(PoseStack stack, Starbuncle animatable, GeoBone bone, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
+        super.renderRecursively(stack, animatable, bone, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
         if (bone.getName().equals("item")) {
             stack.pushPose();
             RenderUtils.translateToPivotPoint(stack, bone);
             stack.translate(0, -0.10, 0);
             stack.scale(0.75f, 0.75f, 0.75f);
-            ItemStack itemstack = starbuncle.getHeldStack();
-            if (starbuncle.dynamicBehavior != null) {
-                itemstack = starbuncle.dynamicBehavior.getStackForRender();
+            ItemStack itemstack = animatable.getHeldStack();
+            if (animatable.dynamicBehavior != null) {
+                itemstack = animatable.dynamicBehavior.getStackForRender();
             }
-            Minecraft.getInstance().getItemRenderer().renderStatic(itemstack, ItemTransforms.TransformType.GROUND, packedLightIn, OverlayTexture.NO_OVERLAY, stack, this.buffer, (int) starbuncle.getOnPos().asLong());
+            if(!itemstack.isEmpty()) {
+                Minecraft.getInstance().getItemRenderer().renderStatic(itemstack, ItemDisplayContext.GROUND, packedLight, OverlayTexture.NO_OVERLAY, stack,
+                        cosmeticBuffer, animatable.level, (int) animatable.getOnPos().asLong());
+            }
+            cosmeticBuffer.endBatch();
             stack.popPose();
-            bufferIn = buffer.getBuffer(RenderType.entityCutoutNoCull(text));
         }
-        if (this.starbuncle.getCosmeticItem().getItem() instanceof ICosmeticItem cosmetic && cosmetic.getBone().equals(bone.getName())) {
-            CosmeticRenderUtil.renderCosmetic(bone, stack, this.buffer, this.starbuncle, packedLightIn);
-            bufferIn = buffer.getBuffer(RenderType.entityCutoutNoCull(text));
+        if (animatable.getCosmeticItem().getItem() instanceof ICosmeticItem cosmetic && cosmetic.getBone().equals(bone.getName())) {
+            CosmeticRenderUtil.renderCosmetic(bone, stack, cosmeticBuffer, animatable, packedLight);
+            cosmeticBuffer.endBatch();
         }
-        super.renderRecursively(bone, stack, bufferIn, packedLightIn, packedOverlayIn, red, green, blue, alpha);
     }
 
     @Override
     public ResourceLocation getTextureLocation(Starbuncle entity) {
-        return entity.isTamed() ? entity.getTexture(entity) : WILD_TEXTURE;
+        return entity.getTexture(entity);
     }
 
     @Override
-    public RenderType getRenderType(Starbuncle animatable, float partialTicks, PoseStack stack, @Nullable MultiBufferSource renderTypeBuffer, @Nullable VertexConsumer vertexBuilder, int packedLightIn, ResourceLocation textureLocation) {
+    public RenderType getRenderType(Starbuncle animatable, ResourceLocation textureLocation, @org.jetbrains.annotations.Nullable MultiBufferSource bufferSource, float partialTick) {
+        // Jared's special shader, because adopter details aren't synced.
+        if(animatable.getName().getString().equals("Splonk")) {
+            return ShaderRegistry.blamed(textureLocation, true);
+        }else if(animatable.getName().getString().equals("Bailey")){
+            return ShaderRegistry.rainbowEntity(textureLocation, new ResourceLocation(ArsNouveau.MODID, "textures/entity/starbuncle_mask.png"),true);
+        }
         return RenderType.entityCutoutNoCull(textureLocation);
     }
 }

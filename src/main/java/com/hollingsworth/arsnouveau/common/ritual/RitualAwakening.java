@@ -7,10 +7,10 @@ import com.hollingsworth.arsnouveau.api.util.SpellUtil;
 import com.hollingsworth.arsnouveau.client.particle.ParticleColor;
 import com.hollingsworth.arsnouveau.client.particle.ParticleLineData;
 import com.hollingsworth.arsnouveau.client.particle.ParticleUtil;
-import com.hollingsworth.arsnouveau.common.entity.ModEntities;
+import com.hollingsworth.arsnouveau.setup.registry.ModEntities;
 import com.hollingsworth.arsnouveau.common.lib.RitualLib;
-import com.hollingsworth.arsnouveau.setup.BlockRegistry;
-import com.hollingsworth.arsnouveau.setup.ItemsRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.BlockRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.ItemsRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -40,21 +40,21 @@ public class RitualAwakening extends AbstractRitual {
 
     public void findTargets(Level world) {
         for (BlockPos p : BlockPos.withinManhattan(getPos(), 3, 1, 3)) {
-            Set<BlockPos> blazing = SpellUtil.DFSBlockstates(world, p, 350, (b) -> b.getBlock() == BlockRegistry.BLAZING_LOG || b.getBlock() == BlockRegistry.BLAZING_LEAVES);
+            Set<BlockPos> blazing = SpellUtil.DFSBlockstates(world, p, 350, (b) -> b.getBlock() == BlockRegistry.BLAZING_LOG.get() || b.getBlock() == BlockRegistry.BLAZING_LEAVES.get());
             if (blazing.size() >= 50) {
                 entity = ModEntities.ENTITY_BLAZING_WEALD.get();
                 foundPos = p;
                 destroyTree(world, blazing);
                 return;
             }
-            Set<BlockPos> flourishing = SpellUtil.DFSBlockstates(world, p, 350, (b) -> b.getBlock() == BlockRegistry.FLOURISHING_LOG || b.getBlock() == BlockRegistry.FLOURISHING_LEAVES);
+            Set<BlockPos> flourishing = SpellUtil.DFSBlockstates(world, p, 350, (b) -> b.getBlock() == BlockRegistry.FLOURISHING_LOG.get() || b.getBlock() == BlockRegistry.FLOURISHING_LEAVES.get());
             if (flourishing.size() >= 50) {
                 entity = ModEntities.ENTITY_FLOURISHING_WEALD.get();
                 foundPos = p;
                 destroyTree(world, flourishing);
                 return;
             }
-            Set<BlockPos> vexing = SpellUtil.DFSBlockstates(world, p, 350, (b) -> b.getBlock() == BlockRegistry.VEXING_LOG || b.getBlock() == BlockRegistry.VEXING_LEAVES);
+            Set<BlockPos> vexing = SpellUtil.DFSBlockstates(world, p, 350, (b) -> b.getBlock() == BlockRegistry.VEXING_LOG.get() || b.getBlock() == BlockRegistry.VEXING_LEAVES.get());
             if (vexing.size() >= 50) {
                 entity = ModEntities.ENTITY_VEXING_WEALD.get();
                 foundPos = p;
@@ -62,7 +62,7 @@ public class RitualAwakening extends AbstractRitual {
                 return;
             }
 
-            Set<BlockPos> cascading = SpellUtil.DFSBlockstates(world, p, 350, (b) -> b.getBlock() == BlockRegistry.CASCADING_LOG || b.getBlock() == BlockRegistry.CASCADING_LEAVE);
+            Set<BlockPos> cascading = SpellUtil.DFSBlockstates(world, p, 350, (b) -> b.getBlock() == BlockRegistry.CASCADING_LOG.get() || b.getBlock() == BlockRegistry.CASCADING_LEAVE.get());
             if (cascading.size() >= 50) {
                 entity = ModEntities.ENTITY_CASCADING_WEALD.get();
                 foundPos = p;

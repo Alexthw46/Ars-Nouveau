@@ -1,26 +1,17 @@
 package com.hollingsworth.arsnouveau.setup;
 
 import com.hollingsworth.arsnouveau.api.perk.PerkAttributes;
-import com.hollingsworth.arsnouveau.client.particle.ModParticles;
-import com.hollingsworth.arsnouveau.common.enchantment.EnchantmentRegistry;
-import com.hollingsworth.arsnouveau.common.entity.ModEntities;
-import com.hollingsworth.arsnouveau.common.menu.MenuRegistry;
-import com.hollingsworth.arsnouveau.common.potions.ModPotions;
-import com.hollingsworth.arsnouveau.common.world.Deferred;
-import com.hollingsworth.arsnouveau.common.world.biome.ModBiomes;
+import com.hollingsworth.arsnouveau.client.registry.ModParticles;
 import com.hollingsworth.arsnouveau.common.world.tree.MagicTrunkPlacer;
-import net.minecraft.core.Registry;
+import com.hollingsworth.arsnouveau.setup.registry.*;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.minecraft.world.level.levelgen.feature.stateproviders.BlockStateProviderType;
 import net.minecraft.world.level.levelgen.feature.trunkplacers.TrunkPlacerType;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.InterModComms;
 import net.minecraftforge.registries.*;
-import software.bernie.geckolib3.GeckoLib;
 import top.theillusivec4.curios.Curios;
 import top.theillusivec4.curios.api.SlotTypeMessage;
 import top.theillusivec4.curios.api.SlotTypePreset;
@@ -40,19 +31,15 @@ public class ModSetup {
         InterModComms.sendTo("curios", SlotTypeMessage.REGISTER_TYPE, () -> SlotTypePreset.NECKLACE.getMessageBuilder().build());
     }
 
-    public static void initGeckolib() {
-        GeckoLib.DISABLE_NETWORKING = true;
-        GeckoLib.initialize();
-    }
-
-    public static final DeferredRegister<TrunkPlacerType<?>> TRUNK_PLACER_TYPE_DEFERRED_REGISTER = DeferredRegister.createOptional(Registry.TRUNK_PLACER_TYPE_REGISTRY, MODID);
+    public static final DeferredRegister<TrunkPlacerType<?>> TRUNK_PLACER_TYPE_DEFERRED_REGISTER = DeferredRegister.createOptional(Registries.TRUNK_PLACER_TYPE, MODID);
 
     public static RegistryObject<TrunkPlacerType<MagicTrunkPlacer>> MAGIC_TRUNK_PLACER = TRUNK_PLACER_TYPE_DEFERRED_REGISTER.register("magic_trunk_placer", () -> new TrunkPlacerType<>(MagicTrunkPlacer.CODEC));
 
     public static void registers(IEventBus modEventBus) {
+        ItemsRegistry.ITEMS.register(modEventBus);
         BlockRegistry.BLOCKS.register(modEventBus);
         BlockRegistry.BLOCK_ENTITIES.register(modEventBus);
-        ItemsRegistry.ITEMS.register(modEventBus);
+        BlockRegistry.BS_PROVIDERS.register(modEventBus);
         ModEntities.ENTITIES.register(modEventBus);
         ModPotions.EFFECTS.register(modEventBus);
         ModPotions.POTIONS.register(modEventBus);
@@ -62,9 +49,7 @@ public class ModSetup {
         ModParticles.PARTICLES.register(modEventBus);
         PerkAttributes.ATTRIBUTES.register(modEventBus);
         TRUNK_PLACER_TYPE_DEFERRED_REGISTER.register(modEventBus);
-        Deferred.FEAT_REG.register(modEventBus);
-        Deferred.CONFG_REG.register(modEventBus);
-        Deferred.PLACED_FEAT_REG.register(modEventBus);
+        WorldgenRegistry.FEAT_REG.register(modEventBus);
         LootRegistry.GLM.register(modEventBus);
         SoundRegistry.SOUND_REG.register(modEventBus);
         StructureRegistry.STRUCTURES.register(modEventBus);
@@ -73,10 +58,10 @@ public class ModSetup {
         MenuRegistry.MENU_REG.register(modEventBus);
         VillagerRegistry.POIs.register(modEventBus);
         VillagerRegistry.VILLAGERS.register(modEventBus);
+        CreativeTabRegistry.TABS.register(modEventBus);
 
     }
 
-    //TODO:Switch to DeferredReg where possible
     public static void registerEvents(RegisterEvent event) {
         if (event.getRegistryKey().equals(ForgeRegistries.Keys.BLOCKS)) {
             IForgeRegistry<Block> registry = Objects.requireNonNull(event.getForgeRegistry());
@@ -86,18 +71,6 @@ public class ModSetup {
             IForgeRegistry<Item> registry = Objects.requireNonNull(event.getForgeRegistry());
             BlockRegistry.onBlockItemsRegistry(registry);
             ItemsRegistry.onItemRegistry(registry);
-        }
-        if (event.getRegistryKey().equals(ForgeRegistries.Keys.BLOCK_ENTITY_TYPES)) {
-            IForgeRegistry<BlockEntityType<?>> registry = Objects.requireNonNull(event.getForgeRegistry());
-            BlockRegistry.onTileEntityRegistry(registry);
-        }
-        if (event.getRegistryKey().equals(ForgeRegistries.Keys.BIOMES)) {
-            IForgeRegistry<Biome> registry = Objects.requireNonNull(event.getForgeRegistry());
-            ModBiomes.registerBiomes(registry);
-        }
-        if (event.getRegistryKey().equals(ForgeRegistries.Keys.BLOCK_STATE_PROVIDER_TYPES)) {
-            IForgeRegistry<BlockStateProviderType<?>> registry = Objects.requireNonNull(event.getForgeRegistry());
-            BlockRegistry.registerBlockProvider(registry);
         }
     }
 }

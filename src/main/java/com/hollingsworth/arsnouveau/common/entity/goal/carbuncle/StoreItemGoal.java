@@ -41,7 +41,7 @@ public class StoreItemGoal<T extends StarbyTransportBehavior> extends GoToPosGoa
             return true;
         }
 
-        IItemHandler iItemHandler = behavior.getItemCapFromTile(tileEntity);
+        IItemHandler iItemHandler = behavior.getItemCapFromTile(tileEntity, behavior.TO_DIRECTION_MAP.get(targetPos.hashCode()));
         if (iItemHandler == null) {
             starbuncle.addGoalDebug(this, new DebugEvent("NoItemHandler", "No item handler at " + targetPos.toString()));
             return true;
@@ -64,7 +64,6 @@ public class StoreItemGoal<T extends StarbyTransportBehavior> extends GoToPosGoa
         }
 
         starbuncle.setHeldStack(left);
-        starbuncle.setBackOff(5 + starbuncle.level.random.nextInt(20));
         starbuncle.addGoalDebug(this, new DebugEvent("stored_item", "successful at " + targetPos.toString() + "set stack to " + left.getCount() + "x " + left.getHoverName().getString()));
         return true;
     }

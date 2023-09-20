@@ -1,12 +1,11 @@
 package com.hollingsworth.arsnouveau.api.loot;
 
-import com.hollingsworth.arsnouveau.api.ArsNouveauAPI;
-import com.hollingsworth.arsnouveau.common.datagen.DungeonLootGenerator;
+import com.hollingsworth.arsnouveau.api.registry.RitualRegistry;
 import com.hollingsworth.arsnouveau.common.items.RitualTablet;
-import com.hollingsworth.arsnouveau.common.potions.ModPotions;
-import com.hollingsworth.arsnouveau.setup.BlockRegistry;
-import com.hollingsworth.arsnouveau.setup.Config;
-import com.hollingsworth.arsnouveau.setup.ItemsRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.ModPotions;
+import com.hollingsworth.arsnouveau.setup.registry.BlockRegistry;
+import com.hollingsworth.arsnouveau.setup.config.Config;
+import com.hollingsworth.arsnouveau.setup.registry.ItemsRegistry;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.PotionUtils;
@@ -61,19 +60,21 @@ public class DungeonLootTables {
         UNCOMMON_LOOT.add(() -> new ItemStack(ItemsRegistry.PIERCE_ARROW.get(), 16 + r.nextInt(16)));
 
         UNCOMMON_LOOT.add(() -> {
-            List<RitualTablet> tablets = new ArrayList<>(ArsNouveauAPI.getInstance().getRitualItemMap().values());
+            List<RitualTablet> tablets = new ArrayList<>(RitualRegistry.getRitualItemMap().values());
             return new ItemStack(tablets.get(r.nextInt(tablets.size())));
         });
 
         RARE_LOOT.add(() -> new ItemStack(ItemsRegistry.FIREL_DISC.get()));
+        RARE_LOOT.add(() -> new ItemStack(ItemsRegistry.SOUND_OF_GLASS.get()));
+        RARE_LOOT.add(() -> new ItemStack(ItemsRegistry.WILD_HUNT.get()));
 
-        }
+    }
 
     public static ItemStack getRandomItem(List<Supplier<ItemStack>> pool) {
         return pool.isEmpty() ? ItemStack.EMPTY : pool.get(r.nextInt(pool.size())).get();
     }
 
-    public static List<ItemStack> getRandomRoll(DungeonLootGenerator.DungeonLootEnhancerModifier modifier) {
+    public static List<ItemStack> getRandomRoll(DungeonLootEnhancerModifier modifier) {
         List<ItemStack> stacks = new ArrayList<>();
 
         for (int i = 0; i < modifier.commonRolls; i++) {

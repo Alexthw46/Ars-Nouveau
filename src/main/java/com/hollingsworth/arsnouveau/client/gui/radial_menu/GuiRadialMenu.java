@@ -5,9 +5,11 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Options;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.Input;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
@@ -35,7 +37,7 @@ public class GuiRadialMenu<T> extends Screen {
      * Zero-Based index
      */
     private int selectedItem;
-
+    public ItemRenderer itemRenderer;
 
     public GuiRadialMenu(RadialMenu<T> radialMenu) {
         super(Component.literal(""));
@@ -44,10 +46,7 @@ public class GuiRadialMenu<T> extends Screen {
         this.closing = false;
         this.minecraft = Minecraft.getInstance();
         this.selectedItem = -1;
-    }
-
-    public GuiRadialMenu() {
-        super(Component.literal(""));
+        itemRenderer = Minecraft.getInstance().getItemRenderer();
     }
 
     @SubscribeEvent
@@ -56,15 +55,16 @@ public class GuiRadialMenu<T> extends Screen {
 
             Options settings = Minecraft.getInstance().options;
             Input eInput = event.getInput();
-            eInput.up = InputConstants.isKeyDown(Minecraft.getInstance().getWindow().getWindow(), settings.keyUp.getKey().getValue());
-            eInput.down = InputConstants.isKeyDown(Minecraft.getInstance().getWindow().getWindow(), settings.keyDown.getKey().getValue());
-            eInput.left = InputConstants.isKeyDown(Minecraft.getInstance().getWindow().getWindow(), settings.keyLeft.getKey().getValue());
-            eInput.right = InputConstants.isKeyDown(Minecraft.getInstance().getWindow().getWindow(), settings.keyRight.getKey().getValue());
+            long window = Minecraft.getInstance().getWindow().getWindow();
+            eInput.up = InputConstants.isKeyDown(window, settings.keyUp.getKey().getValue());
+            eInput.down = InputConstants.isKeyDown(window, settings.keyDown.getKey().getValue());
+            eInput.left = InputConstants.isKeyDown(window, settings.keyLeft.getKey().getValue());
+            eInput.right = InputConstants.isKeyDown(window, settings.keyRight.getKey().getValue());
 
             eInput.forwardImpulse = eInput.up == eInput.down ? 0.0F : (eInput.up ? 1.0F : -1.0F);
             eInput.leftImpulse = eInput.left == eInput.right ? 0.0F : (eInput.left ? 1.0F : -1.0F);
-            eInput.jumping = InputConstants.isKeyDown(Minecraft.getInstance().getWindow().getWindow(), settings.keyJump.getKey().getValue());
-            eInput.shiftKeyDown = InputConstants.isKeyDown(Minecraft.getInstance().getWindow().getWindow(), settings.keyShift.getKey().getValue());
+            eInput.jumping = InputConstants.isKeyDown(window, settings.keyJump.getKey().getValue());
+            eInput.shiftKeyDown = InputConstants.isKeyDown(window, settings.keyShift.getKey().getValue());
             if (Minecraft.getInstance().player.isMovingSlowly()) {
                 eInput.leftImpulse = (float) ((double) eInput.leftImpulse * 0.3D);
                 eInput.forwardImpulse = (float) ((double) eInput.forwardImpulse * 0.3D);
@@ -80,9 +80,9 @@ public class GuiRadialMenu<T> extends Screen {
     }
 
     @Override
-    public void render(PoseStack ms, int mouseX, int mouseY, float partialTicks) {
-        super.render(ms, mouseX, mouseY, partialTicks);
-
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+        super.render(graphics, mouseX, mouseY, partialTicks);
+        PoseStack ms = graphics.pose();
         float openAnimation = closing ? 1.0f - totalTime / OPEN_ANIMATION_LENGTH : totalTime / OPEN_ANIMATION_LENGTH;
         float currTick = minecraft.getFrameTime();
         totalTime += (currTick + extraTick - prevTick)/20f;
@@ -109,7 +109,6 @@ public class GuiRadialMenu<T> extends Screen {
 
         ms.pushPose();
         RenderSystem.enableBlend();
-        RenderSystem.disableTexture();
         RenderSystem.defaultBlendFunc();
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
@@ -146,12 +145,11 @@ public class GuiRadialMenu<T> extends Screen {
         }
 
         tessellator.end();
-        RenderSystem.enableTexture();
         RenderSystem.disableBlend();
         if (hasMouseOver && mousedOverSlot != -1) {
             int adjusted = ((mousedOverSlot + (numberOfSlices / 2 + 1)) % numberOfSlices) - 1;
             adjusted = adjusted == -1 ? numberOfSlices - 1 : adjusted;
-            drawCenteredString(ms, font, radialMenuSlots.get(adjusted).slotName(), width / 2, (height - font.lineHeight) / 2, 16777215);
+            graphics.drawCenteredString(font, radialMenuSlots.get(adjusted).slotName(), width / 2, (height - font.lineHeight) / 2, 16777215);
         }
 
         ms.popPose();
@@ -163,18 +161,21 @@ public class GuiRadialMenu<T> extends Screen {
             }
             float posX = centerOfScreenX - 8 + itemRadius * (float) Math.cos(angle1);
             float posY = centerOfScreenY - 8 + itemRadius * (float) Math.sin(angle1);
-
             RenderSystem.disableDepthTest();
 
+//            graphics.renderItem(new ItemStack(Items.DIAMOND_PICKAXE), (int) posX, (int) posY);
             T primarySlotIcon = radialMenuSlots.get(i).primarySlotIcon();
             List<T> secondarySlotIcons = radialMenuSlots.get(i).secondarySlotIcons();
             if (primarySlotIcon != null) {
-                radialMenu.drawIcon(primarySlotIcon, ms, (int) posX, (int) posY, 16);
+                radialMenu.drawIcon(primarySlotIcon, graphics, (int) posX, (int) posY, 16);
                 if (secondarySlotIcons != null && !secondarySlotIcons.isEmpty()) {
-                    drawSecondaryIcons(ms, (int) posX, (int) posY, secondarySlotIcons);
+                    drawSecondaryIcons(graphics, (int) posX, (int) posY, secondarySlotIcons);
                 }
             }
-            drawSliceName(String.valueOf(i + 1), stack, (int) posX, (int) posY);
+            ms.pushPose();
+            ms.translate(0, 0, 9999);
+            drawSliceName(graphics, String.valueOf(i + 1), stack, (int) posX, (int) posY);
+            ms.popPose();
         }
 
         if (mousedOverSlot != -1) {
@@ -184,7 +185,7 @@ public class GuiRadialMenu<T> extends Screen {
         }
     }
 
-    public void drawSecondaryIcons(PoseStack ms, int positionXOfPrimaryIcon, int positionYOfPrimaryIcon, List<T> secondarySlotIcons) {
+    public void drawSecondaryIcons(GuiGraphics ms, int positionXOfPrimaryIcon, int positionYOfPrimaryIcon, List<T> secondarySlotIcons) {
         if (!radialMenu.isShowMoreSecondaryItems()) {
             drawSecondaryIcon(ms, secondarySlotIcons.get(0), positionXOfPrimaryIcon, positionYOfPrimaryIcon, radialMenu.getSecondaryIconStartingPosition());
         } else {
@@ -196,7 +197,7 @@ public class GuiRadialMenu<T> extends Screen {
         }
     }
 
-    public void drawSecondaryIcon(PoseStack poseStack, T item, int positionXOfPrimaryIcon, int positionYOfPrimaryIcon, SecondaryIconPosition secondaryIconPosition) {
+    public void drawSecondaryIcon(GuiGraphics poseStack, T item, int positionXOfPrimaryIcon, int positionYOfPrimaryIcon, SecondaryIconPosition secondaryIconPosition) {
         int offset = radialMenu.getOffset();
         switch (secondaryIconPosition) {
             case NORTH ->
@@ -210,11 +211,11 @@ public class GuiRadialMenu<T> extends Screen {
         }
     }
 
-    public void drawSliceName(String sliceName, ItemStack stack, int posX, int posY) {
+    public void drawSliceName(GuiGraphics graphics, String sliceName, ItemStack stack, int posX, int posY) {
         if (!radialMenu.isShowMoreSecondaryItems()) {
-            this.itemRenderer.renderGuiItemDecorations(font, stack, posX + 5, posY, sliceName);
+            graphics.renderItemDecorations(font, stack, posX + 5, posY, sliceName);
         } else {
-            this.itemRenderer.renderGuiItemDecorations(font, stack, posX + 5, posY + 5, sliceName);
+            graphics.renderItemDecorations(font, stack, posX + 5, posY + 5, sliceName);
         }
     }
 

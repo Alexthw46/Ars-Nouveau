@@ -8,12 +8,12 @@ import com.hollingsworth.arsnouveau.common.spell.augment.AugmentAmplify;
 import com.hollingsworth.arsnouveau.common.spell.augment.AugmentDampen;
 import com.hollingsworth.arsnouveau.common.spell.augment.AugmentDurationDown;
 import com.hollingsworth.arsnouveau.common.spell.augment.AugmentExtendTime;
-import com.hollingsworth.arsnouveau.setup.BlockRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.BlockRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.material.Material;
+
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraftforge.common.ForgeConfigSpec;
 import org.jetbrains.annotations.NotNull;
@@ -30,6 +30,7 @@ public class EffectRedstone extends AbstractEffect {
 
     @Override
     public void onResolveBlock(BlockHitResult rayTraceResult, Level world, @Nullable LivingEntity shooter, SpellStats spellStats, SpellContext spellContext, SpellResolver resolver) {
+
         BlockState state = BlockRegistry.REDSTONE_AIR.defaultBlockState();
         int signalModifier = (int) spellStats.getAmpMultiplier() + 10;
         if (signalModifier < 1)
@@ -38,9 +39,11 @@ public class EffectRedstone extends AbstractEffect {
             signalModifier = 15;
         state = state.setValue(RedstoneAir.POWER, signalModifier);
         BlockPos pos = rayTraceResult.getBlockPos().relative(rayTraceResult.getDirection());
-        if (!(world.getBlockState(pos).getMaterial() == Material.AIR && world.getBlockState(pos).getBlock() != BlockRegistry.REDSTONE_AIR)) {
+        if (!(world.getBlockState(pos).isAir() && world.getBlockState(pos).getBlock() != BlockRegistry.REDSTONE_AIR.get())) {
             return;
         }
+        if(!world.isInWorldBounds(pos))
+            return;
         int timeBonus = (int) spellStats.getDurationMultiplier();
         world.setBlockAndUpdate(pos, state);
         int delay = Math.max(GENERIC_INT.get() + timeBonus * BONUS_TIME.get(), 2);

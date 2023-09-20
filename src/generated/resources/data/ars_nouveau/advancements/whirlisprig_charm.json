@@ -33,5 +33,6 @@
     [
       "has_whirlisprig_charm"
     ]
-  ]
+  ],
+  "sends_telemetry_event": false
 }

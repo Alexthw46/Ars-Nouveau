@@ -1,12 +1,16 @@
 package com.hollingsworth.arsnouveau.common.datagen;
 
+
 import com.hollingsworth.arsnouveau.ArsNouveau;
 import com.hollingsworth.arsnouveau.common.lib.LibBlockNames;
-import com.hollingsworth.arsnouveau.setup.BlockRegistry;
-import net.minecraft.data.DataGenerator;
+import com.hollingsworth.arsnouveau.common.util.RegistryWrapper;
+import com.hollingsworth.arsnouveau.setup.registry.BlockRegistry;
+import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.DoorBlock;
+import net.minecraft.world.level.block.SlabBlock;
+import net.minecraft.world.level.block.StairBlock;
 import net.minecraftforge.client.model.generators.BlockStateProvider;
 import net.minecraftforge.client.model.generators.ConfiguredModel;
 import net.minecraftforge.client.model.generators.ModelFile;
@@ -15,8 +19,8 @@ import net.minecraftforge.registries.ForgeRegistries;
 
 public class BlockStatesDatagen extends BlockStateProvider {
 
-    public BlockStatesDatagen(DataGenerator gen, String modid, ExistingFileHelper exFileHelper) {
-        super(gen, modid, exFileHelper);
+    public BlockStatesDatagen(PackOutput output, String modid, ExistingFileHelper exFileHelper) {
+        super(output, modid, exFileHelper);
     }
 
     @Override
@@ -29,19 +33,37 @@ public class BlockStatesDatagen extends BlockStateProvider {
         registerOnlyState(BlockRegistry.ORANGE_SBED, LibBlockNames.ORANGE_SBED);
         registerOnlyState(BlockRegistry.PURPLE_SBED, LibBlockNames.PURPLE_SBED);
         registerOnlyState(BlockRegistry.POTION_DIFFUSER, LibBlockNames.POTION_DIFFUSER);
+        registerOnlyState(BlockRegistry.AGRONOMIC_SOURCELINK.get(), LibBlockNames.AGRONOMIC_SOURCELINK);
+        registerOnlyState(BlockRegistry.ALCHEMICAL_BLOCK.get(), LibBlockNames.ALCHEMICAL_SOURCELINK);
+        registerOnlyState(BlockRegistry.MYCELIAL_BLOCK.get(), LibBlockNames.MYCELIAL_SOURCELINK);
+        registerOnlyState(BlockRegistry.VITALIC_BLOCK.get(), LibBlockNames.VITALIC_SOURCELINK);
+        registerOnlyState(BlockRegistry.VOLCANIC_BLOCK.get(), LibBlockNames.VOLCANIC_SOURCELINK);
         for (var pot : BlockRegistry.flowerPots.entrySet()){
             registerOnlyState(pot.getValue(), "pots/" + LibBlockNames.Pot(pot.getKey().get().getPath()));
         }
-        registerDoor(BlockRegistry.ARCHWOOD_DOOR, LibBlockNames.ARCHWOOD_DOOR);
+        registerDoor(BlockRegistry.ARCHWOOD_DOOR.get(), LibBlockNames.ARCHWOOD_DOOR);
 
-        registerNormalCube(BlockRegistry.VOID_PRISM, LibBlockNames.VOID_PRISM);
+        registerNormalCube(BlockRegistry.VOID_PRISM.get(), LibBlockNames.VOID_PRISM);
         for (String s : LibBlockNames.DECORATIVE_SOURCESTONE) {
             registerNormalCube(ForgeRegistries.BLOCKS.getValue(new ResourceLocation(ArsNouveau.MODID, s)), s);
         }
-        registerNormalCube(BlockRegistry.MAGEBLOOM_BLOCK, LibBlockNames.MAGEBLOOM_BLOCK);
-        registerNormalCube(BlockRegistry.FALSE_WEAVE, LibBlockNames.FALSE_WEAVE);
-        registerNormalCube(BlockRegistry.GHOST_WEAVE, LibBlockNames.GHOST_WEAVE);
-        registerNormalCube(BlockRegistry.MIRROR_WEAVE, LibBlockNames.MIRROR_WEAVE);
+        registerNormalCube(BlockRegistry.MAGEBLOOM_BLOCK.get(), LibBlockNames.MAGEBLOOM_BLOCK);
+        registerNormalCube(BlockRegistry.FALSE_WEAVE.get(), LibBlockNames.FALSE_WEAVE);
+        registerNormalCube(BlockRegistry.GHOST_WEAVE.get(), LibBlockNames.GHOST_WEAVE);
+        registerNormalCube(BlockRegistry.MIRROR_WEAVE.get(), LibBlockNames.MIRROR_WEAVE);
+
+        for(String s : LibBlockNames.DECORATIVE_SOURCESTONE){
+            ResourceLocation tex = new ResourceLocation(ArsNouveau.MODID, "block/" + s);
+            Block block = ForgeRegistries.BLOCKS.getValue(new ResourceLocation(ArsNouveau.MODID, s + "_stairs"));
+            stairsBlock((StairBlock) block, tex);
+
+            Block slab = ForgeRegistries.BLOCKS.getValue(new ResourceLocation(ArsNouveau.MODID, s + "_slab"));
+            slabBlock((SlabBlock) slab, new ResourceLocation(ArsNouveau.MODID, s), tex);
+        }
+    }
+
+    private void registerOnlyState(RegistryWrapper<? extends Block> block, String registry) {
+        registerOnlyState(block.get(), registry);
     }
 
     private void registerOnlyState(Block block, String registry) {
@@ -52,6 +74,8 @@ public class BlockStatesDatagen extends BlockStateProvider {
     private void registerDoor(DoorBlock door, String reg) {
         doorBlock(door, reg, getBlockLoc(reg + "_bottom"), getBlockLoc(reg + "_top"));
     }
+
+
 
     //will it work? idk
     public void signBlock(Block sign, String reg) {
@@ -77,7 +101,7 @@ public class BlockStatesDatagen extends BlockStateProvider {
     }
 
     public ResourceLocation getBlockLoc(String registryName) {
-        return new ResourceLocation(ArsNouveau.MODID, "blocks" + "/" + registryName);
+        return new ResourceLocation(ArsNouveau.MODID, "block" + "/" + registryName);
     }
 
 }

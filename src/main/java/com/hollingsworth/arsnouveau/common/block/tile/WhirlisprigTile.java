@@ -10,8 +10,8 @@ import com.hollingsworth.arsnouveau.client.particle.ParticleColor;
 import com.hollingsworth.arsnouveau.client.particle.ParticleUtil;
 import com.hollingsworth.arsnouveau.common.entity.EntityFollowProjectile;
 import com.hollingsworth.arsnouveau.common.entity.Whirlisprig;
-import com.hollingsworth.arsnouveau.setup.BlockRegistry;
-import com.hollingsworth.arsnouveau.setup.Config;
+import com.hollingsworth.arsnouveau.setup.registry.BlockRegistry;
+import com.hollingsworth.arsnouveau.setup.config.Config;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
@@ -25,15 +25,15 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.material.Material;
-import software.bernie.geckolib3.core.IAnimatable;
-import software.bernie.geckolib3.core.PlayState;
-import software.bernie.geckolib3.core.builder.AnimationBuilder;
-import software.bernie.geckolib3.core.controller.AnimationController;
-import software.bernie.geckolib3.core.event.predicate.AnimationEvent;
-import software.bernie.geckolib3.core.manager.AnimationData;
-import software.bernie.geckolib3.core.manager.AnimationFactory;
-import software.bernie.geckolib3.util.GeckoLibUtil;
+import software.bernie.geckolib.animatable.GeoBlockEntity;
+import software.bernie.geckolib.core.animatable.GeoAnimatable;
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.core.animation.AnimationController;
+import software.bernie.geckolib.core.animation.AnimationState;
+import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.core.object.PlayState;
+import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -42,7 +42,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-public class WhirlisprigTile extends SummoningTile implements IAnimatable {
+public class WhirlisprigTile extends SummoningTile implements GeoBlockEntity {
 
     public static TagKey<Block> KINDA_LIKES = BlockTags.create(new ResourceLocation(ArsNouveau.MODID, "whirlisprig/kinda_likes"));
     public static TagKey<Block> GREATLY_LIKES = BlockTags.create(new ResourceLocation(ArsNouveau.MODID, "whirlisprig/greatly_likes"));
@@ -103,7 +103,7 @@ public class WhirlisprigTile extends SummoningTile implements IAnimatable {
             return false;
         if (ignoreItems == null || ignoreItems.isEmpty())
             return true;
-        return ignoreItems.stream().noneMatch(i -> i.sameItem(stack));
+        return ignoreItems.stream().noneMatch(i -> ItemStack.isSameItem(i, stack));
     }
 
     public int getDropsByDiversity() {
@@ -164,7 +164,7 @@ public class WhirlisprigTile extends SummoningTile implements IAnimatable {
 
     public static int getScore(BlockState state) {
 
-        if (state.getMaterial() == Material.AIR)
+        if (state.isAir())
             return 0;
 
         if (state == Blocks.WATER.defaultBlockState() || state == Blocks.GRASS_BLOCK.defaultBlockState() || state == Blocks.PODZOL.defaultBlockState() || state == Blocks.DIRT_PATH.defaultBlockState())
@@ -183,8 +183,9 @@ public class WhirlisprigTile extends SummoningTile implements IAnimatable {
         if (state.is(BlockTags.LEAVES) || state.getBlock() instanceof LeavesBlock)
             return 1;
 
-        if (state.getMaterial() == Material.PLANT || state.getMaterial() == Material.REPLACEABLE_PLANT)
-            return 1;
+        // TODO: fix whirlisprig scoring
+//        if (state.getMaterial() == Material.PLANT || state.getMaterial() == Material.REPLACEABLE_PLANT)
+//            return 1;
 
         if (state.getBlock() instanceof BonemealableBlock)
             return 1;
@@ -241,19 +242,19 @@ public class WhirlisprigTile extends SummoningTile implements IAnimatable {
     }
 
     @Override
-    public void registerControllers(AnimationData data) {
-        data.addAnimationController(new AnimationController<>(this, "rotateController", 1, this::walkPredicate));
+    public void registerControllers(AnimatableManager.ControllerRegistrar data) {
+        data.add(new AnimationController<>(this, "rotateController", 1, this::walkPredicate));
     }
 
-    private <T extends IAnimatable> PlayState walkPredicate(AnimationEvent<T> tAnimationEvent) {
-        tAnimationEvent.getController().setAnimation(new AnimationBuilder().addAnimation("spin"));
+    private <T extends GeoAnimatable> PlayState walkPredicate(AnimationState<T> tAnimationState) {
+        tAnimationState.getController().setAnimation(RawAnimation.begin().thenPlay("spin"));
         return PlayState.CONTINUE;
     }
 
-    AnimationFactory factory = GeckoLibUtil.createFactory(this);
+    AnimatableInstanceCache factory = GeckoLibUtil.createInstanceCache(this);
 
     @Override
-    public AnimationFactory getFactory() {
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
         return factory;
     }
 }

@@ -86,7 +86,7 @@ public class FindItem extends Goal {
         }
         Collections.shuffle(destList);
         for (ItemEntity e : destList) {
-            Path path = starbuncle.minecraftPathNav.createPath(new BlockPos(e.position()), 1, 9);
+            Path path = starbuncle.minecraftPathNav.createPath(BlockPos.containing(e.position()), 1, 9);
             if (path != null && path.canReach()) {
                 this.dest = e;
                 starbuncle.addGoalDebug(this, new DebugEvent("DestSet", "Dest set to " + e));
@@ -96,6 +96,11 @@ public class FindItem extends Goal {
         if (dest == null) {
             starbuncle.setBackOff(30 + starbuncle.level.random.nextInt(30));
             starbuncle.addGoalDebug(this, new DebugEvent("NotReachable", "No pathable items nearby"));
+            return false;
+        }
+        if(behavior.isBedPowered()){
+            starbuncle.addGoalDebug(this, new DebugEvent("BedPowered", "Bed powered, cannot pickup items"));
+            return false;
         }
         return dest != null && !nearbyItems().isEmpty();
     }
@@ -110,7 +115,7 @@ public class FindItem extends Goal {
         }
         timeFinding++;
         starbuncle.minecraftPathNav.stop();
-        Path path = starbuncle.minecraftPathNav.createPath(new BlockPos(dest.position()), 1, 9);
+        Path path = starbuncle.minecraftPathNav.createPath(BlockPos.containing(dest.position()), 1, 9);
         if (path == null || !path.canReach()) {
             stuckTicks++;
             if (stuckTicks > 20 * 5) { // Give up after 5 seconds of being unpathable, in case we fall or jump into the air

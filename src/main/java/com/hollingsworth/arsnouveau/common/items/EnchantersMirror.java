@@ -2,6 +2,7 @@ package com.hollingsworth.arsnouveau.common.items;
 
 import com.hollingsworth.arsnouveau.api.item.ICasterTool;
 import com.hollingsworth.arsnouveau.api.item.ISpellModifierItem;
+import com.hollingsworth.arsnouveau.api.mana.IManaDiscountEquipment;
 import com.hollingsworth.arsnouveau.api.spell.*;
 import com.hollingsworth.arsnouveau.client.renderer.item.MirrorRenderer;
 import com.hollingsworth.arsnouveau.common.spell.method.MethodSelf;
@@ -17,17 +18,17 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.HitResult;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
-import software.bernie.geckolib3.core.IAnimatable;
-import software.bernie.geckolib3.core.manager.AnimationData;
-import software.bernie.geckolib3.core.manager.AnimationFactory;
-import software.bernie.geckolib3.util.GeckoLibUtil;
+import software.bernie.geckolib.animatable.GeoItem;
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.util.GeckoLibUtil;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-public class EnchantersMirror extends ModItem implements ICasterTool, IAnimatable, ISpellModifierItem {
+public class EnchantersMirror extends ModItem implements ICasterTool, GeoItem, ISpellModifierItem, IManaDiscountEquipment {
 
     public EnchantersMirror(Properties properties) {
         super(properties);
@@ -38,13 +39,13 @@ public class EnchantersMirror extends ModItem implements ICasterTool, IAnimatabl
     }
 
     @Override
-    public void registerControllers(AnimationData data) {
+    public void registerControllers(AnimatableManager.ControllerRegistrar data) {
     }
 
-    AnimationFactory factory = GeckoLibUtil.createFactory(this);
+    AnimatableInstanceCache factory = GeckoLibUtil.createInstanceCache(this);
 
     @Override
-    public AnimationFactory getFactory() {
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
         return this.factory;
     }
 
@@ -52,8 +53,12 @@ public class EnchantersMirror extends ModItem implements ICasterTool, IAnimatabl
     public InteractionResultHolder<ItemStack> use(Level worldIn, Player playerIn, InteractionHand handIn) {
         ItemStack stack = playerIn.getItemInHand(handIn);
         ISpellCaster caster = getSpellCaster(stack);
-        caster.getSpell().addDiscount((int) (caster.getSpell().getDiscountedCost() * 0.25));
         return caster.castSpell(worldIn, playerIn, handIn, Component.translatable("ars_nouveau.mirror.invalid"), caster.getSpell());
+    }
+
+    @Override
+    public int getManaDiscount(ItemStack i, Spell spell) {
+        return (int) (spell.getCost() * .25);
     }
 
     @Override

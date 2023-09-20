@@ -3,39 +3,39 @@ package com.hollingsworth.arsnouveau.client.renderer.entity;
 import com.hollingsworth.arsnouveau.ArsNouveau;
 import com.hollingsworth.arsnouveau.common.entity.Starbuncle;
 import net.minecraft.resources.ResourceLocation;
-import software.bernie.geckolib3.core.event.predicate.AnimationEvent;
-import software.bernie.geckolib3.core.processor.IBone;
-import software.bernie.geckolib3.model.AnimatedGeoModel;
-import software.bernie.geckolib3.model.provider.data.EntityModelData;
+import software.bernie.geckolib.constant.DataTickets;
+import software.bernie.geckolib.core.animatable.model.CoreGeoBone;
+import software.bernie.geckolib.core.animation.AnimationState;
+import software.bernie.geckolib.model.GeoModel;
+import software.bernie.geckolib.model.data.EntityModelData;
 
 import javax.annotation.Nullable;
 
-public class StarbuncleModel extends AnimatedGeoModel<Starbuncle> {
-
-    private static final ResourceLocation WILD_TEXTURE = new ResourceLocation(ArsNouveau.MODID, "textures/entity/carbuncle_wild_orange.png");
-    private static final ResourceLocation TAMED_TEXTURE = new ResourceLocation(ArsNouveau.MODID, "textures/entity/carbuncle_orange.png");
+public class StarbuncleModel extends GeoModel<Starbuncle> {
 
     @Override
-    public void setCustomAnimations(Starbuncle entity, int uniqueID, @Nullable AnimationEvent customPredicate) {
+    public void setCustomAnimations(Starbuncle entity, long uniqueID, @Nullable AnimationState customPredicate) {
         super.setCustomAnimations(entity, uniqueID, customPredicate);
         if (entity.partyCarby)
             return;
-        IBone head = this.getAnimationProcessor().getBone("head");
         if (customPredicate == null)
             return;
-        EntityModelData extraData = (EntityModelData) customPredicate.getExtraDataOfType(EntityModelData.class).get(0);
-        head.setRotationX(extraData.headPitch * 0.017453292F);
-        head.setRotationY(extraData.netHeadYaw * 0.017453292F);
+        this.getBone("basket").get().setHidden(!entity.isTamed());
+
+        CoreGeoBone head = this.getAnimationProcessor().getBone("head");
+        EntityModelData extraData = (EntityModelData) customPredicate.getExtraData().get(DataTickets.ENTITY_MODEL_DATA);
+        head.setRotX(extraData.headPitch() * 0.017453292F);
+        head.setRotY(extraData.netHeadYaw() * 0.017453292F);
     }
 
     @Override
     public ResourceLocation getModelResource(Starbuncle carbuncle) {
-        return new ResourceLocation(ArsNouveau.MODID, "geo/carbuncle.geo.json");
+        return new ResourceLocation(ArsNouveau.MODID, "geo/starbuncle.geo.json");
     }
 
     @Override
     public ResourceLocation getTextureResource(Starbuncle carbuncle) {
-        return carbuncle.isTamed() ? TAMED_TEXTURE : WILD_TEXTURE;
+        return carbuncle.getTexture(carbuncle);
     }
 
     @Override

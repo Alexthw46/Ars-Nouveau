@@ -1,7 +1,9 @@
 package com.hollingsworth.arsnouveau.common.entity;
 
 import com.hollingsworth.arsnouveau.api.entity.ISummon;
+import com.hollingsworth.arsnouveau.setup.registry.ModEntities;
 import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -14,14 +16,14 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraftforge.network.NetworkHooks;
 import net.minecraftforge.network.PlayMessages;
-import software.bernie.geckolib3.core.IAnimatable;
-import software.bernie.geckolib3.core.manager.AnimationData;
-import software.bernie.geckolib3.core.manager.AnimationFactory;
-import software.bernie.geckolib3.util.GeckoLibUtil;
+import software.bernie.geckolib.animatable.GeoEntity;
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.Collection;
 
-public class EntityChimeraProjectile extends AbstractArrow implements IAnimatable {
+public class EntityChimeraProjectile extends AbstractArrow implements GeoEntity {
     int groundMax;
 
     public EntityChimeraProjectile(double p_i48547_2_, double p_i48547_4_, double p_i48547_6_, Level p_i48547_8_) {
@@ -43,8 +45,6 @@ public class EntityChimeraProjectile extends AbstractArrow implements IAnimatabl
     @Override
     public void tick() {
         super.tick();
-//        if(groundMax == 0)
-//            groundMax = 60 + random.nextInt(60);
         if (!level.isClientSide && this.inGroundTime >= 1) {
             this.remove(RemovalReason.DISCARDED);
         }
@@ -56,7 +56,7 @@ public class EntityChimeraProjectile extends AbstractArrow implements IAnimatabl
     }
 
     @Override
-    public void registerControllers(AnimationData data) {}
+    public void registerControllers(AnimatableManager.ControllerRegistrar data) {}
 
     @Override
     protected void onHitEntity(EntityHitResult rayTraceResult) {
@@ -67,9 +67,9 @@ public class EntityChimeraProjectile extends AbstractArrow implements IAnimatabl
         Entity entity1 = this.getOwner();
         DamageSource damagesource;
         if (entity1 == null) {
-            damagesource = DamageSource.indirectMagic(this, null);
+            damagesource = level.damageSources().indirectMagic(this, null);
         } else {
-            damagesource = DamageSource.MAGIC;
+            damagesource = level.damageSources().magic();
             if (entity1 instanceof LivingEntity) {
                 ((LivingEntity) entity1).setLastHurtMob(entity);
             }
@@ -136,10 +136,10 @@ public class EntityChimeraProjectile extends AbstractArrow implements IAnimatabl
         return !(entity instanceof WildenChimera) && super.canHitEntity(entity);
     }
 
-    AnimationFactory factory = GeckoLibUtil.createFactory(this);
+    AnimatableInstanceCache factory = GeckoLibUtil.createInstanceCache(this);
 
     @Override
-    public AnimationFactory getFactory() {
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
         return factory;
     }
 
@@ -149,7 +149,7 @@ public class EntityChimeraProjectile extends AbstractArrow implements IAnimatabl
     }
 
     @Override
-    public Packet<?> getAddEntityPacket() {
+    public Packet<ClientGamePacketListener> getAddEntityPacket() {
         return NetworkHooks.getEntitySpawningPacket(this);
     }
 

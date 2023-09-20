@@ -1,13 +1,16 @@
 package com.hollingsworth.arsnouveau.common.datagen;
 
 import com.hollingsworth.arsnouveau.ArsNouveau;
-import com.hollingsworth.arsnouveau.setup.APIRegistry;
-import net.minecraft.data.tags.BlockTagsProvider;
+import com.hollingsworth.arsnouveau.setup.registry.APIRegistry;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.data.PackOutput;
+import net.minecraftforge.common.data.DatapackBuiltinEntriesProvider;
+import net.minecraftforge.common.data.ExistingFileHelper;
+import net.minecraftforge.data.event.GatherDataEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.data.event.GatherDataEvent;
 
-import static com.hollingsworth.arsnouveau.ArsNouveau.MODID;
+import java.util.concurrent.CompletableFuture;
 
 @Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD)
 public class ModDatagen {
@@ -15,33 +18,41 @@ public class ModDatagen {
     @SubscribeEvent
     public static void datagen(GatherDataEvent event) {
         APIRegistry.postInit();
-        BlockTagsProvider blocktagsprovider = new BlockTagsProvider(event.getGenerator(), MODID, event.getExistingFileHelper());
+        PackOutput output = event.getGenerator().getPackOutput();
+        CompletableFuture<HolderLookup.Provider> provider = event.getLookupProvider();
+        ExistingFileHelper fileHelper = event.getExistingFileHelper();
+        event.getGenerator().addProvider(event.includeClient(), new ItemModelGenerator(output, fileHelper));
+        event.getGenerator().addProvider(event.includeServer(), new BlockTagProvider(output, provider, fileHelper));
+        event.getGenerator().addProvider(event.includeClient(), new LangDatagen(output, ArsNouveau.MODID, "en_us"));
 
-        event.getGenerator().addProvider(event.includeClient(), new ItemModelGenerator(event.getGenerator(), ArsNouveau.MODID, event.getExistingFileHelper()));
-        event.getGenerator().addProvider(event.includeClient(), new LangDatagen(event.getGenerator(), ArsNouveau.MODID, "en_us"));
-
-        event.getGenerator().addProvider(event.includeServer(), new RecipeDatagen(event.getGenerator()));
-        event.getGenerator().addProvider(event.includeServer(), new BlockTagProvider(event.getGenerator(), event.getExistingFileHelper()));
-        event.getGenerator().addProvider(event.includeServer(), new BlockStatesDatagen(event.getGenerator(), ArsNouveau.MODID, event.getExistingFileHelper()));
+        event.getGenerator().addProvider(event.includeServer(), new RecipeDatagen(output));
+        event.getGenerator().addProvider(event.includeServer(), new BlockStatesDatagen(output, ArsNouveau.MODID, fileHelper));
         event.getGenerator().addProvider(event.includeServer(), new GlyphRecipeProvider(event.getGenerator()));
         event.getGenerator().addProvider(event.includeServer(), new ApparatusRecipeProvider(event.getGenerator()));
         event.getGenerator().addProvider(event.includeServer(), new PatchouliProvider(event.getGenerator()));
-        event.getGenerator().addProvider(event.includeServer(), new LootTableProvider(event.getGenerator()));
-        event.getGenerator().addProvider(event.includeServer(), new DefaultTableProvider(event.getGenerator()));
-//        event.getGenerator().addProvider(event.includeServer(), new DungeonLootGenerator(event.getGenerator(), MODID));
+        event.getGenerator().addProvider(event.includeServer(), new DefaultTableProvider(output));
         event.getGenerator().addProvider(event.includeServer(), new ImbuementRecipeProvider(event.getGenerator()));
         event.getGenerator().addProvider(event.includeServer(), new CrushRecipeProvider(event.getGenerator()));
-        event.getGenerator().addProvider(event.includeServer(), new ItemTagProvider(event.getGenerator(), blocktagsprovider, MODID, event.getExistingFileHelper()));
-        event.getGenerator().addProvider(event.includeServer(), new EntityTagProvider(event.getGenerator(), MODID, event.getExistingFileHelper()));
-        event.getGenerator().addProvider(event.includeServer(), new BiomeTagProvider(event.getGenerator(), MODID, event.getExistingFileHelper()));
-        event.getGenerator().addProvider(event.includeServer(), new PlacedFeatureTagProvider(event.getGenerator(), MODID, event.getExistingFileHelper()));
-        event.getGenerator().addProvider(event.includeServer(), new PotionEffectTagProvider(event.getGenerator(), MODID, event.getExistingFileHelper()));
-        event.getGenerator().addProvider(event.includeServer(), new JsonDatagen(event.getGenerator()));
-        event.getGenerator().addProvider(event.includeServer(), new Advancements(event.getGenerator(), event.getExistingFileHelper()));
+        event.getGenerator().addProvider(event.includeServer(), new ItemTagProvider(output, provider, fileHelper));
+        event.getGenerator().addProvider(event.includeServer(), new EntityTagProvider(output, provider, fileHelper));
+        event.getGenerator().addProvider(event.includeServer(), new PlacedFeatureTagProvider(output, provider, fileHelper));
+        event.getGenerator().addProvider(event.includeServer(), new PotionEffectTagProvider(output, provider, fileHelper));
+        event.getGenerator().addProvider(event.includeServer(), new DyeRecipeDatagen(event.getGenerator()));
+        event.getGenerator().addProvider(event.includeServer(), new ANAdvancements(output, provider, fileHelper));
         event.getGenerator().addProvider(event.includeServer(), new CasterTomeProvider(event.getGenerator()));
         event.getGenerator().addProvider(event.includeServer(), new SummonRitualProvider(event.getGenerator()));
-        event.getGenerator().addProvider(event.includeServer(), new StructureTagProvider(event.getGenerator(), MODID, event.getExistingFileHelper()));
-        BiomeModifiersProvider.datagenModifiers(event);
+        event.getGenerator().addProvider(event.includeServer(), new StructureTagProvider(output, provider, fileHelper));
+        event.getGenerator().addProvider(event.includeClient(), new AtlasProvider(output, fileHelper));
+        event.getGenerator().addProvider(event.includeServer(), new DamageTypesProvider(output, provider));
+        event.getGenerator().addProvider(event.includeServer(), new DamageTypesProvider.DamageTypesTagsProvider(output, provider, fileHelper));
+
+
+
+
+        DatapackBuiltinEntriesProvider datapackProvider = new WorldgenProvider(output, provider);
+        event.getGenerator().addProvider(event.includeServer(), datapackProvider);
+        CompletableFuture<HolderLookup.Provider> lookupProvider = datapackProvider.getRegistryProvider();
+        event.getGenerator().addProvider(event.includeServer(), new BiomeTagProvider(output, lookupProvider, fileHelper));
     }
 
 }

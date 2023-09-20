@@ -61,8 +61,15 @@ public abstract class AbstractSpellPart implements Comparable<AbstractSpellPart>
         compatibleAugments.addAll(getCompatibleAugments());
     }
 
-    public abstract int getDefaultManaCost();
+    /**
+     * The default cost generated for the config.
+     * This should not be used directly for calculations, but as a helper for a recommended value.
+     */
+    protected abstract int getDefaultManaCost();
 
+    /**
+     * The actual cost of the spell part after config is applied.
+     */
     public int getCastingCost() {
         return COST == null ? getDefaultManaCost() : COST.get();
     }
@@ -75,17 +82,8 @@ public abstract class AbstractSpellPart implements Comparable<AbstractSpellPart>
         return GLYPH_TIER == null ? defaultTier() : SpellTier.SPELL_TIER_MAP.get(GLYPH_TIER.get());
     }
 
-    /**
-     * Deprecated: Use {@link AbstractSpellPart#defaultTier()} or  {@link AbstractSpellPart#getConfigTier()}
-     * @return default tier
-     */
-    @Deprecated(forRemoval = true)
-    public SpellTier getTier() {
-        return SpellTier.ONE;
-    }
-
     public SpellTier defaultTier() {
-        return getTier();
+        return SpellTier.ONE;
     }
 
     /**
@@ -178,6 +176,9 @@ public abstract class AbstractSpellPart implements Comparable<AbstractSpellPart>
     // Augment limits only apply to cast forms and effects, but not augments.
     public SpellPartConfigUtil.AugmentLimits augmentLimits;
 
+    // Augment limits only apply to cast forms and effects, but not augments.
+    public SpellPartConfigUtil.AugmentCosts augmentCosts;
+
     /**
      * Registers the glyph_limits configuration entry for augmentation limits.
      */
@@ -185,15 +186,16 @@ public abstract class AbstractSpellPart implements Comparable<AbstractSpellPart>
         this.augmentLimits = SpellPartConfigUtil.buildAugmentLimitsConfig(builder, defaults);
     }
 
-    /**
-     * Override this method to provide defaults for the augmentation limits configuration.
-     */
-    protected Map<ResourceLocation, Integer> getDefaultAugmentLimits(Map<ResourceLocation, Integer> defaults) {
-        addDefaultAugmentLimits(defaults);
-        return defaults;
+    protected void buildAugmentCostOverrideConfig(ForgeConfigSpec.Builder builder, Map<ResourceLocation, Integer> defaults) {
+        this.augmentCosts = SpellPartConfigUtil.buildAugmentCosts(builder, defaults);
     }
 
+    /**
+     * Adds default augment limits to the given map, used to generate the config.
+     */
     protected void addDefaultAugmentLimits(Map<ResourceLocation, Integer> defaults) {}
+
+    protected void addAugmentCostOverrides(Map<ResourceLocation, Integer> defaults) {}
 
     // Default value for the starter spell config
     public boolean defaultedStarterGlyph() {

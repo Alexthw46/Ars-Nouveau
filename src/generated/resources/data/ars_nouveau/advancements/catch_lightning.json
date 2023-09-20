@@ -25,5 +25,6 @@
     [
       "catch_lightning"
     ]
-  ]
+  ],
+  "sends_telemetry_event": false
 }

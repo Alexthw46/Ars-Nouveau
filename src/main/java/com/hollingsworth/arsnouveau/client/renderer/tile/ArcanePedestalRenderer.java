@@ -3,16 +3,13 @@ package com.hollingsworth.arsnouveau.client.renderer.tile;
 import com.hollingsworth.arsnouveau.client.ClientInfo;
 import com.hollingsworth.arsnouveau.common.block.tile.ArcanePedestalTile;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.math.Vector3f;
+import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
-import net.minecraft.core.Direction;
-import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
 public class ArcanePedestalRenderer implements BlockEntityRenderer<ArcanePedestalTile> {
@@ -47,13 +44,14 @@ public class ArcanePedestalRenderer implements BlockEntityRenderer<ArcanePedesta
         }
         matrixStack.translate(xOffset, yOffset, zOffset);
         matrixStack.scale(0.5f, 0.5f, 0.5f);
-        matrixStack.mulPose(Vector3f.YP.rotationDegrees((pPartialTick + (float) ClientInfo.ticksInGame) * 3f));
+        matrixStack.mulPose(Axis.YP.rotationDegrees((pPartialTick + (float) ClientInfo.ticksInGame) * 3f));
         Minecraft.getInstance().getItemRenderer().renderStatic(tileEntityIn.getStack(),
-                ItemTransforms.TransformType.FIXED,
+                ItemDisplayContext.FIXED,
                 pPackedLight,
                 pPackedOverlay,
                 matrixStack,
                 pBufferSource,
+                tileEntityIn.getLevel(),
                 (int) tileEntityIn.getBlockPos().asLong());
 
         matrixStack.popPose();

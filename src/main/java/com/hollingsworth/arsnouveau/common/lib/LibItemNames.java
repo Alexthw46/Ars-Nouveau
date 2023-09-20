@@ -91,20 +91,20 @@ public class LibItemNames {
     public static final String SOURCE_BERRY_PIE = "source_berry_pie";
     public static final String ENCHANTERS_MIRROR = "enchanters_mirror";
 
-    public static final String NOVICE_BOOTS = "novice_boots";
-    public static final String NOVICE_LEGGINGS = "novice_leggings";
-    public static final String NOVICE_ROBES = "novice_robes";
-    public static final String NOVICE_HOOD = "novice_hood";
+    public static final String SORCERER_BOOTS = "sorcerer_boots";
+    public static final String SORCERER_LEGGINGS = "sorcerer_leggings";
+    public static final String SORCERER_ROBES = "sorcerer_robes";
+    public static final String SORCERER_HOOD = "sorcerer_hood";
 
-    public static final String APPRENTICE_BOOTS = "apprentice_boots";
-    public static final String APPRENTICE_LEGGINGS = "apprentice_leggings";
-    public static final String APPRENTICE_ROBES = "apprentice_robes";
-    public static final String APPRENTICE_HOOD = "apprentice_hood";
+    public static final String ARCANIST_BOOTS = "arcanist_boots";
+    public static final String ARCANIST_LEGGINGS = "arcanist_leggings";
+    public static final String ARCANIST_ROBES = "arcanist_robes";
+    public static final String ARCANIST_HOOD = "arcanist_hood";
 
-    public static final String ARCHMAGE_BOOTS = "archmage_boots";
-    public static final String ARCHMAGE_LEGGINGS = "archmage_leggings";
-    public static final String ARCHMAGE_ROBES = "archmage_robes";
-    public static final String ARCHMAGE_HOOD = "archmage_hood";
+    public static final String BATTLEMAGE_BOOTS = "battlemage_boots";
+    public static final String BATTLEMAGE_LEGGINGS = "battlemage_leggings";
+    public static final String BATTLEMAGE_ROBES = "battlemage_robes";
+    public static final String BATTLEMAGE_HOOD = "battlemage_hood";
 
     public static final String ABJURATION_ESSENCE = "abjuration_essence";
     public static final String CONJURATION_ESSENCE = "conjuration_essence";
@@ -127,9 +127,10 @@ public class LibItemNames {
     public static final String LINGERING_LAUNCHER = "lingering_flask_cannon";
     public static final String BLANK_THREAD = "blank_thread";
     public static final String FIREL_DISC = "music_disc_aria_biblio";
-
     public static final String STARBY_GIFT = "starby_gift";
     public static final String SPELL_CROSSBOW = "spell_crossbow";
     public static final String STABLE_WARP_SCROLL = "stable_warp_scroll";
     public static final String SCRY_CASTER = "enchanters_eye";
+    public static final String SOUND_OF_GLASS = "music_disc_thistle_the_sound_of_glass";
+    public static final String FIREL_WILD_HUNT = "music_disc_firel_the_wild_hunt";
 }

@@ -32,7 +32,6 @@ import net.minecraft.world.phys.HitResult;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -71,8 +70,6 @@ public interface ISpellCaster {
     void setSpell(Spell spell, int slot);
 
     void setSpell(Spell spell);
-
-    void setSpellRecipe(List<AbstractSpellPart> spellRecipe, int slot);
 
     @NotNull
     ParticleColor getColor(int slot);
@@ -118,16 +115,9 @@ public interface ISpellCaster {
     Map<Integer, Spell> getSpells();
 
     @NotNull
-    @Deprecated(forRemoval = true)
-    default Spell getSpell(Level world, Player playerEntity, InteractionHand hand, ISpellCaster caster) {
-        return caster.getSpell();
-    }
-
-    @NotNull
     default Spell getSpell(Level world, LivingEntity playerEntity, InteractionHand hand, ISpellCaster caster) {
         return caster.getSpell();
     }
-
 
     default Spell modifySpellBeforeCasting(Level worldIn, @Nullable Entity playerIn, @Nullable InteractionHand handIn, Spell spell) {
         return spell;
@@ -147,7 +137,7 @@ public interface ISpellCaster {
         IWrappedCaster wrappedCaster = entity instanceof Player pCaster ? new PlayerCaster(pCaster) : new LivingCaster(entity);
         SpellResolver resolver = getSpellResolver(new SpellContext(worldIn, spell, entity, wrappedCaster, stack), worldIn, player, handIn);
         boolean isSensitive = resolver.spell.getBuffsAtIndex(0, entity, AugmentSensitive.INSTANCE) > 0;
-        HitResult result = SpellUtil.rayTrace(entity, 5, 0, isSensitive);
+        HitResult result = SpellUtil.rayTrace(entity, 0.5 + player.getBlockReach(), 0, isSensitive);
         if (result instanceof BlockHitResult blockHit) {
             BlockEntity tile = worldIn.getBlockEntity(blockHit.getBlockPos());
             if (tile instanceof ScribesTile)
@@ -180,19 +170,7 @@ public interface ISpellCaster {
         return new InteractionResultHolder<>(InteractionResult.CONSUME, stack);
     }
 
-    //TODO: 1.19.3 remove this
-    @Deprecated(forRemoval = true)
-    default InteractionResultHolder<ItemStack> castSpell(Level worldIn, Player playerIn, InteractionHand handIn, @Nullable Component invalidMessage, @NotNull Spell spell) {
-        return castSpell(worldIn, (LivingEntity) playerIn, handIn, invalidMessage, spell);
-    }
-
     default InteractionResultHolder<ItemStack> castSpell(Level worldIn, LivingEntity playerIn, InteractionHand handIn, Component invalidMessage) {
-        return castSpell(worldIn, playerIn, handIn, invalidMessage, getSpell(worldIn, playerIn, handIn, this));
-    }
-
-    //TODO: 1.19.3 remove this
-    @Deprecated(forRemoval = true)
-    default InteractionResultHolder<ItemStack> castSpell(Level worldIn, Player playerIn, InteractionHand handIn, Component invalidMessage) {
         return castSpell(worldIn, playerIn, handIn, invalidMessage, getSpell(worldIn, playerIn, handIn, this));
     }
 
@@ -205,12 +183,6 @@ public interface ISpellCaster {
 
     default SpellResolver getSpellResolver(SpellContext context, Level worldIn, LivingEntity playerIn, InteractionHand handIn) {
         return new SpellResolver(context);
-    }
-
-    //TODO: 1.19.3 remove this
-    @Deprecated(forRemoval = true)
-    default SpellResolver getSpellResolver(SpellContext context, Level worldIn, Player playerIn, InteractionHand handIn) {
-        return getSpellResolver(context, worldIn, (LivingEntity) playerIn, handIn);
     }
 
     default void playSound(BlockPos pos, Level worldIn, @Nullable Entity playerIn, ConfiguredSpellSound configuredSound, SoundSource source) {

@@ -33,5 +33,6 @@
     [
       "has_starbuncle_shades"
     ]
-  ]
+  ],
+  "sends_telemetry_event": false
 }

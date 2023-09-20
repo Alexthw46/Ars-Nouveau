@@ -3,7 +3,7 @@ package com.hollingsworth.arsnouveau.common.network;
 import com.hollingsworth.arsnouveau.api.event.FamiliarSummonEvent;
 import com.hollingsworth.arsnouveau.api.familiar.IFamiliar;
 import com.hollingsworth.arsnouveau.client.particle.ParticleUtil;
-import com.hollingsworth.arsnouveau.common.capability.CapabilityRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.CapabilityRegistry;
 import com.hollingsworth.arsnouveau.common.capability.IPlayerCap;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
@@ -17,12 +17,6 @@ import java.util.function.Supplier;
 public class PacketSummonFamiliar {
 
     ResourceLocation familiarID;
-
-    // TODO: 1.20 remove entityID
-    @Deprecated(forRemoval = true)
-    public PacketSummonFamiliar(ResourceLocation id, int entityID) {
-        this.familiarID = id;
-    }
 
     public PacketSummonFamiliar(ResourceLocation id) {
         this.familiarID = id;

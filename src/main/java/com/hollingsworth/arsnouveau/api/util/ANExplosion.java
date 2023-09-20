@@ -23,8 +23,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import net.minecraft.world.level.Explosion.BlockInteraction;
-
 public class ANExplosion extends Explosion {
     public double amps;
     public double baseDamage;
@@ -70,7 +68,7 @@ public class ANExplosion extends Explosion {
                         double d8 = this.z;
 
                         for (float f1 = 0.3F; f > 0.0F; f -= 0.22500001F) {
-                            BlockPos blockpos = new BlockPos(d4, d6, d8);
+                            BlockPos blockpos = BlockPos.containing(d4, d6, d8);
                             BlockState blockstate = this.level.getBlockState(blockpos);
                             FluidState fluidstate = this.level.getFluidState(blockpos);
                             Optional<Float> optional = this.damageCalculator.getBlockExplosionResistance(this, this.level, blockpos, blockstate, fluidstate);

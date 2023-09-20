@@ -15,7 +15,7 @@ import com.hollingsworth.arsnouveau.common.entity.goal.amethyst_golem.*;
 import com.hollingsworth.arsnouveau.common.entity.pathfinding.MinecoloniesAdvancedPathNavigate;
 import com.hollingsworth.arsnouveau.common.entity.pathfinding.PathingStuckHandler;
 import com.hollingsworth.arsnouveau.common.util.PortUtil;
-import com.hollingsworth.arsnouveau.setup.ItemsRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.ItemsRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -42,14 +42,13 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
-import software.bernie.geckolib3.core.IAnimatable;
-import software.bernie.geckolib3.core.PlayState;
-import software.bernie.geckolib3.core.builder.AnimationBuilder;
-import software.bernie.geckolib3.core.controller.AnimationController;
-import software.bernie.geckolib3.core.event.predicate.AnimationEvent;
-import software.bernie.geckolib3.core.manager.AnimationData;
-import software.bernie.geckolib3.core.manager.AnimationFactory;
-import software.bernie.geckolib3.util.GeckoLibUtil;
+import software.bernie.geckolib.animatable.GeoEntity;
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.core.animation.AnimationController;
+import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.core.object.PlayState;
+import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -57,7 +56,7 @@ import java.util.Optional;
 
 import static com.hollingsworth.arsnouveau.common.datagen.BlockTagProvider.BUDDING_BLOCKS;
 
-public class AmethystGolem extends PathfinderMob implements IAnimatable, IDispellable, ITooltipProvider, IWandable {
+public class AmethystGolem extends PathfinderMob implements GeoEntity, IDispellable, ITooltipProvider, IWandable {
     public static final EntityDataAccessor<Optional<BlockPos>> HOME = SynchedEntityData.defineId(AmethystGolem.class, EntityDataSerializers.OPTIONAL_BLOCK_POS);
     public static final EntityDataAccessor<Boolean> IMBUEING = SynchedEntityData.defineId(AmethystGolem.class, EntityDataSerializers.BOOLEAN);
     public static final EntityDataAccessor<Boolean> STOMPING = SynchedEntityData.defineId(AmethystGolem.class, EntityDataSerializers.BOOLEAN);
@@ -281,37 +280,36 @@ public class AmethystGolem extends PathfinderMob implements IAnimatable, IDispel
     }
 
     @Override
-    public void registerControllers(AnimationData data) {
-        data.addAnimationController(new AnimationController<>(this, "run_controller", 1.0f, this::runController));
-        data.addAnimationController(new AnimationController<>(this, "attack_controller", 5f, this::attackController));
+    public void registerControllers(AnimatableManager.ControllerRegistrar data) {
+        data.add(new AnimationController<>(this, "run_controller", 1, e ->{
+            AnimationController controller = e.getController();
+            if (isStomping()) {
+                controller.setAnimation(RawAnimation.begin().thenPlay("harvest2"));
+                return PlayState.CONTINUE;
+            }
+
+            if (isImbueing() || (level.isClientSide && PatchouliHandler.isPatchouliWorld())) {
+                controller.setAnimation(RawAnimation.begin().thenPlay("tending_master"));
+                return PlayState.CONTINUE;
+            }
+            if (e.isMoving()) {
+                String anim = getHeldStack().isEmpty() ? "run" : "run_carry";
+                controller.setAnimation(RawAnimation.begin().thenPlay(anim));
+                return PlayState.CONTINUE;
+            }
+
+            if (!getHeldStack().isEmpty()) {
+                controller.setAnimation(RawAnimation.begin().thenPlay("carry_idle"));
+                return PlayState.CONTINUE;
+            }
+            return PlayState.STOP;
+        }));
+        data.add(new AnimationController<>(this, "attack_controller", 5, e ->{
+            return PlayState.CONTINUE;
+        }));
     }
 
-    private PlayState attackController(AnimationEvent<?> animationEvent) {
-        return PlayState.CONTINUE;
-    }
 
-    private PlayState runController(AnimationEvent<?> animationEvent) {
-        if (isStomping()) {
-            animationEvent.getController().setAnimation(new AnimationBuilder().addAnimation("harvest2"));
-            return PlayState.CONTINUE;
-        }
-
-        if (isImbueing() || (level.isClientSide && PatchouliHandler.isPatchouliWorld())) {
-            animationEvent.getController().setAnimation(new AnimationBuilder().addAnimation("tending_master"));
-            return PlayState.CONTINUE;
-        }
-        if (animationEvent.isMoving()) {
-            String anim = getHeldStack().isEmpty() ? "run" : "run_carry";
-            animationEvent.getController().setAnimation(new AnimationBuilder().addAnimation(anim));
-            return PlayState.CONTINUE;
-        }
-
-        if (!getHeldStack().isEmpty()) {
-            animationEvent.getController().setAnimation(new AnimationBuilder().addAnimation("carry_idle"));
-            return PlayState.CONTINUE;
-        }
-        return PlayState.STOP;
-    }
 
     public void setHome(BlockPos home) {
         this.entityData.set(HOME, Optional.of(home));
@@ -340,10 +338,10 @@ public class AmethystGolem extends PathfinderMob implements IAnimatable, IDispel
         return 0;
     }
 
-    AnimationFactory factory = GeckoLibUtil.createFactory(this);
+    AnimatableInstanceCache factory = GeckoLibUtil.createInstanceCache(this);
 
     @Override
-    public AnimationFactory getFactory() {
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
         return factory;
     }
 

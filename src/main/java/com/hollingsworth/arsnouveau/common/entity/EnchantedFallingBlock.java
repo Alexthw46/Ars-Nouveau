@@ -6,15 +6,19 @@ import com.hollingsworth.arsnouveau.api.spell.SpellStats;
 import com.hollingsworth.arsnouveau.api.util.BlockUtil;
 import com.hollingsworth.arsnouveau.common.block.tile.MageBlockTile;
 import com.hollingsworth.arsnouveau.common.datagen.BlockTagProvider;
-import com.hollingsworth.arsnouveau.setup.ItemsRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.ItemsRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.ModEntities;
+import com.mojang.authlib.GameProfile;
 import com.mojang.logging.LogUtils;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import net.minecraft.CrashReportCategory;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 import net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -25,7 +29,6 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.damagesource.IndirectEntityDamageSource;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.minecraft.world.item.ItemStack;
@@ -45,15 +48,15 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.slf4j.Logger;
-import software.bernie.geckolib3.core.IAnimatable;
-import software.bernie.geckolib3.core.manager.AnimationData;
-import software.bernie.geckolib3.core.manager.AnimationFactory;
-import software.bernie.geckolib3.util.GeckoLibUtil;
+import software.bernie.geckolib.animatable.GeoEntity;
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.util.GeckoLibUtil;
 
 import javax.annotation.Nullable;
 import java.util.function.Predicate;
 
-public class EnchantedFallingBlock extends ColoredProjectile implements IAnimatable {
+public class EnchantedFallingBlock extends ColoredProjectile implements GeoEntity {
 
     private static final Logger LOGGER = LogUtils.getLogger();
     public BlockState blockState = Blocks.SAND.defaultBlockState();
@@ -93,7 +96,11 @@ public class EnchantedFallingBlock extends ColoredProjectile implements IAnimata
     }
 
     public static boolean canFall(Level level, BlockPos pos, LivingEntity owner, SpellStats spellStats) {
-        if (level.isEmptyBlock(pos)  || !level.getFluidState(pos).isEmpty() || (level.getBlockEntity(pos) != null && !(level.getBlockEntity(pos) instanceof MageBlockTile || level.getBlockEntity(pos) instanceof SkullBlockEntity))) {
+        if (level.isEmptyBlock(pos)
+                || !level.getFluidState(pos).isEmpty()
+                || level.getBlockState(pos).is(BlockTagProvider.RELOCATION_NOT_SUPPORTED)
+                || (level.getBlockEntity(pos) != null && !(level.getBlockEntity(pos) instanceof MageBlockTile
+                || level.getBlockEntity(pos) instanceof SkullBlockEntity))) {
             return false;
         }
         return BlockUtil.canBlockBeHarvested(spellStats, level, pos) && BlockUtil.destroyRespectsClaim(owner, level, pos);
@@ -171,7 +178,7 @@ public class EnchantedFallingBlock extends ColoredProjectile implements IAnimata
                 }
             }
 
-            if (!this.onGround && !isConcreteInWater) {
+            if (!this.onGround() && !isConcreteInWater) {
                 if (!this.level.isClientSide && (this.time > 100 && (blockpos.getY() <= this.level.getMinBuildHeight() || blockpos.getY() > this.level.getMaxBuildHeight()) || this.time > 600)) {
                     if (this.dropItem && this.level.getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
                         this.spawnAtLocation(block);
@@ -221,8 +228,11 @@ public class EnchantedFallingBlock extends ColoredProjectile implements IAnimata
 
                         try {
                             blockentity.load(this.blockData);
+                            if(blockentity instanceof SkullBlockEntity sk && this.blockData != null && this.blockData.contains("SkullOwner")){
+                                sk.setOwner(new GameProfile(null, this.blockData.getString("SkullOwner")));
+                            }
                         } catch (Exception exception) {
-
+                            exception.printStackTrace();
                         }
 
                         blockentity.setChanged();
@@ -237,14 +247,22 @@ public class EnchantedFallingBlock extends ColoredProjectile implements IAnimata
             } else if (this.dropItem && this.level.getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
                 this.discard();
                 this.callOnBrokenAfterFall(block, blockpos);
-                this.spawnAtLocation(block);
+                ItemStack itemstack = new ItemStack(block);
+                if(this.blockData != null && !itemstack.hasTag() && this.getBlockState().is(Blocks.PLAYER_HEAD)){
+                    itemstack.setTag(this.blockData);
+                }
+                this.spawnAtLocation(itemstack);
                 return null;
             }
         } else {
             this.discard();
             if (this.dropItem && this.level.getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
                 this.callOnBrokenAfterFall(block, blockpos);
-                this.spawnAtLocation(block);
+                ItemStack itemstack = new ItemStack(block);
+                if(this.blockData != null && !itemstack.hasTag() && this.getBlockState().is(Blocks.PLAYER_HEAD)){
+                    itemstack.setTag(this.blockData);
+                }
+                this.spawnAtLocation(itemstack);
             }
         }
         return null;
@@ -273,10 +291,11 @@ public class EnchantedFallingBlock extends ColoredProjectile implements IAnimata
 
         Entity owner = this.getOwner();
         DamageSource damagesource;
+        // TODO: check falling block sources
         if (owner == null) {
-            damagesource = new IndirectEntityDamageSource("an_enchantedBlock", this, owner);
+            damagesource = level.damageSources().thrown(this, owner);
         } else {
-            damagesource = new IndirectEntityDamageSource("an_enchantedBlock", this, owner);
+            damagesource = level.damageSources().thrown(this, owner);
             if (owner instanceof LivingEntity livingOwner) {
                 livingOwner.setLastHurtMob(entity);
             }
@@ -333,7 +352,7 @@ public class EnchantedFallingBlock extends ColoredProjectile implements IAnimata
         return true;
     }
 
-    public Packet<?> getAddEntityPacket() {
+    public Packet<ClientGamePacketListener> getAddEntityPacket() {
         return new ClientboundAddEntityPacket(this, Block.getId(this.getBlockState()));
     }
 
@@ -363,14 +382,13 @@ public class EnchantedFallingBlock extends ColoredProjectile implements IAnimata
             if (i < 0) {
                 return false;
             } else {
-                Predicate<Entity> predicate;
+                Predicate<Entity> predicate = EntitySelector.NO_CREATIVE_OR_SPECTATOR.and(EntitySelector.LIVING_ENTITY_STILL_ALIVE);
                 DamageSource damagesource;
                 if (this.blockState.getBlock() instanceof Fallable fallable) {
-                    predicate = fallable.getHurtsEntitySelector();
-                    damagesource = fallable.getFallDamageSource();
+                    damagesource = fallable.getFallDamageSource(this);
                 } else {
-                    predicate = EntitySelector.NO_SPECTATORS;
-                    damagesource = DamageSource.FALLING_BLOCK;
+
+                    damagesource = level.damageSources().fallingBlock(this);
                 }
 
                 float f = (float) Math.min(Mth.floor((float) i * this.fallDamagePerDistance), this.fallDamageMax);
@@ -414,7 +432,7 @@ public class EnchantedFallingBlock extends ColoredProjectile implements IAnimata
      */
     protected void readAdditionalSaveData(CompoundTag pCompound) {
         super.readAdditionalSaveData(pCompound);
-        this.blockState = NbtUtils.readBlockState(pCompound.getCompound("BlockState"));
+        this.blockState = NbtUtils.readBlockState(this.level().holderLookup(Registries.BLOCK), pCompound.getCompound("BlockState"));
         this.time = pCompound.getInt("Time");
         if (pCompound.contains("HurtEntities", 99)) {
             this.hurtEntities = pCompound.getBoolean("HurtEntities");
@@ -477,12 +495,12 @@ public class EnchantedFallingBlock extends ColoredProjectile implements IAnimata
 
 
     @Override
-    public void registerControllers(AnimationData data) {
+    public void registerControllers(AnimatableManager.ControllerRegistrar data) {
 
     }
 
     @Override
-    public AnimationFactory getFactory() {
-        return GeckoLibUtil.createFactory(this);
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
+        return GeckoLibUtil.createInstanceCache(this);
     }
 }

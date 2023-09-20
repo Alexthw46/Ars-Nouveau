@@ -6,7 +6,8 @@ import com.google.gson.JsonObject;
 import com.hollingsworth.arsnouveau.ArsNouveau;
 import com.hollingsworth.arsnouveau.common.block.tile.EnchantingApparatusTile;
 import com.hollingsworth.arsnouveau.common.util.PortUtil;
-import com.hollingsworth.arsnouveau.setup.RecipeRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.RecipeRegistry;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -28,7 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.hollingsworth.arsnouveau.api.RegistryHelper.getRegistryName;
+import static com.hollingsworth.arsnouveau.setup.registry.RegistryHelper.getRegistryName;
 
 public class EnchantmentRecipe extends EnchantingApparatusRecipe {
     public Enchantment enchantment;
@@ -93,7 +94,7 @@ public class EnchantmentRecipe extends EnchantingApparatusRecipe {
     }
 
     @Override
-    public ItemStack assemble(EnchantingApparatusTile inv) {
+    public ItemStack assemble(EnchantingApparatusTile inv, RegistryAccess p_267165_) {
         ItemStack stack = inv.getStack().getItem() == Items.BOOK ? new ItemStack(Items.ENCHANTED_BOOK) : inv.getStack().copy();
         Map<Enchantment, Integer> enchantments = EnchantmentHelper.getEnchantments(stack);
         enchantments.put(enchantment, enchantLevel);
@@ -101,10 +102,9 @@ public class EnchantmentRecipe extends EnchantingApparatusRecipe {
         return stack;
     }
 
-
     @Override
     public ItemStack getResult(List<ItemStack> pedestalItems, ItemStack reagent, EnchantingApparatusTile tile) {
-        return assemble(tile);
+        return assemble(tile, null);
     }
 
     @Override

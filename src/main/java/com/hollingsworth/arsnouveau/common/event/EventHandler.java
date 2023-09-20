@@ -9,6 +9,7 @@ import com.hollingsworth.arsnouveau.api.loot.DungeonLootTables;
 import com.hollingsworth.arsnouveau.api.perk.PerkAttributes;
 import com.hollingsworth.arsnouveau.api.recipe.MultiRecipeWrapper;
 import com.hollingsworth.arsnouveau.api.registry.CasterTomeRegistry;
+import com.hollingsworth.arsnouveau.api.registry.RitualRegistry;
 import com.hollingsworth.arsnouveau.api.ritual.RitualEventQueue;
 import com.hollingsworth.arsnouveau.api.util.BlockUtil;
 import com.hollingsworth.arsnouveau.api.util.CuriosUtil;
@@ -22,17 +23,20 @@ import com.hollingsworth.arsnouveau.common.datagen.ItemTagProvider;
 import com.hollingsworth.arsnouveau.common.items.EnchantersSword;
 import com.hollingsworth.arsnouveau.common.items.RitualTablet;
 import com.hollingsworth.arsnouveau.common.items.VoidJar;
+import com.hollingsworth.arsnouveau.common.network.Networking;
+import com.hollingsworth.arsnouveau.common.network.PacketJoinedServer;
 import com.hollingsworth.arsnouveau.common.perk.JumpHeightPerk;
 import com.hollingsworth.arsnouveau.common.perk.LootingPerk;
-import com.hollingsworth.arsnouveau.common.potions.ModPotions;
+import com.hollingsworth.arsnouveau.setup.registry.ModPotions;
 import com.hollingsworth.arsnouveau.common.ritual.DenySpawnRitual;
 import com.hollingsworth.arsnouveau.common.ritual.RitualFlight;
 import com.hollingsworth.arsnouveau.common.spell.effect.EffectGlide;
 import com.hollingsworth.arsnouveau.common.util.PortUtil;
-import com.hollingsworth.arsnouveau.setup.BlockRegistry;
-import com.hollingsworth.arsnouveau.setup.Config;
-import com.hollingsworth.arsnouveau.setup.ItemsRegistry;
-import com.hollingsworth.arsnouveau.setup.VillagerRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.BlockRegistry;
+import com.hollingsworth.arsnouveau.setup.config.Config;
+import com.hollingsworth.arsnouveau.setup.registry.ItemsRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.VillagerRegistry;
+import com.hollingsworth.arsnouveau.setup.reward.Rewards;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
@@ -43,8 +47,7 @@ import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.damagesource.EntityDamageSource;
+import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
@@ -100,7 +103,7 @@ public class EventHandler {
                     @Override
                     public void tickEvent(TickEvent event) {
                         if(event instanceof TickEvent.ServerTickEvent serverTickEvent){
-                            CasterTomeRegistry.reloadTomeData(serverTickEvent.getServer().getRecipeManager());
+                            CasterTomeRegistry.reloadTomeData(serverTickEvent.getServer().getRecipeManager(), ((TickEvent.ServerTickEvent) event).getServer().getLevel(Level.OVERWORLD));
                         }
                         expired = true;
                     }
@@ -160,7 +163,7 @@ public class EventHandler {
 
     @SubscribeEvent
     public static void livingAttackEvent(LivingAttackEvent e) {
-        if (e.getSource() == DamageSource.HOT_FLOOR && e.getEntity() != null && !e.getEntity().getCommandSenderWorld().isClientSide) {
+        if (e.getSource().is(DamageTypes.HOT_FLOOR) && e.getEntity() != null && !e.getEntity().getCommandSenderWorld().isClientSide) {
             Level world = e.getEntity().level;
             if (world.getBlockState(e.getEntity().blockPosition()).getBlock() instanceof LavaLily) {
                 e.setCanceled(true);
@@ -169,11 +172,9 @@ public class EventHandler {
     }
 
     @SubscribeEvent
-    public static void livingSpawnEvent(LivingSpawnEvent.CheckSpawn checkSpawn) {
+    public static void livingSpawnEvent(MobSpawnEvent.FinalizeSpawn checkSpawn) {
         if(checkSpawn.getLevel() instanceof Level level && !level.isClientSide){
-            if(RitualEventQueue.getRitual(level, DenySpawnRitual.class, ritu -> ritu.denySpawn(checkSpawn)) != null){
-                checkSpawn.setResult(Event.Result.DENY);
-            }
+             RitualEventQueue.getRitual(level, DenySpawnRitual.class, ritu -> ritu.denySpawn(checkSpawn));
         }
     }
 
@@ -191,6 +192,12 @@ public class EventHandler {
     public static void playerLogin(PlayerEvent.PlayerLoggedInEvent e) {
         if (e.getEntity().getCommandSenderWorld().isClientSide)
             return;
+        if(e.getEntity() instanceof ServerPlayer serverPlayer) {
+            boolean isContributor = Rewards.CONTRIBUTORS.contains(serverPlayer.getUUID());
+            if(isContributor) {
+                Networking.sendToPlayerClient(new PacketJoinedServer(true), (ServerPlayer) e.getEntity());
+            }
+        }
         CompoundTag tag = e.getEntity().getPersistentData().getCompound(Player.PERSISTED_NBT_TAG);
         String book_tag = "an_book_";
         String light_tag = "an_light_";
@@ -243,13 +250,13 @@ public class EventHandler {
 
     @SubscribeEvent
     public static void entityHurt(LivingHurtEvent e) {
-        if (e.getEntity() != null && e.getEntity().hasEffect(ModPotions.DEFENCE_EFFECT.get()) && (e.getSource() == DamageSource.MAGIC || e.getSource() == DamageSource.GENERIC || e.getSource() instanceof EntityDamageSource)) {
+        if (e.getEntity() != null && e.getEntity().hasEffect(ModPotions.DEFENCE_EFFECT.get()) && (e.getSource().is(DamageTypes.MAGIC) || e.getSource().is(DamageTypes.GENERIC) || e.getSource().is(DamageTypes.MOB_ATTACK))) {
             if (e.getAmount() > 0.5) {
                 e.setAmount((float) Math.max(0.5, e.getAmount() - 1.0f - e.getEntity().getEffect(ModPotions.DEFENCE_EFFECT.get()).getAmplifier()));
             }
         }
 
-        if (e.getEntity() != null && e.getSource() == DamageSource.LIGHTNING_BOLT && e.getEntity().hasEffect(ModPotions.SHOCKED_EFFECT.get())) {
+        if (e.getEntity() != null && e.getSource().is(DamageTypes.LIGHTNING_BOLT) && e.getEntity().hasEffect(ModPotions.SHOCKED_EFFECT.get())) {
             float damage = e.getAmount() + 3.0f + 3.0f * e.getEntity().getEffect(ModPotions.SHOCKED_EFFECT.get()).getAmplifier();
             e.setAmount(Math.max(0, damage));
         }
@@ -262,11 +269,11 @@ public class EventHandler {
             return;
         double warding = PerkUtil.valueOrZero(entity, PerkAttributes.WARDING.get());
         double feather = PerkUtil.valueOrZero(entity, PerkAttributes.FEATHER.get());
-        if (e.getSource().isMagic()) {
+        if (e.getSource().is(DamageTypes.MAGIC)) {
             e.setAmount((float) (e.getAmount() - warding));
         }
 
-        if (e.getSource().isFall()) {
+        if (e.getSource().is(DamageTypes.FALL)) {
             e.setAmount((float) (e.getAmount() - (e.getAmount() * feather)));
         }
     }
@@ -323,6 +330,7 @@ public class EventHandler {
         PathCommand.register(event.getDispatcher());
         ToggleLightCommand.register(event.getDispatcher());
         AddTomeCommand.register(event.getDispatcher());
+        SummonAnimHeadCommand.register(event.getDispatcher());
     }
 
     @SubscribeEvent
@@ -354,7 +362,7 @@ public class EventHandler {
             level2.add((trader, rand) -> itemToEmer(ItemsRegistry.WILDEN_SPIKE, 4, 8, 12));
             level2.add((trader, rand) -> itemToEmer(ItemsRegistry.WILDEN_WING, 4, 8, 12));
 
-            List<RitualTablet> tablets = new ArrayList<>(ArsNouveauAPI.getInstance().getRitualItemMap().values());
+            List<RitualTablet> tablets = new ArrayList<>(RitualRegistry.getRitualItemMap().values());
             for(RitualTablet tablet : tablets){
                 if(tablet.ritual.canBeTraded()) {
                     level3.add((trader, rand) -> emerToItem(tablet, 4, 1, 12));

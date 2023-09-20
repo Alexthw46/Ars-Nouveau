@@ -6,11 +6,10 @@ import com.hollingsworth.arsnouveau.common.advancement.ANCriteriaTriggers;
 import com.hollingsworth.arsnouveau.common.entity.WildenChimera;
 import com.hollingsworth.arsnouveau.common.network.Networking;
 import com.hollingsworth.arsnouveau.common.network.PacketAnimEntity;
-import com.hollingsworth.arsnouveau.setup.Config;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.ai.goal.Goal;
-import net.minecraft.world.level.Explosion;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.EnumSet;
@@ -91,7 +90,7 @@ public class ChimeraDiveGoal extends Goal {
                 boss.orbitOffset = new Vec3(divePos.getX() + 0.5, divePos.getY(), divePos.getZ() + 0.5);
             }
         }
-        if ((isDiving && (boss.isOnGround() || BlockUtil.distanceFrom(boss.position, divePos) <= 1.0d) || (boss.orbitOffset != null && BlockUtil.distanceFrom(boss.position, boss.orbitOffset) <= 1.7d))) {
+        if ((isDiving && (boss.onGround() || BlockUtil.distanceFrom(boss.position, divePos) <= 1.0d) || (boss.orbitOffset != null && BlockUtil.distanceFrom(boss.position, boss.orbitOffset) <= 1.7d))) {
             makeExplosion();
             endGoal();
             return;
@@ -111,7 +110,7 @@ public class ChimeraDiveGoal extends Goal {
         boss.diveCooldown = (int) (300 + ParticleUtil.inRange(-100, 100) + boss.getCooldownModifier());
         boss.diving = false;
         finished = true;
-        ANCriteriaTriggers.rewardNearbyPlayers(ANCriteriaTriggers.CHIMERA_EXPLOSION, (ServerLevel) boss.level, new BlockPos(boss.position().x, boss.position.y, boss.position.z), 10);
+        ANCriteriaTriggers.rewardNearbyPlayers(ANCriteriaTriggers.CHIMERA_EXPLOSION, (ServerLevel) boss.level, BlockPos.containing(boss.position().x, boss.position.y, boss.position.z), 10);
         for(int i = 0; i < 40; i++){
             if(!boss.level.getBlockState(boss.getOnPos().below(i)).isAir()){
                 boss.setPos(boss.getX(), boss.getY() - i, boss.getZ());
@@ -122,11 +121,8 @@ public class ChimeraDiveGoal extends Goal {
     }
 
     public void makeExplosion() {
-        Explosion.BlockInteraction mode = net.minecraftforge.event.ForgeEventFactory.getMobGriefingEvent(this.boss.level, this.boss) ? Explosion.BlockInteraction.BREAK : Explosion.BlockInteraction.NONE;
-        if(!Config.CHIMERA_DIVE_DESTRUCTIVE.get()){
-            mode = Explosion.BlockInteraction.NONE;
-        }
-        boss.level.explode(boss, boss.getX() + 0.5, boss.getY(), boss.getZ() + 0.5, 4.5f, mode);
+        //TODO: restore destructive chimera config
+        boss.level.explode(boss, boss.getX() + 0.5, boss.getY(), boss.getZ() + 0.5, 4.5f, Level.ExplosionInteraction.MOB);
         if(boss.hasSpikes()) {
             ChimeraSpikeGoal.spawnAOESpikes(boss);
         }

@@ -2,56 +2,53 @@ package com.hollingsworth.arsnouveau.client.renderer.item;
 
 import com.hollingsworth.arsnouveau.api.spell.ISpellCaster;
 import com.hollingsworth.arsnouveau.api.util.CasterUtil;
-import com.hollingsworth.arsnouveau.client.ClientInfo;
 import com.hollingsworth.arsnouveau.client.particle.ParticleColor;
 import com.hollingsworth.arsnouveau.client.particle.ParticleLineData;
 import com.hollingsworth.arsnouveau.client.particle.ParticleUtil;
+import com.hollingsworth.arsnouveau.client.renderer.ANGeoModel;
 import com.hollingsworth.arsnouveau.common.items.SpellBow;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
-import software.bernie.geckolib3.core.processor.IBone;
-import software.bernie.geckolib3.core.util.Color;
-import software.bernie.geckolib3.geo.render.built.GeoBone;
-import software.bernie.geckolib3.geo.render.built.GeoModel;
-
-import javax.annotation.Nullable;
+import software.bernie.geckolib.cache.object.BakedGeoModel;
+import software.bernie.geckolib.cache.object.GeoBone;
+import software.bernie.geckolib.core.animatable.model.CoreGeoBone;
+import software.bernie.geckolib.core.object.Color;
 
 public class SpellBowRenderer extends FixedGeoItemRenderer<SpellBow> {
     public SpellBowRenderer() {
-        super(new SpellBowModel());
+        super(new ANGeoModel<SpellBow>("geo/spellbow.geo.json", "textures/item/spellbow.png", "animations/wand_animation.json"));
     }
 
     @Override
-    public void renderRecursively(GeoBone bone, PoseStack poseStack, VertexConsumer buffer, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
-        //we override the color getter for a specific bone, this means the other ones need to use the neutral color
+    public void renderRecursively(PoseStack poseStack, SpellBow animatable, GeoBone bone, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
         if (bone.getName().equals("gem")) {
             //NOTE: if the bone have a parent, the recursion will get here with the neutral color, making the color getter useless
-            super.renderRecursively(bone, poseStack, buffer, packedLight, packedOverlay, red, green, blue, alpha);
+            super.renderRecursively(poseStack, animatable, bone, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
         } else {
-            super.renderRecursively(bone, poseStack, buffer, packedLight, packedOverlay, Color.WHITE.getRed() / 255f, Color.WHITE.getGreen() / 255f, Color.WHITE.getBlue() / 255f, Color.WHITE.getAlpha() / 255f);
+            super.renderRecursively(poseStack, animatable, bone, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, Color.WHITE.getRed() / 255f, Color.WHITE.getGreen() / 255f, Color.WHITE.getBlue() / 255f, Color.WHITE.getAlpha() / 255f);
         }
     }
 
     @Override
-    public Color getRenderColor(Object animatable, float partialTick, PoseStack poseStack, @org.jetbrains.annotations.Nullable MultiBufferSource bufferSource, @org.jetbrains.annotations.Nullable VertexConsumer buffer, int packedLight) {
+    public Color getRenderColor(SpellBow animatable, float partialTick, int packedLight) {
         ParticleColor color = ParticleColor.defaultParticleColor();
         if (currentItemStack.hasTag()) {
-            color = ((SpellBow) animatable).getSpellCaster(currentItemStack).getColor();
+            color = animatable.getSpellCaster(currentItemStack).getColor();
         }
-        return Color.ofRGBA(color.toWrapper().r, color.toWrapper().g, color.toWrapper().b, 200);
+        return Color.ofRGBA(color.getRed(), color.getGreen(), color.getBlue(), 0.75f);
     }
 
     @Override
-    public void renderByItem(ItemStack itemStack, ItemTransforms.TransformType transformType, PoseStack stack, MultiBufferSource bufferIn, int combinedLightIn, int p_239207_6_) {
-        if (transformType == ItemTransforms.TransformType.FIRST_PERSON_RIGHT_HAND) {
+    public void renderByItem(ItemStack itemStack, ItemDisplayContext transformType, PoseStack stack, MultiBufferSource bufferIn, int combinedLightIn, int p_239207_6_) {
+        if (transformType == ItemDisplayContext.FIRST_PERSON_RIGHT_HAND) {
             Player player = Minecraft.getInstance().player;
             Vec3 playerPos = player.position().add(0, player.getEyeHeight(), 0);
             Vec3 look = player.getLookAngle(); // or getLook(partialTicks)
@@ -86,43 +83,42 @@ public class SpellBowRenderer extends FixedGeoItemRenderer<SpellBow> {
     }
 
     @Override
-    public void render(GeoModel model, Object animatable, float partialTicks, RenderType type, PoseStack matrixStackIn, @Nullable MultiBufferSource renderTypeBuffer, @Nullable VertexConsumer vertexBuilder, int packedLightIn, int packedOverlayIn, float red, float green, float blue, float alpha) {
-        IBone top = model.getBone("bow_top").get();
-        IBone gem = model.getBone("gem").get();
-        IBone bottom = model.getBone("bow_bot").get();
-        float outerAngle = ((ClientInfo.ticksInGame + partialTicks) / 10.0f) % 360;
-        top.setRotationZ((float) Math.toRadians(-10.0));
-        top.setRotationY(0.0f);
-        top.setRotationX(0.0f);
+    public void renderFinal(PoseStack poseStack, SpellBow animatable, BakedGeoModel model, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTicks, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
+        CoreGeoBone top = model.getBone("bow_top").get();
+        CoreGeoBone gem = model.getBone("gem").get();
+        CoreGeoBone bottom = model.getBone("bow_bot").get();
+        double ticks = animatable.getTick(animatable);
+        float outerAngle = (float) (((ticks + partialTicks) / 10.0f) % 360);
+        top.setRotZ((float) Math.toRadians(-10.0));
+        top.setRotY(0.0f);
+        top.setRotX(0.0f);
 
-        bottom.setRotationZ((float) Math.toRadians(10f));
-        bottom.setRotationY(0);
-        bottom.setRotationX((float) Math.toRadians(-180.0f));
+        bottom.setRotZ((float) Math.toRadians(10f));
+        bottom.setRotY(0);
+        bottom.setRotX((float) Math.toRadians(-180.0f));
 
 
         if (Minecraft.getInstance().player.getMainHandItem().equals(currentItemStack)) {
             // System.out.println(72000 - Minecraft.getInstance().player.getItemInUseCount());
-            int timeHeld = (int) (72000 - Minecraft.getInstance().player.getUseItemRemainingTicks() + partialTicks);
+            int timeHeld = 72000 - Minecraft.getInstance().player.getUseItemRemainingTicks();
 
             if (timeHeld != 0 && timeHeld != 72000) {
-                top.setRotationZ((float) (Math.toRadians(-10) - Math.toRadians(timeHeld) * 2.0f));
-                bottom.setRotationZ((float) (Math.toRadians(-10f) + Math.toRadians(timeHeld) * 2.0f));
-                outerAngle = ((ClientInfo.ticksInGame + partialTicks) / 5.0f) % 360;
+                top.setRotZ((float) (Math.toRadians(-10) - Math.toRadians(timeHeld) * 2.0f));
+                bottom.setRotZ((float) (Math.toRadians(-10f) + Math.toRadians(timeHeld) * 2.0f));
+                outerAngle = (float) (((ticks + partialTicks) / 5.0f) % 360);
                 if (timeHeld >= 19) {
-                    top.setRotationZ((float) (Math.toRadians(-10) - Math.toRadians(19) * 2.0f));
-                    bottom.setRotationZ((float) (Math.toRadians(-10) + Math.toRadians(19) * 2.0f));
-                    outerAngle = ((ClientInfo.ticksInGame + partialTicks) / 3.0f) % 360;
+                    top.setRotZ((float) (Math.toRadians(-10) - Math.toRadians(19) * 2.0f));
+                    bottom.setRotZ((float) (Math.toRadians(-10) + Math.toRadians(19) * 2.0f));
+                    outerAngle = (float) (((ticks + partialTicks) / 3.0f) % 360);
                 }
             }
         }
-        gem.setRotationX(outerAngle);
-        gem.setRotationY(outerAngle);
-
-        super.render(model, animatable, partialTicks, type, matrixStackIn, renderTypeBuffer, vertexBuilder, packedLightIn, packedOverlayIn, red, green, blue, alpha);
+        gem.setRotX(outerAngle);
+        gem.setRotY(outerAngle);
     }
 
     @Override
-    public RenderType getRenderType(Object animatable, float partialTicks, PoseStack stack, @Nullable MultiBufferSource renderTypeBuffer, @Nullable VertexConsumer vertexBuilder, int packedLightIn, ResourceLocation textureLocation) {
-        return RenderType.entityTranslucent(textureLocation);
+    public RenderType getRenderType(SpellBow animatable, ResourceLocation texture, @org.jetbrains.annotations.Nullable MultiBufferSource bufferSource, float partialTick) {
+        return RenderType.entityTranslucent(texture);
     }
 }

@@ -2,6 +2,7 @@ package com.hollingsworth.arsnouveau.common.items;
 
 import com.google.common.collect.Lists;
 import com.hollingsworth.arsnouveau.api.item.ICasterTool;
+import com.hollingsworth.arsnouveau.api.mana.IManaDiscountEquipment;
 import com.hollingsworth.arsnouveau.api.spell.*;
 import com.hollingsworth.arsnouveau.api.spell.wrapped_caster.LivingCaster;
 import com.hollingsworth.arsnouveau.api.spell.wrapped_caster.PlayerCaster;
@@ -10,8 +11,6 @@ import com.hollingsworth.arsnouveau.common.entity.EntitySpellArrow;
 import com.hollingsworth.arsnouveau.common.spell.augment.AugmentSplit;
 import com.hollingsworth.arsnouveau.common.spell.method.MethodProjectile;
 import com.hollingsworth.arsnouveau.common.util.PortUtil;
-import com.mojang.math.Quaternion;
-import com.mojang.math.Vector3f;
 import net.minecraft.advancements.CriteriaTriggers;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.nbt.CompoundTag;
@@ -35,11 +34,12 @@ import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
-import org.jetbrains.annotations.NotNull;
-import software.bernie.geckolib3.core.IAnimatable;
-import software.bernie.geckolib3.core.manager.AnimationData;
-import software.bernie.geckolib3.core.manager.AnimationFactory;
-import software.bernie.geckolib3.util.GeckoLibUtil;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
+import software.bernie.geckolib.animatable.GeoItem;
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.util.GeckoLibUtil;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -47,7 +47,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
-public class SpellCrossbow extends CrossbowItem implements IAnimatable, ICasterTool {
+public class SpellCrossbow extends CrossbowItem implements GeoItem, ICasterTool, IManaDiscountEquipment {
 
     public SpellCrossbow(Properties pProperties) {
         super(pProperties);
@@ -220,10 +220,9 @@ public class SpellCrossbow extends CrossbowItem implements IAnimatable, ICasterT
                 crossbowattackmob.shootCrossbowProjectile(crossbowattackmob.getTarget(), pCrossbowStack, projectile, pProjectileAngle);
             } else {
                 Vec3 vec31 = pShooter.getUpVector(1.0F);
-                Quaternion quaternion = new Quaternion(new Vector3f(vec31), pProjectileAngle, true);
+                Quaternionf quaternionf = (new Quaternionf()).setAngleAxis(pProjectileAngle * ((float)Math.PI / 180F), vec31.x, vec31.y, vec31.z);
                 Vec3 vec3 = pShooter.getViewVector(1.0F);
-                Vector3f vector3f = new Vector3f(vec3);
-                vector3f.transform(quaternion);
+                Vector3f vector3f = vec3.toVector3f().rotate(quaternionf);
                 projectile.shoot(vector3f.x(), vector3f.y(), vector3f.z(), pVelocity, pInaccuracy);
             }
 
@@ -326,13 +325,9 @@ public class SpellCrossbow extends CrossbowItem implements IAnimatable, ICasterT
         return ICasterTool.super.setSpell(caster, player, hand, stack, spell);
     }
 
-    @NotNull
     @Override
-    public ISpellCaster getSpellCaster(ItemStack stack) {
-        return new BasicReductionCaster(stack, (spell -> {
-            spell.addDiscount(MethodProjectile.INSTANCE.getCastingCost());
-            return spell;
-        }));
+    public int getManaDiscount(ItemStack i, Spell spell) {
+        return MethodProjectile.INSTANCE.getCastingCost();
     }
 
     @Override
@@ -359,12 +354,12 @@ public class SpellCrossbow extends CrossbowItem implements IAnimatable, ICasterT
     }
 
     @Override
-    public void registerControllers(AnimationData data) {}
+    public void registerControllers(AnimatableManager.ControllerRegistrar data) {}
 
-    public AnimationFactory factory = GeckoLibUtil.createFactory(this);
+    public AnimatableInstanceCache factory = GeckoLibUtil.createInstanceCache(this);
 
     @Override
-    public AnimationFactory getFactory() {
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
         return factory;
     }
 }

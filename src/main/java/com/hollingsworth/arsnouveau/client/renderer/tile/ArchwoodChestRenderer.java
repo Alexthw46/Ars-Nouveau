@@ -1,8 +1,9 @@
 package com.hollingsworth.arsnouveau.client.renderer.tile;
 
+import com.hollingsworth.arsnouveau.ArsNouveau;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.math.Vector3f;
+import com.mojang.math.Axis;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -22,8 +23,6 @@ import net.minecraft.world.level.block.entity.LidBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.ChestType;
 
-import java.util.Calendar;
-
 public class ArchwoodChestRenderer<T extends BlockEntity & LidBlockEntity> implements BlockEntityRenderer<T> {
 
     private final ModelPart lid;
@@ -35,14 +34,9 @@ public class ArchwoodChestRenderer<T extends BlockEntity & LidBlockEntity> imple
     private final ModelPart doubleRightLid;
     private final ModelPart doubleRightBottom;
     private final ModelPart doubleRightLock;
-    private boolean xmasTextures;
-    public static Block invBlock = null;
+
 
     public ArchwoodChestRenderer(BlockEntityRendererProvider.Context context) {
-        Calendar calendar = Calendar.getInstance();
-        if (calendar.get(Calendar.MONTH) + 1 == 12 && calendar.get(Calendar.DATE) >= 24 && calendar.get(Calendar.DATE) <= 26) {
-            this.xmasTextures = true;
-        }
         ModelPart modelpart = context.bakeLayer(ModelLayers.CHEST);
         this.bottom = modelpart.getChild("bottom");
         this.lid = modelpart.getChild("lid");
@@ -69,7 +63,7 @@ public class ArchwoodChestRenderer<T extends BlockEntity & LidBlockEntity> imple
             ms.pushPose();
             float f = blockstate.getValue(ChestBlock.FACING).toYRot();
             ms.translate(0.5D, 0.5D, 0.5D);
-            ms.mulPose(Vector3f.YP.rotationDegrees(-f));
+            ms.mulPose(Axis.YP.rotationDegrees(-f));
             ms.translate(-0.5D, -0.5D, -0.5D);
             DoubleBlockCombiner.NeighborCombineResult<? extends ChestBlockEntity> icallbackwrapper;
             if (flag) {
@@ -108,14 +102,15 @@ public class ArchwoodChestRenderer<T extends BlockEntity & LidBlockEntity> imple
     }
 
     protected Material getMaterial(T tileEntity, ChestType chestType) {
+        String type = "archwood";
         switch (chestType) {
             case LEFT:
-                return new Material(Sheets.CHEST_SHEET, new ResourceLocation("ars_nouveau", "entity/archwood_chest_left"));
+                return new Material(Sheets.CHEST_SHEET, new ResourceLocation(ArsNouveau.MODID, "model/chest/" + type + "/left"));
             case RIGHT:
-                return new Material(Sheets.CHEST_SHEET, new ResourceLocation("ars_nouveau", "entity/archwood_chest_right"));
+                return new Material(Sheets.CHEST_SHEET, new ResourceLocation(ArsNouveau.MODID, "model/chest/" + type + "/right"));
             case SINGLE:
             default:
-                return new Material(Sheets.CHEST_SHEET, new ResourceLocation("ars_nouveau", "entity/archwood_chest"));
+                return new Material(Sheets.CHEST_SHEET,new ResourceLocation(ArsNouveau.MODID, "model/chest/" + type + "/" + type));
         }
     }
 }

@@ -1,11 +1,12 @@
 package com.hollingsworth.arsnouveau.common.datagen;
 
 import com.hollingsworth.arsnouveau.ArsNouveau;
-import com.hollingsworth.arsnouveau.setup.BlockRegistry;
-import com.hollingsworth.arsnouveau.setup.ItemsRegistry;
-import net.minecraft.data.DataGenerator;
-import net.minecraft.data.tags.BlockTagsProvider;
-import net.minecraft.data.tags.ItemTagsProvider;
+import com.hollingsworth.arsnouveau.setup.registry.BlockRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.ItemsRegistry;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.data.PackOutput;
+import net.minecraft.data.tags.IntrinsicHolderTagsProvider;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
@@ -14,9 +15,10 @@ import net.minecraft.world.item.Items;
 import net.minecraftforge.common.Tags;
 import net.minecraftforge.common.data.ExistingFileHelper;
 import net.minecraftforge.versions.forge.ForgeVersion;
-import org.jetbrains.annotations.Nullable;
 
-public class ItemTagProvider extends ItemTagsProvider {
+import java.util.concurrent.CompletableFuture;
+
+public class ItemTagProvider extends IntrinsicHolderTagsProvider<Item> {
     public static TagKey<Item> SUMMON_BED_ITEMS = ItemTags.create(new ResourceLocation(ArsNouveau.MODID, "summon_bed"));
     public static TagKey<Item> SOURCE_GEM_TAG = ItemTags.create(new ResourceLocation("forge:gems/source"));
     public static TagKey<Item> SOURCE_GEM_BLOCK_TAG = ItemTags.create(new ResourceLocation("forge:storage_blocks/source"));
@@ -28,13 +30,12 @@ public class ItemTagProvider extends ItemTagsProvider {
     public static final TagKey<Item> SUMMON_SHARDS_TAG = ItemTags.create(new ResourceLocation(ArsNouveau.MODID, "magic_shards"));
     public static TagKey<Item> JAR_ITEM_BLACKLIST = ItemTags.create(new ResourceLocation(ArsNouveau.MODID, "interact_jar_blacklist"));
 
-    public ItemTagProvider(DataGenerator p_126530_, BlockTagsProvider p_126531_, String modId, @Nullable ExistingFileHelper existingFileHelper) {
-        super(p_126530_, p_126531_, modId, existingFileHelper);
+    public ItemTagProvider(PackOutput output, CompletableFuture<HolderLookup.Provider> future, ExistingFileHelper helper) {
+        super(output, Registries.ITEM, future, item -> item.builtInRegistryHolder().key(), ArsNouveau.MODID, helper);
     }
 
     @Override
-    protected void addTags() {
-
+    protected void addTags(HolderLookup.Provider pProvider) {
         this.tag(SUMMON_SHARDS_TAG)
                 .add(ItemsRegistry.DRYGMY_SHARD.get(),
                         ItemsRegistry.STARBUNCLE_SHARD.get(),
@@ -43,7 +44,7 @@ public class ItemTagProvider extends ItemTagsProvider {
 
         this.tag(BERRY_TAG).add(BlockRegistry.SOURCEBERRY_BUSH.asItem());
 
-        this.tag(ItemTags.MUSIC_DISCS).add(ItemsRegistry.FIREL_DISC.get());
+        this.tag(ItemTags.MUSIC_DISCS).add(ItemsRegistry.FIREL_DISC.get(), ItemsRegistry.WILD_HUNT.get(), ItemsRegistry.SOUND_OF_GLASS.get());
         this.tag(MAGIC_FOOD)
                 .add(ItemsRegistry.SOURCE_BERRY_PIE.get(),
                         ItemsRegistry.SOURCE_BERRY_ROLL.get());
@@ -163,34 +164,34 @@ public class ItemTagProvider extends ItemTagsProvider {
                 ItemsRegistry.APPRENTICE_SPELLBOOK.asItem(),
                 ItemsRegistry.CREATIVE_SPELLBOOK.asItem());
 
-        this.tag(Tags.Items.ARMORS).add(ItemsRegistry.NOVICE_ROBES.asItem(),
-                ItemsRegistry.APPRENTICE_ROBES.asItem(),
-                ItemsRegistry.ARCHMAGE_ROBES.asItem(),
-                ItemsRegistry.NOVICE_BOOTS.asItem(),
-                ItemsRegistry.APPRENTICE_BOOTS.asItem(),
-                ItemsRegistry.ARCHMAGE_BOOTS.asItem(),
-                ItemsRegistry.NOVICE_LEGGINGS.asItem(),
-                ItemsRegistry.APPRENTICE_LEGGINGS.asItem(),
-                ItemsRegistry.ARCHMAGE_LEGGINGS.asItem(),
-                ItemsRegistry.NOVICE_HOOD.asItem(),
-                ItemsRegistry.APPRENTICE_HOOD.asItem(),
-                ItemsRegistry.ARCHMAGE_HOOD.asItem());
+        this.tag(Tags.Items.ARMORS).add(ItemsRegistry.SORCERER_ROBES.asItem(),
+                ItemsRegistry.ARCANIST_ROBES.asItem(),
+                ItemsRegistry.BATTLEMAGE_ROBES.asItem(),
+                ItemsRegistry.SORCERER_BOOTS.asItem(),
+                ItemsRegistry.ARCANIST_BOOTS.asItem(),
+                ItemsRegistry.BATTLEMAGE_BOOTS.asItem(),
+                ItemsRegistry.SORCERER_LEGGINGS.asItem(),
+                ItemsRegistry.ARCANIST_LEGGINGS.asItem(),
+                ItemsRegistry.BATTLEMAGE_LEGGINGS.asItem(),
+                ItemsRegistry.SORCERER_HOOD.asItem(),
+                ItemsRegistry.ARCANIST_HOOD.asItem(),
+                ItemsRegistry.BATTLEMAGE_HOOD.asItem());
 
         this.tag(Tags.Items.ARMORS_BOOTS)
-                .add(ItemsRegistry.NOVICE_BOOTS.asItem(),
-                        ItemsRegistry.APPRENTICE_BOOTS.asItem(),
-                        ItemsRegistry.ARCHMAGE_BOOTS.asItem());
+                .add(ItemsRegistry.SORCERER_BOOTS.asItem(),
+                        ItemsRegistry.ARCANIST_BOOTS.asItem(),
+                        ItemsRegistry.BATTLEMAGE_BOOTS.asItem());
         this.tag(Tags.Items.ARMORS_CHESTPLATES)
-                .add(ItemsRegistry.NOVICE_ROBES.asItem(),
-                        ItemsRegistry.APPRENTICE_ROBES.asItem(),
-                        ItemsRegistry.ARCHMAGE_ROBES.asItem());
+                .add(ItemsRegistry.SORCERER_ROBES.asItem(),
+                        ItemsRegistry.ARCANIST_ROBES.asItem(),
+                        ItemsRegistry.BATTLEMAGE_ROBES.asItem());
         this.tag(Tags.Items.ARMORS_HELMETS)
-                .add(ItemsRegistry.NOVICE_HOOD.asItem(),
-                        ItemsRegistry.APPRENTICE_HOOD.asItem(),
-                        ItemsRegistry.ARCHMAGE_HOOD.asItem());
-        this.tag(Tags.Items.ARMORS_LEGGINGS).add(ItemsRegistry.NOVICE_LEGGINGS.asItem(),
-                ItemsRegistry.APPRENTICE_LEGGINGS.asItem(),
-                ItemsRegistry.ARCHMAGE_LEGGINGS.asItem());
+                .add(ItemsRegistry.SORCERER_HOOD.asItem(),
+                        ItemsRegistry.ARCANIST_HOOD.asItem(),
+                        ItemsRegistry.BATTLEMAGE_HOOD.asItem());
+        this.tag(Tags.Items.ARMORS_LEGGINGS).add(ItemsRegistry.SORCERER_LEGGINGS.asItem(),
+                ItemsRegistry.ARCANIST_LEGGINGS.asItem(),
+                ItemsRegistry.BATTLEMAGE_LEGGINGS.asItem());
 
         this.tag(Tags.Items.CHESTS).add(BlockRegistry.ARCHWOOD_CHEST.asItem());
         this.tag(Tags.Items.CHESTS_WOODEN).add(BlockRegistry.ARCHWOOD_CHEST.asItem());

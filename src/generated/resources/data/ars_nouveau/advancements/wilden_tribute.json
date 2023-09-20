@@ -33,5 +33,6 @@
     [
       "has_wilden_tribute"
     ]
-  ]
+  ],
+  "sends_telemetry_event": false
 }

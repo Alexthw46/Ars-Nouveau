@@ -6,8 +6,8 @@ import com.google.gson.JsonObject;
 import com.hollingsworth.arsnouveau.ArsNouveau;
 import com.hollingsworth.arsnouveau.api.enchanting_apparatus.EnchantingApparatusRecipe;
 import com.hollingsworth.arsnouveau.common.block.tile.ImbuementTile;
-import com.hollingsworth.arsnouveau.setup.RecipeRegistry;
-import net.minecraft.core.Registry;
+import com.hollingsworth.arsnouveau.setup.registry.RecipeRegistry;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
@@ -20,6 +20,7 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.Level;
+import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
 import javax.annotation.Nullable;
@@ -27,7 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.hollingsworth.arsnouveau.api.RegistryHelper.getRegistryName;
+import static com.hollingsworth.arsnouveau.setup.registry.RegistryHelper.getRegistryName;
 
 
 public class ImbuementRecipe implements Recipe<ImbuementTile> {
@@ -88,7 +89,7 @@ public class ImbuementRecipe implements Recipe<ImbuementTile> {
     }
 
     @Override
-    public ItemStack assemble(ImbuementTile pContainer) {
+    public ItemStack assemble(ImbuementTile p_44001_, RegistryAccess p_267165_) {
         return ItemStack.EMPTY;
     }
 
@@ -98,7 +99,7 @@ public class ImbuementRecipe implements Recipe<ImbuementTile> {
     }
 
     @Override
-    public ItemStack getResultItem() {
+    public ItemStack getResultItem(RegistryAccess p_267052_) {
         return ItemStack.EMPTY;
     }
 
@@ -114,7 +115,7 @@ public class ImbuementRecipe implements Recipe<ImbuementTile> {
 
     @Override
     public RecipeType<?> getType() {
-        return Registry.RECIPE_TYPE.get(new ResourceLocation(ArsNouveau.MODID, RecipeRegistry.IMBUEMENT_RECIPE_ID));
+        return ForgeRegistries.RECIPE_TYPES.getValue(new ResourceLocation(ArsNouveau.MODID, RecipeRegistry.IMBUEMENT_RECIPE_ID));
     }
 
     public JsonElement asRecipe() {

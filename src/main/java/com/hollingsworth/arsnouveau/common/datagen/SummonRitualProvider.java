@@ -1,38 +1,39 @@
 package com.hollingsworth.arsnouveau.common.datagen;
 
+
 import com.hollingsworth.arsnouveau.api.recipe.SummonRitualRecipe;
 import net.minecraft.data.CachedOutput;
 import net.minecraft.data.DataGenerator;
-import net.minecraft.data.DataProvider;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.Ingredient;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SummonRitualProvider implements DataProvider{
+public class SummonRitualProvider extends SimpleDataProvider{
 
     public List<SummonRitualRecipe> recipes = new ArrayList<>();
-    public final DataGenerator generator;
-
 
     public SummonRitualProvider(DataGenerator generatorIn) {
-        this.generator = generatorIn;
+        super(generatorIn);
     }
+
     @Override
-    public void run(CachedOutput cache) throws IOException {
+    public void collectJsons(CachedOutput pOutput) {
         addEntries();
-        Path output = this.generator.getOutputFolder();
         for (SummonRitualRecipe recipe : recipes) {
-                Path path = getRecipePath(output, recipe.getId().getPath());
-                DataProvider.saveStable(cache, recipe.asRecipe(), path);
-            }
+            Path path = getRecipePath(output, recipe.getId().getPath());
+            saveStable(pOutput, recipe.asRecipe(), path);
         }
+    }
 
     protected void addEntries() {
-        // ArrayList<SummonRitualRecipe.WeightedMobType> bats = new ArrayList<>();
-        // bats.add(new SummonRitualRecipe.WeightedMobType(EntityType.getKey(EntityType.BAT)));
-        // recipes.add(new SummonRitualRecipe(new ResourceLocation("", ""), Ingredient.of(Items.AMETHYST_SHARD), SummonRitualRecipe.MobSource.MOB_LIST, 5, bats));
+         ArrayList<SummonRitualRecipe.WeightedMobType> bats = new ArrayList<>();
+         bats.add(new SummonRitualRecipe.WeightedMobType(EntityType.getKey(EntityType.BAT)));
+         recipes.add(new SummonRitualRecipe(new ResourceLocation("", ""), Ingredient.of(Items.AMETHYST_SHARD), SummonRitualRecipe.MobSource.MOB_LIST, 5, bats));
     }
 
     protected static Path getRecipePath(Path path, String id) {

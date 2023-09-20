@@ -3,13 +3,13 @@ package com.hollingsworth.arsnouveau.client.renderer.item;
 import com.hollingsworth.arsnouveau.client.renderer.tile.GenericModel;
 import com.hollingsworth.arsnouveau.common.block.tile.MobJarTile;
 import com.hollingsworth.arsnouveau.common.items.MobJarItem;
-import com.hollingsworth.arsnouveau.setup.BlockRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.BlockRegistry;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 
 public class MobJarItemRenderer extends FixedGeoItemRenderer<MobJarItem> {
@@ -19,12 +19,12 @@ public class MobJarItemRenderer extends FixedGeoItemRenderer<MobJarItem> {
     }
 
     @Override
-    public void renderByItem(ItemStack stack, ItemTransforms.TransformType pTransformType, PoseStack pPoseStack, MultiBufferSource pBuffer, int pPackedLight, int pPackedOverlay) {
-        if(pTransformType == ItemTransforms.TransformType.GUI){
+    public void renderByItem(ItemStack stack, ItemDisplayContext transformType, PoseStack pPoseStack, MultiBufferSource pBuffer, int pPackedLight, int pPackedOverlay) {
+        if(transformType == ItemDisplayContext.GUI){
             pPackedLight = LightTexture.FULL_BRIGHT;
             pPackedOverlay = LightTexture.FULL_BRIGHT;
         }
-        super.renderByItem(stack, pTransformType, pPoseStack, pBuffer, pPackedLight, pPackedOverlay);
+        super.renderByItem(stack, transformType, pPoseStack, pBuffer, pPackedLight, pPackedOverlay);
 
         jarTile = new MobJarTile(Minecraft.getInstance().player.getOnPos().above(), BlockRegistry.MOB_JAR.defaultBlockState());
         Entity entity = MobJarItem.fromItem(stack, Minecraft.getInstance().level);

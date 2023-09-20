@@ -24,6 +24,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -38,20 +39,20 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BoneMealItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import software.bernie.geckolib3.core.IAnimatable;
-import software.bernie.geckolib3.core.PlayState;
-import software.bernie.geckolib3.core.builder.AnimationBuilder;
-import software.bernie.geckolib3.core.controller.AnimationController;
-import software.bernie.geckolib3.core.event.predicate.AnimationEvent;
-import software.bernie.geckolib3.core.manager.AnimationData;
-import software.bernie.geckolib3.core.manager.AnimationFactory;
-import software.bernie.geckolib3.util.GeckoLibUtil;
+import software.bernie.geckolib.animatable.GeoEntity;
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.core.animation.AnimationController;
+import software.bernie.geckolib.core.animation.AnimationState;
+import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.core.object.PlayState;
+import software.bernie.geckolib.util.GeckoLibUtil;
 
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Optional;
 
-public class WealdWalker extends AgeableMob implements IAnimatable, IAnimationListener, RangedAttackMob, IWandable, ITooltipProvider {
+public class WealdWalker extends AgeableMob implements GeoEntity, IAnimationListener, RangedAttackMob, IWandable, ITooltipProvider {
 
     public static final EntityDataAccessor<Boolean> SMASHING = SynchedEntityData.defineId(WealdWalker.class, EntityDataSerializers.BOOLEAN);
     public static final EntityDataAccessor<Boolean> CASTING = SynchedEntityData.defineId(WealdWalker.class, EntityDataSerializers.BOOLEAN);
@@ -195,7 +196,7 @@ public class WealdWalker extends AgeableMob implements IAnimatable, IAnimationLi
         this.goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 8.0F));
         this.goalSelector.addGoal(8, new RandomLookAroundGoal(this));
         this.goalSelector.addGoal(2, new SmashGoal(this, true, () -> smashCooldown <= 0 && !this.entityData.get(BABY), Animations.SMASH.ordinal(), 25, 5));
-        this.goalSelector.addGoal(2, new CastSpellGoal(this, 1.2d, 20, 15f, () -> castCooldown <= 0 && !this.entityData.get(BABY), Animations.CAST.ordinal(), 20));
+        this.goalSelector.addGoal(2, new CastSpellGoal(this, 1.2d,  15f, () -> castCooldown <= 0 && !this.entityData.get(BABY), Animations.CAST.ordinal(), 20));
     }
 
     @Override
@@ -223,7 +224,7 @@ public class WealdWalker extends AgeableMob implements IAnimatable, IAnimationLi
 
     @Override
     public boolean hurt(DamageSource source, float amount) {
-        if (source == DamageSource.CACTUS || source == DamageSource.SWEET_BERRY_BUSH || source == DamageSource.DROWN)
+        if (source.is(DamageTypes.CACTUS) || source.is(DamageTypes.SWEET_BERRY_BUSH) || source.is(DamageTypes.DROWN))
             return false;
         return super.hurt(source, amount);
     }
@@ -242,33 +243,33 @@ public class WealdWalker extends AgeableMob implements IAnimatable, IAnimationLi
     AnimationController attackController;
 
     @Override
-    public void registerControllers(AnimationData data) {
-        data.addAnimationController(new AnimationController<>(this, "run_controller", 1.0f, this::runController));
-        attackController = new AnimationController<>(this, "attack_controller", 5f, this::attackController);
-        data.addAnimationController(attackController);
+    public void registerControllers(AnimatableManager.ControllerRegistrar data) {
+        data.add(new AnimationController<>(this, "run_controller", 1, this::runController));
+        attackController = new AnimationController<>(this, "attack_controller", 5, this::attackController);
+        data.add(attackController);
     }
 
-    private PlayState attackController(AnimationEvent<?> animationEvent) {
+    private PlayState attackController(software.bernie.geckolib.core.animation.AnimationState<?> AnimationState) {
         return PlayState.CONTINUE;
     }
 
-    private PlayState runController(AnimationEvent<?> animationEvent) {
+    private PlayState runController(AnimationState AnimationState) {
         if (entityData.get(SMASHING) || entityData.get(CASTING))
             return PlayState.STOP;
-        if (animationEvent.getController().getCurrentAnimation() != null && !(animationEvent.getController().getCurrentAnimation().animationName.equals("run_master"))) {
+        if (AnimationState.getController().getCurrentAnimation() != null && !(AnimationState.getController().getCurrentAnimation().animation().name().equals("run_master"))) {
             return PlayState.STOP;
         }
-        if (animationEvent.isMoving()) {
-            animationEvent.getController().setAnimation(new AnimationBuilder().addAnimation("run_master"));
+        if (AnimationState.isMoving()) {
+            AnimationState.getController().setAnimation(RawAnimation.begin().thenPlay("run_master"));
             return PlayState.CONTINUE;
         }
         return PlayState.STOP;
     }
 
-    AnimationFactory factory = GeckoLibUtil.createFactory(this);
+    AnimatableInstanceCache factory = GeckoLibUtil.createInstanceCache(this);
 
     @Override
-    public AnimationFactory getFactory() {
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
         return factory;
     }
 
@@ -277,19 +278,19 @@ public class WealdWalker extends AgeableMob implements IAnimatable, IAnimationLi
         try {
             if (arg == Animations.SMASH.ordinal()) {
 
-                if (attackController.getCurrentAnimation() != null && (attackController.getCurrentAnimation().animationName.equals("smash"))) {
+                if (attackController.getCurrentAnimation() != null && (attackController.getCurrentAnimation().animation().name().equals("smash"))) {
                     return;
                 }
-                attackController.markNeedsReload();
-                attackController.setAnimation(new AnimationBuilder().addAnimation("smash").addAnimation("idle"));
+                attackController.forceAnimationReset();
+                attackController.setAnimation(RawAnimation.begin().thenPlay("smash").thenPlay("idle"));
             }
 
             if (arg == Animations.CAST.ordinal()) {
-                if (attackController.getCurrentAnimation() != null && attackController.getCurrentAnimation().animationName.equals("cast")) {
+                if (attackController.getCurrentAnimation() != null && attackController.getCurrentAnimation().animation().name().equals("cast")) {
                     return;
                 }
-                attackController.markNeedsReload();
-                attackController.setAnimation(new AnimationBuilder().addAnimation("cast").addAnimation("idle"));
+                attackController.forceAnimationReset();
+                attackController.setAnimation(RawAnimation.begin().thenPlay("cast").thenPlay("idle"));
             }
         } catch (Exception e) {
             e.printStackTrace();

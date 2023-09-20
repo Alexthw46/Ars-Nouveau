@@ -18,14 +18,15 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.client.model.data.ModelData;
-import org.jetbrains.annotations.Nullable;
-import software.bernie.geckolib3.core.event.predicate.AnimationEvent;
-import software.bernie.geckolib3.core.processor.IBone;
-import software.bernie.geckolib3.core.util.Color;
-import software.bernie.geckolib3.geo.render.built.GeoBone;
-import software.bernie.geckolib3.model.AnimatedGeoModel;
-import software.bernie.geckolib3.renderers.geo.GeoEntityRenderer;
-import software.bernie.geckolib3.util.RenderUtils;
+import software.bernie.geckolib.cache.object.BakedGeoModel;
+import software.bernie.geckolib.cache.object.GeoBone;
+import software.bernie.geckolib.core.animatable.model.CoreGeoBone;
+import software.bernie.geckolib.core.animation.AnimationState;
+import software.bernie.geckolib.core.object.Color;
+import software.bernie.geckolib.model.GeoModel;
+import software.bernie.geckolib.renderer.GeoEntityRenderer;
+import software.bernie.geckolib.util.RenderUtils;
+
 
 public class AnimBlockRenderer<BOBBY extends AnimBlockSummon> extends GeoEntityRenderer<BOBBY> {
 
@@ -37,26 +38,26 @@ public class AnimBlockRenderer<BOBBY extends AnimBlockSummon> extends GeoEntityR
     protected MultiBufferSource bufferSource;
 
     public AnimBlockRenderer(EntityRendererProvider.Context renderManager) {
-        super(renderManager, new AnimatedGeoModel<>() {
+        super(renderManager, new GeoModel<BOBBY>() {
             @Override
-            public ResourceLocation getModelResource(AnimBlockSummon object) {
+            public ResourceLocation getModelResource(BOBBY object) {
                 return BASE_MODEL;
             }
 
             @Override
-            public ResourceLocation getTextureResource(AnimBlockSummon object) {
+            public ResourceLocation getTextureResource(BOBBY object) {
                 return TEXTURE;
             }
 
             @Override
-            public ResourceLocation getAnimationResource(AnimBlockSummon animatable) {
+            public ResourceLocation getAnimationResource(BOBBY animatable) {
                 return ANIMATIONS;
             }
 
             @Override
-            public void setCustomAnimations(BOBBY animatable, int instanceId, AnimationEvent customPredicate) {
+            public void setCustomAnimations(BOBBY animatable, long instanceId, AnimationState<BOBBY> customPredicate) {
                 super.setCustomAnimations(animatable, instanceId, customPredicate);
-                IBone head = this.getAnimationProcessor().getBone("block");
+                CoreGeoBone head = this.getAnimationProcessor().getBone("block");
                 head.setHidden(!(animatable.getBlockState().getBlock() instanceof MageBlock));
             }
         });
@@ -72,13 +73,13 @@ public class AnimBlockRenderer<BOBBY extends AnimBlockSummon> extends GeoEntityR
     }
 
     @Override
-    public void renderEarly(BOBBY animatable, PoseStack poseStack, float partialTick, MultiBufferSource bufferSource, VertexConsumer buffer, int packedLight, int packedOverlay, float red, float green, float blue, float partialTicks) {
-        super.renderEarly(animatable, poseStack, partialTick, bufferSource, buffer, packedLight, packedOverlay, red, green, blue, partialTicks);
+    public void preRender(PoseStack poseStack, BOBBY animatable, BakedGeoModel model, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
         this.bufferSource = bufferSource;
+        super.preRender(poseStack, animatable, model, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
     }
 
     @Override
-    public void renderRecursively(GeoBone bone, PoseStack poseStack, VertexConsumer buffer, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
+    public void renderRecursively(PoseStack poseStack, BOBBY animatable, GeoBone bone, RenderType ty, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
         if (bone.getName().equals("block")) {
             AnimBlockSummon animBlock = animatable;
             if (animBlock == null) return;
@@ -87,7 +88,7 @@ public class AnimBlockRenderer<BOBBY extends AnimBlockSummon> extends GeoEntityR
             //hide the block and render the blockstate
             if (!(blockstate.getBlock() instanceof MageBlock)) {
                 try {
-                    Level level = animatable.getLevel();
+                    Level level = animatable.level();
                     if (blockstate != level.getBlockState(animBlock.blockPosition()) && blockstate.getRenderShape() != RenderShape.INVISIBLE) {
                         poseStack.pushPose();
                         BlockPos blockpos = animBlock.blockPosition().above();
@@ -104,16 +105,15 @@ public class AnimBlockRenderer<BOBBY extends AnimBlockSummon> extends GeoEntityR
                 }
             }
         }
-        super.renderRecursively(bone, poseStack, buffer, packedLight, packedOverlay, red, green, blue, alpha);
+        super.renderRecursively(poseStack, animatable, bone, ty, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
     }
 
     @Override
-    public Color getRenderColor(BOBBY animatable, float partialTick, PoseStack poseStack, @Nullable MultiBufferSource bufferSource, @Nullable VertexConsumer buffer, int packedLight) {
+    public Color getRenderColor(BOBBY animatable, float partialTick, int packedLight) {
         if (animatable != null) {
             ParticleColor color = ParticleColor.fromInt(animatable.getColor());
-            return Color.ofRGBA(color.toWrapper().r, color.toWrapper().g, color.toWrapper().b, 200);
+            return Color.ofRGBA(color.getRed(), color.getGreen(), color.getBlue(), 0.75f);
         }
-        return super.getRenderColor(animatable, partialTick, poseStack, bufferSource, buffer, packedLight);
+        return super.getRenderColor(animatable, partialTick, packedLight);
     }
-
 }

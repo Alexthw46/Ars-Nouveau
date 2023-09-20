@@ -1,12 +1,10 @@
 package com.hollingsworth.arsnouveau.common.event;
 
 import com.hollingsworth.arsnouveau.ArsNouveau;
-import com.hollingsworth.arsnouveau.api.event.FamiliarSummonEvent;
-import com.hollingsworth.arsnouveau.api.event.MaxManaCalcEvent;
-import com.hollingsworth.arsnouveau.api.event.SpellCastEvent;
-import com.hollingsworth.arsnouveau.api.event.SpellModifierEvent;
+import com.hollingsworth.arsnouveau.api.event.*;
 import com.hollingsworth.arsnouveau.api.util.BlockUtil;
 import com.hollingsworth.arsnouveau.common.entity.familiar.*;
+import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -40,6 +38,15 @@ public class FamiliarEvents {
         for (FamiliarEntity entity : getFamiliars((f) -> f instanceof ISpellCastListener)) {
             if (entity instanceof ISpellCastListener) {
                 ((ISpellCastListener) entity).onCast(event);
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public static void calcEvent(SpellCostCalcEvent event) {
+        for (FamiliarEntity entity : getFamiliars((f) -> f instanceof ISpellCastListener)) {
+            if (entity instanceof ISpellCastListener) {
+                ((ISpellCastListener) entity).onCostCalc(event);
             }
         }
     }
@@ -122,7 +129,7 @@ public class FamiliarEvents {
 
     @SubscribeEvent
     public static void livingHurtEvent(LivingHurtEvent event){
-        if(!event.getSource().isBypassArmor() && event.getEntity() instanceof Player player) {
+        if(!event.getSource().is(DamageTypeTags.BYPASSES_ARMOR) && event.getEntity() instanceof Player player) {
             List<FamiliarEntity> golems = getFamiliars((familiarEntity -> familiarEntity instanceof FamiliarAmethystGolem golem && golem.getOwner() != null && golem.getOwner().equals(event.getEntity())));
             if (!golems.isEmpty()) {
                 Entity entity = event.getSource().getEntity();

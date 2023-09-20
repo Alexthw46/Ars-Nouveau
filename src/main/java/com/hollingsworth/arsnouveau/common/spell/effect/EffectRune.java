@@ -5,7 +5,7 @@ import com.hollingsworth.arsnouveau.common.block.tile.RuneTile;
 import com.hollingsworth.arsnouveau.common.lib.GlyphLib;
 import com.hollingsworth.arsnouveau.common.spell.augment.AugmentSensitive;
 import com.hollingsworth.arsnouveau.common.spell.method.MethodTouch;
-import com.hollingsworth.arsnouveau.setup.BlockRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.BlockRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -30,7 +30,10 @@ public class EffectRune extends AbstractEffect {
         pos = rayTraceResult.isInside() ? pos : pos.relative((rayTraceResult).getDirection());
         spellContext.setCanceled(true);
         Spell newSpell = spellContext.getRemainingSpell();
-        if (world.getBlockState(pos).getMaterial().isReplaceable()) {
+
+        if (world.getBlockState(pos).canBeReplaced()) {
+            if(!world.isInWorldBounds(pos))
+                return;
             world.setBlockAndUpdate(pos, BlockRegistry.RUNE_BLOCK.defaultBlockState());
             if (world.getBlockEntity(pos) instanceof RuneTile runeTile) {
                 if (shooter instanceof Player) {

@@ -7,13 +7,13 @@ import com.hollingsworth.arsnouveau.api.spell.*;
 import com.hollingsworth.arsnouveau.api.util.BlockUtil;
 import com.hollingsworth.arsnouveau.api.util.LootUtil;
 import com.hollingsworth.arsnouveau.api.util.SpellUtil;
+import com.hollingsworth.arsnouveau.common.block.IntangibleAirBlock;
 import com.hollingsworth.arsnouveau.common.items.curios.ShapersFocus;
 import com.hollingsworth.arsnouveau.common.lib.GlyphLib;
 import com.hollingsworth.arsnouveau.common.spell.augment.AugmentAOE;
 import com.hollingsworth.arsnouveau.common.spell.augment.AugmentAmplify;
 import com.hollingsworth.arsnouveau.common.spell.augment.AugmentDampen;
 import com.hollingsworth.arsnouveau.common.spell.augment.AugmentPierce;
-import com.hollingsworth.arsnouveau.setup.BlockRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
@@ -28,7 +28,6 @@ import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.material.Material;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
@@ -37,8 +36,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Set;
-
-import static com.hollingsworth.arsnouveau.api.util.BlockUtil.destroyBlockSafelyWithoutSound;
 
 public class EffectExchange extends AbstractEffect {
     public static EffectExchange INSTANCE = new EffectExchange();
@@ -69,7 +66,7 @@ public class EffectExchange extends AbstractEffect {
             BlockState state = world.getBlockState(pos1);
 
             if (!canBlockBeHarvested(spellStats, world, pos1) || origState.getBlock() != state.getBlock() ||
-                    world.getBlockState(pos1).getMaterial() != Material.AIR && world.getBlockState(pos1).getBlock() == BlockRegistry.INTANGIBLE_AIR
+                    !world.getBlockState(pos1).isAir() && world.getBlockState(pos1).getBlock() instanceof IntangibleAirBlock
                     || !BlockUtil.destroyRespectsClaim(getPlayer(shooter, (ServerLevel) world), world, pos1)) {
                 continue;
             }
@@ -103,8 +100,10 @@ public class EffectExchange extends AbstractEffect {
         BlockState placeState = item.getBlock().getStateForPlacement(context);
         if(placeState != null && placeState.getBlock() == world.getBlockState(pos1).getBlock())
             return;
-        Block.dropResources(world.getBlockState(pos1), world, pos1, world.getBlockEntity(pos1), shooter, tool);
-        destroyBlockSafelyWithoutSound(world, pos1, false, shooter);
+
+        if(!BlockUtil.breakExtraBlock((ServerLevel) world, pos1, tool, shooter.getUUID(), true)){
+            return;
+        }
         if(placeState == null)
             return;
         world.setBlock(pos1, placeState, 3);

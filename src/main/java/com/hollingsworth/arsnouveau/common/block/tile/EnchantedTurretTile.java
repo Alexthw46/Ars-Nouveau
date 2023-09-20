@@ -1,13 +1,14 @@
 package com.hollingsworth.arsnouveau.common.block.tile;
 
-import com.hollingsworth.arsnouveau.setup.BlockRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.BlockRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
-import software.bernie.geckolib3.core.PlayState;
-import software.bernie.geckolib3.core.builder.AnimationBuilder;
-import software.bernie.geckolib3.core.controller.AnimationController;
-import software.bernie.geckolib3.core.event.predicate.AnimationEvent;
-import software.bernie.geckolib3.core.manager.AnimationData;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.core.animation.AnimationController;
+import software.bernie.geckolib.core.animation.AnimationState;
+import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.core.object.PlayState;
+
 
 public class EnchantedTurretTile extends BasicSpellTurretTile {
 
@@ -17,17 +18,17 @@ public class EnchantedTurretTile extends BasicSpellTurretTile {
 
     @Override
     public int getManaCost() {
-        return getSpellCaster().getSpell().getDiscountedCost() / 2;
+        return getSpellCaster().getSpell().getCost() / 2;
     }
 
     @Override
-    public void registerControllers(AnimationData data) {
+    public void registerControllers(AnimatableManager.ControllerRegistrar data) {
         super.registerControllers(data);
-        data.addAnimationController(new AnimationController<>(this, "spinController", 0, this::spinPredicate));
+        data.add(new AnimationController<>(this, "spinController", 0, this::spinPredicate));
     }
 
-    public PlayState spinPredicate(AnimationEvent event) {
-        event.getController().setAnimation(new AnimationBuilder().addAnimation("gem_rotation"));
+    public PlayState spinPredicate(AnimationState event) {
+        event.getController().setAnimation(RawAnimation.begin().thenPlay("gem_rotation"));
         return PlayState.CONTINUE;
     }
 }

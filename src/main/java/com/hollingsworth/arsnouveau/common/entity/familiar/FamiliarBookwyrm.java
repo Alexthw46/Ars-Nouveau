@@ -4,7 +4,7 @@ import com.hollingsworth.arsnouveau.ArsNouveau;
 import com.hollingsworth.arsnouveau.api.item.inv.FilterableItemHandler;
 import com.hollingsworth.arsnouveau.api.item.inv.InventoryManager;
 import com.hollingsworth.arsnouveau.common.entity.EntityBookwyrm;
-import com.hollingsworth.arsnouveau.common.entity.ModEntities;
+import com.hollingsworth.arsnouveau.setup.registry.ModEntities;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -19,9 +19,9 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.Tags;
 import net.minecraftforge.event.entity.player.EntityItemPickupEvent;
 import net.minecraftforge.items.wrapper.PlayerMainInvWrapper;
-import software.bernie.geckolib3.core.PlayState;
-import software.bernie.geckolib3.core.builder.AnimationBuilder;
-import software.bernie.geckolib3.core.event.predicate.AnimationEvent;
+import software.bernie.geckolib.core.animation.AnimationState;
+import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.core.object.PlayState;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -66,7 +66,7 @@ public class FamiliarBookwyrm extends FlyingFamiliarEntity implements ISpellCast
                 ItemStack stack = i.getItem();
                 if (stack.isEmpty()
                         || MinecraftForge.EVENT_BUS.post(new EntityItemPickupEvent(player, i))
-                        || getOwnerID().equals(i.getThrower())
+                        || getOwnerID().equals(i.getOwner())
                         || i.hasPickUpDelay()
                         || i.getPersistentData().getBoolean("PreventRemoteMovement")
                         || !i.isAlive())
@@ -84,8 +84,8 @@ public class FamiliarBookwyrm extends FlyingFamiliarEntity implements ISpellCast
     }
 
     @Override
-    public PlayState walkPredicate(AnimationEvent<?> event) {
-        event.getController().setAnimation(new AnimationBuilder().addAnimation("fly"));
+    public PlayState walkPredicate(AnimationState event) {
+        event.getController().setAnimation(RawAnimation.begin().thenPlay("fly"));
         return PlayState.CONTINUE;
     }
 

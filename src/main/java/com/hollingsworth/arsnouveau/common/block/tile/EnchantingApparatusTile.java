@@ -8,13 +8,13 @@ import com.hollingsworth.arsnouveau.client.particle.GlowParticleData;
 import com.hollingsworth.arsnouveau.client.particle.ParticleColor;
 import com.hollingsworth.arsnouveau.client.particle.ParticleLineData;
 import com.hollingsworth.arsnouveau.client.particle.ParticleUtil;
-import com.hollingsworth.arsnouveau.client.util.ColorPos;
+import com.hollingsworth.arsnouveau.client.particle.ColorPos;
 import com.hollingsworth.arsnouveau.common.block.ITickable;
 import com.hollingsworth.arsnouveau.common.network.HighlightAreaPacket;
 import com.hollingsworth.arsnouveau.common.network.Networking;
 import com.hollingsworth.arsnouveau.common.network.PacketOneShotAnimation;
-import com.hollingsworth.arsnouveau.setup.BlockRegistry;
-import com.hollingsworth.arsnouveau.setup.SoundRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.BlockRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.SoundRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
@@ -24,29 +24,21 @@ import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.wrapper.InvWrapper;
-import software.bernie.geckolib3.core.IAnimatable;
-import software.bernie.geckolib3.core.PlayState;
-import software.bernie.geckolib3.core.builder.AnimationBuilder;
-import software.bernie.geckolib3.core.controller.AnimationController;
-import software.bernie.geckolib3.core.event.predicate.AnimationEvent;
-import software.bernie.geckolib3.core.manager.AnimationData;
-import software.bernie.geckolib3.core.manager.AnimationFactory;
-import software.bernie.geckolib3.util.GeckoLibUtil;
+import software.bernie.geckolib.animatable.GeoBlockEntity;
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.core.animation.AnimationController;
+import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.core.object.PlayState;
+import software.bernie.geckolib.util.GeckoLibUtil;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class EnchantingApparatusTile extends SingleItemTile implements Container, IPedestalMachine, ITickable, IAnimatable, IAnimationListener {
-
-    private final LazyOptional<IItemHandler> itemHandler = LazyOptional.of(() -> new InvWrapper(this));
-
+public class EnchantingApparatusTile extends SingleItemTile implements Container, IPedestalMachine, ITickable, GeoBlockEntity {
     private int counter;
     public boolean isCrafting;
     public static final int craftingLength = 210;
@@ -69,7 +61,7 @@ public class EnchantingApparatusTile extends SingleItemTile implements Container
         if (level.isClientSide) {
             if (this.isCrafting) {
                 Level world = getLevel();
-                BlockPos pos = getBlockPos().offset(0, 0.5, 0);
+                BlockPos pos = getBlockPos().offset(0, 1, 0);
                 RandomSource rand = world.getRandom();
 
                 Vec3 particlePos = new Vec3(pos.getX(), pos.getY(), pos.getZ()).add(0.5, 0, 0.5);
@@ -234,45 +226,32 @@ public class EnchantingApparatusTile extends SingleItemTile implements Container
         attemptCraft(stack, null);
     }
 
-    AnimationController<EnchantingApparatusTile> craftController;
-    AnimationController<EnchantingApparatusTile> idleController;
-
     @Override
-    public void registerControllers(AnimationData animationData) {
-        idleController = new AnimationController<>(this, "controller", 0, this::idlePredicate);
-        animationData.addAnimationController(idleController);
-        craftController = new AnimationController<>(this, "craft_controller", 0, this::craftPredicate);
-        animationData.addAnimationController(craftController);
-        animationData.setResetSpeedInTicks(0.0);
-    }
-
-    AnimationFactory manager = GeckoLibUtil.createFactory(this);
-
-    @Override
-    public AnimationFactory getFactory() {
-        return manager;
-    }
-
-    private <E extends BlockEntity & IAnimatable> PlayState idlePredicate(AnimationEvent<E> event) {
-        event.getController().setAnimation(new AnimationBuilder().addAnimation("floating"));
-        return PlayState.CONTINUE;
-    }
-
-    private <E extends BlockEntity & IAnimatable> PlayState craftPredicate(AnimationEvent<E> event) {
-        if (!this.isCrafting)
-            return PlayState.STOP;
-        return PlayState.CONTINUE;
-    }
-
-    @Override
-    public void startAnimation(int arg) {
-        try {
-            if (craftController != null) {
-                craftController.markNeedsReload();
-                craftController.setAnimation(new AnimationBuilder().addAnimation("enchanting"));
+    public void registerControllers(AnimatableManager.ControllerRegistrar animatableManager) {
+        animatableManager.add(new AnimationController<>(this, "controller", 0, event ->{
+            event.getController().setAnimation(RawAnimation.begin().thenPlay("floating"));
+            return PlayState.CONTINUE;
+        }));
+        animatableManager.add(new AnimationController<>(this, "craft_controller", 0, event ->{
+            if (!this.isCrafting) {
+                event.getController().forceAnimationReset();
+                return PlayState.STOP;
+            }else{
+                event.getController().setAnimation(RawAnimation.begin().thenPlay("enchanting"));
             }
-        }catch (Exception e){
-            e.printStackTrace();
-        }
+            return PlayState.CONTINUE;
+        }));
+    }
+
+    AnimatableInstanceCache manager = GeckoLibUtil.createInstanceCache(this);
+
+    @Override
+    public double getBoneResetTime() {
+        return 0;
+    }
+
+    @Override
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
+        return manager;
     }
 }

@@ -1,6 +1,6 @@
 package com.hollingsworth.arsnouveau.common.entity.goal.chimera;
 
-import com.hollingsworth.arsnouveau.common.entity.ModEntities;
+import com.hollingsworth.arsnouveau.setup.registry.ModEntities;
 import com.hollingsworth.arsnouveau.common.entity.SummonWolf;
 import com.hollingsworth.arsnouveau.common.entity.WildenHunter;
 import com.hollingsworth.arsnouveau.common.network.Networking;
@@ -40,11 +40,6 @@ public class WildenSummon extends Goal {
         ticksSummoning = 0;
         this.entity.summonCooldown = 400;
         this.entity.getEntityData().set(WildenHunter.ANIM_STATE, WildenHunter.Animations.HOWL.name());
-    }
-
-    @Override
-    public void stop() {
-        super.stop();
     }
 
     @Override

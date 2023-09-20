@@ -12,7 +12,7 @@ import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.level.ItemLike;
 import net.minecraftforge.registries.RegistryObject;
 
-import static com.hollingsworth.arsnouveau.api.RegistryHelper.getRegistryName;
+import static com.hollingsworth.arsnouveau.setup.registry.RegistryHelper.getRegistryName;
 
 public class ApparatusRecipeBuilder {
     EnchantingApparatusRecipe recipe;
@@ -27,6 +27,11 @@ public class ApparatusRecipeBuilder {
 
     public ApparatusRecipeBuilder withResult(ItemLike result) {
         this.recipe.result = new ItemStack(result);
+        return this;
+    }
+
+    public ApparatusRecipeBuilder withResult(ItemLike result, int count) {
+        this.recipe.result = new ItemStack(result, count);
         return this;
     }
 

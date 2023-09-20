@@ -1,37 +1,41 @@
 package com.hollingsworth.arsnouveau.common.datagen;
 
 import com.google.common.base.Preconditions;
-
 import com.hollingsworth.arsnouveau.ArsNouveau;
-import com.hollingsworth.arsnouveau.api.ArsNouveauAPI;
+import com.hollingsworth.arsnouveau.api.registry.FamiliarRegistry;
+import com.hollingsworth.arsnouveau.api.registry.GlyphRegistry;
+import com.hollingsworth.arsnouveau.api.registry.PerkRegistry;
+import com.hollingsworth.arsnouveau.api.registry.RitualRegistry;
 import com.hollingsworth.arsnouveau.common.items.FamiliarScript;
 import com.hollingsworth.arsnouveau.common.items.Glyph;
 import com.hollingsworth.arsnouveau.common.items.PerkItem;
 import com.hollingsworth.arsnouveau.common.items.RitualTablet;
-
 import com.hollingsworth.arsnouveau.common.lib.LibBlockNames;
 import com.hollingsworth.arsnouveau.common.util.RegistryWrapper;
-import com.hollingsworth.arsnouveau.setup.ItemsRegistry;
-import net.minecraft.data.DataGenerator;
+import com.hollingsworth.arsnouveau.setup.registry.ItemsRegistry;
+import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
+import net.minecraftforge.client.model.generators.ItemModelProvider;
 import net.minecraftforge.client.model.generators.ModelFile;
 import net.minecraftforge.common.data.ExistingFileHelper;
 
 import java.util.function.Supplier;
 
-import static com.hollingsworth.arsnouveau.api.RegistryHelper.getRegistryName;
+import static com.hollingsworth.arsnouveau.setup.registry.RegistryHelper.getRegistryName;
 
-public class ItemModelGenerator extends net.minecraftforge.client.model.generators.ItemModelProvider {
-    public ItemModelGenerator(DataGenerator generator, String modid, ExistingFileHelper existingFileHelper) {
-        super(generator, modid, existingFileHelper);
+public class ItemModelGenerator extends ItemModelProvider {
+
+
+    public ItemModelGenerator(PackOutput output, ExistingFileHelper existingFileHelper) {
+        super(output, ArsNouveau.MODID, existingFileHelper);
     }
 
     @Override
     protected void registerModels() {
 
-        for (Supplier<Glyph> i : ArsNouveauAPI.getInstance().getGlyphItemMap().values()) {
+        for (Supplier<Glyph> i : GlyphRegistry.getGlyphItemMap().values()) {
             try {
                 if(i.get().spellPart.getRegistryName().getNamespace().equals(ArsNouveau.MODID))
                     getBuilder(i.get().spellPart.getRegistryName().getPath()).parent(new ModelFile.UncheckedModelFile("item/generated")).texture("layer0", spellTexture(i.get()));
@@ -40,7 +44,7 @@ public class ItemModelGenerator extends net.minecraftforge.client.model.generato
                 System.out.println("No texture for " + i.get());
             }
         }
-        for (RitualTablet i : ArsNouveauAPI.getInstance().getRitualItemMap().values()) {
+        for (RitualTablet i : RitualRegistry.getRitualItemMap().values()) {
             try {
                 if(i.ritual.getRegistryName().getNamespace().equals(ArsNouveau.MODID))
                     getBuilder(i.ritual.getRegistryName().getPath()).parent(new ModelFile.UncheckedModelFile("item/generated")).texture("layer0", itemTexture(i));
@@ -48,7 +52,7 @@ public class ItemModelGenerator extends net.minecraftforge.client.model.generato
                 System.out.println("No texture for " + i);
             }
         }
-        for (FamiliarScript i : ArsNouveauAPI.getInstance().getFamiliarScriptMap().values()) {
+        for (FamiliarScript i : FamiliarRegistry.getFamiliarScriptMap().values()) {
             try {
                 if(i.familiar.getRegistryName().getNamespace().equals(ArsNouveau.MODID))
                     getBuilder(i.familiar.getRegistryName().getPath()).parent(new ModelFile.UncheckedModelFile("item/generated")).texture("layer0", itemTexture(i));
@@ -57,7 +61,7 @@ public class ItemModelGenerator extends net.minecraftforge.client.model.generato
             }
          }
 
-        for (PerkItem i : ArsNouveauAPI.getInstance().getPerkItemMap().values()) {
+        for (PerkItem i : PerkRegistry.getPerkItemMap().values()) {
             try {
                 if(i.perk.getRegistryName().getNamespace().equals(ArsNouveau.MODID))
                     getBuilder(i.perk.getRegistryName().getPath()).parent(new ModelFile.UncheckedModelFile("item/generated")).texture("layer0", itemTexture(i));
@@ -84,6 +88,11 @@ public class ItemModelGenerator extends net.minecraftforge.client.model.generato
         getBuilder(LibBlockNames.YELLOW_SBED).parent(BlockStatesDatagen.getUncheckedModel(LibBlockNames.YELLOW_SBED));
         getBuilder(LibBlockNames.ORANGE_SBED).parent(BlockStatesDatagen.getUncheckedModel(LibBlockNames.ORANGE_SBED));
         getBuilder(LibBlockNames.PURPLE_SBED).parent(BlockStatesDatagen.getUncheckedModel(LibBlockNames.PURPLE_SBED));
+        getBuilder(LibBlockNames.AGRONOMIC_SOURCELINK).parent(BlockStatesDatagen.getUncheckedModel(LibBlockNames.AGRONOMIC_SOURCELINK));
+        getBuilder(LibBlockNames.VOLCANIC_SOURCELINK).parent(BlockStatesDatagen.getUncheckedModel(LibBlockNames.VOLCANIC_SOURCELINK));
+        getBuilder(LibBlockNames.VITALIC_SOURCELINK).parent(BlockStatesDatagen.getUncheckedModel(LibBlockNames.VITALIC_SOURCELINK));
+        getBuilder(LibBlockNames.MYCELIAL_SOURCELINK).parent(BlockStatesDatagen.getUncheckedModel(LibBlockNames.MYCELIAL_SOURCELINK));
+        getBuilder(LibBlockNames.ALCHEMICAL_SOURCELINK).parent(BlockStatesDatagen.getUncheckedModel(LibBlockNames.ALCHEMICAL_SOURCELINK));
         blockAsItem(LibBlockNames.MENDOSTEEN_POD);
         blockAsItem(LibBlockNames.BASTION_POD);
         blockAsItem(LibBlockNames.FROSTAYA_POD);
@@ -92,15 +101,23 @@ public class ItemModelGenerator extends net.minecraftforge.client.model.generato
         stateUnchecked(LibBlockNames.POTION_DIFFUSER);
         for(String s : LibBlockNames.DECORATIVE_SOURCESTONE){
             getBuilder(s).parent(BlockStatesDatagen.getUncheckedModel(s));
+            getBuilder(s + "_slab").parent(BlockStatesDatagen.getUncheckedModel(s + "_slab"));
+            getBuilder(s + "_stairs").parent(BlockStatesDatagen.getUncheckedModel(s + "_stairs"));
         }
         getBuilder(LibBlockNames.VOID_PRISM).parent(BlockStatesDatagen.getUncheckedModel(LibBlockNames.VOID_PRISM));
         getBuilder(LibBlockNames.FALSE_WEAVE).parent(BlockStatesDatagen.getUncheckedModel(LibBlockNames.FALSE_WEAVE));
         getBuilder(LibBlockNames.MIRROR_WEAVE).parent(BlockStatesDatagen.getUncheckedModel(LibBlockNames.MIRROR_WEAVE));
         getBuilder(LibBlockNames.GHOST_WEAVE).parent(BlockStatesDatagen.getUncheckedModel(LibBlockNames.GHOST_WEAVE));
         getBuilder(LibBlockNames.MAGEBLOOM_BLOCK).parent(BlockStatesDatagen.getUncheckedModel(LibBlockNames.MAGEBLOOM_BLOCK));
+        getBuilder(LibBlockNames.SCONCE).parent(BlockStatesDatagen.getUncheckedModel(LibBlockNames.SCONCE));
+        getBuilder(LibBlockNames.ARCHWOOD_SCONCE).parent(BlockStatesDatagen.getUncheckedModel(LibBlockNames.ARCHWOOD_SCONCE));
+        getBuilder(LibBlockNames.SOURCESTONE_SCONCE).parent(BlockStatesDatagen.getUncheckedModel(LibBlockNames.SOURCESTONE_SCONCE));
+        getBuilder(LibBlockNames.POLISHED_SCONCE).parent(BlockStatesDatagen.getUncheckedModel(LibBlockNames.POLISHED_SCONCE));
 
         getBuilder(LibBlockNames.RITUAL_BRAZIER).parent(BlockStatesDatagen.getUncheckedModel(LibBlockNames.RITUAL_BRAZIER));
         getBuilder(LibBlockNames.ITEM_DETECTOR).parent(BlockStatesDatagen.getUncheckedModel(LibBlockNames.ITEM_DETECTOR));
+        itemUnchecked(ItemsRegistry.WILD_HUNT);
+        itemUnchecked(ItemsRegistry.SOUND_OF_GLASS);
     }
 
     public void blockAsItem(String s){
@@ -138,21 +155,21 @@ public class ItemModelGenerator extends net.minecraftforge.client.model.generato
     }
 
     private ResourceLocation itemTexture(String item) {
-        return new ResourceLocation(ArsNouveau.MODID, "items" + "/" + item);
+        return new ResourceLocation(ArsNouveau.MODID, "item" + "/" + item);
     }
 
     private ResourceLocation itemTexture(final Item item) {
         final ResourceLocation name = registryName(item);
-        return new ResourceLocation(name.getNamespace(), "items" + "/" + name.getPath());
+        return new ResourceLocation(name.getNamespace(), "item" + "/" + name.getPath());
     }
 
     private ResourceLocation itemTexture(final Block item) {
         final ResourceLocation name = registryName(item);
-        return new ResourceLocation(name.getNamespace(), "items" + "/" + name.getPath());
+        return new ResourceLocation(name.getNamespace(), "item" + "/" + name.getPath());
     }
 
     private ResourceLocation spellTexture(final Item item) {
         final ResourceLocation name = registryName(item);
-        return new ResourceLocation(name.getNamespace(), "items" + "/" + name.getPath().replace("glyph_", ""));
+        return new ResourceLocation(name.getNamespace(), "item" + "/" + name.getPath().replace("glyph_", ""));
     }
 }

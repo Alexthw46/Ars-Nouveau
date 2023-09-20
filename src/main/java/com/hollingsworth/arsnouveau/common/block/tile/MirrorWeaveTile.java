@@ -5,8 +5,10 @@ import com.hollingsworth.arsnouveau.api.spell.SpellContext;
 import com.hollingsworth.arsnouveau.api.spell.SpellStats;
 import com.hollingsworth.arsnouveau.common.block.MirrorWeave;
 import com.hollingsworth.arsnouveau.common.spell.augment.AugmentDampen;
-import com.hollingsworth.arsnouveau.setup.BlockRegistry;
+import com.hollingsworth.arsnouveau.common.util.RegistryWrapper;
+import com.hollingsworth.arsnouveau.setup.registry.BlockRegistry;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.world.entity.LivingEntity;
@@ -15,31 +17,35 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
-import software.bernie.geckolib3.core.IAnimatable;
-import software.bernie.geckolib3.core.manager.AnimationData;
-import software.bernie.geckolib3.core.manager.AnimationFactory;
-import software.bernie.geckolib3.util.GeckoLibUtil;
+import software.bernie.geckolib.animatable.GeoBlockEntity;
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.util.GeckoLibUtil;
 
-public class MirrorWeaveTile extends ModdedTile implements IAnimatable, ILightable {
+public class MirrorWeaveTile extends ModdedTile implements GeoBlockEntity, ILightable {
     public BlockState mimicState;
     public BlockState nextState = BlockRegistry.MIRROR_WEAVE.defaultBlockState();
-
-    public MirrorWeaveTile(BlockPos pos, BlockState state) {
-        this(BlockRegistry.MIRROR_WEAVE_TILE, pos, state);
-    }
 
     public MirrorWeaveTile(BlockEntityType type, BlockPos pos, BlockState state) {
         super(type, pos, state);
         this.mimicState = getDefaultBlockState();
     }
 
-    @Override
-    public void registerControllers(AnimationData data) {}
+    public MirrorWeaveTile(BlockPos pos, BlockState state) {
+        this(BlockRegistry.MIRROR_WEAVE_TILE.get(), pos, state);
+    }
 
-    AnimationFactory factory = GeckoLibUtil.createFactory(this);
+    public MirrorWeaveTile(RegistryWrapper<? extends BlockEntityType> type, BlockPos pos, BlockState state) {
+        this(type.get(), pos, state);
+    }
 
     @Override
-    public AnimationFactory getFactory() {
+    public void registerControllers(AnimatableManager.ControllerRegistrar data) {}
+
+    AnimatableInstanceCache factory = GeckoLibUtil.createInstanceCache(this);
+
+    @Override
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
         return factory;
     }
 
@@ -53,7 +59,7 @@ public class MirrorWeaveTile extends ModdedTile implements IAnimatable, ILightab
     public void load(CompoundTag pTag) {
         super.load(pTag);
         if(pTag.contains("mimic_state")) {
-            mimicState = NbtUtils.readBlockState(pTag.getCompound("mimic_state"));
+            mimicState = NbtUtils.readBlockState(this.level.holderLookup(Registries.BLOCK), pTag.getCompound("mimic_state"));
         }else{
             mimicState = getDefaultBlockState();
         }

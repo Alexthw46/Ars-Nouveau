@@ -1,11 +1,12 @@
 package com.hollingsworth.arsnouveau.common.entity.familiar;
 
 import com.hollingsworth.arsnouveau.ArsNouveau;
-import com.hollingsworth.arsnouveau.api.event.SpellCastEvent;
+import com.hollingsworth.arsnouveau.api.event.SpellCostCalcEvent;
 import com.hollingsworth.arsnouveau.api.spell.AbstractSpellPart;
+import com.hollingsworth.arsnouveau.api.spell.Spell;
 import com.hollingsworth.arsnouveau.api.spell.SpellSchools;
-import com.hollingsworth.arsnouveau.common.entity.ModEntities;
 import com.hollingsworth.arsnouveau.common.entity.Whirlisprig;
+import com.hollingsworth.arsnouveau.setup.registry.ModEntities;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -18,9 +19,10 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
-import software.bernie.geckolib3.core.PlayState;
-import software.bernie.geckolib3.core.builder.AnimationBuilder;
-import software.bernie.geckolib3.core.event.predicate.AnimationEvent;
+import software.bernie.geckolib.core.animation.AnimationState;
+import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.core.object.PlayState;
+
 
 public class FamiliarWhirlisprig extends FlyingFamiliarEntity implements ISpellCastListener {
     public FamiliarWhirlisprig(EntityType<? extends PathfinderMob> ent, Level world) {
@@ -44,18 +46,19 @@ public class FamiliarWhirlisprig extends FlyingFamiliarEntity implements ISpellC
     }
 
     @Override
-    public void onCast(SpellCastEvent event) {
+    public void onCostCalc(SpellCostCalcEvent event) {
         if (!isAlive())
             return;
 
-        if (getOwner() != null && getOwner().equals(event.getEntity())) {
+        if (getOwner() != null && getOwner().equals(event.context.getUnwrappedCaster())) {
             int discount = 0;
-            for (AbstractSpellPart part : event.spell.recipe) {
+            Spell spell = event.context.getSpell();
+            for (AbstractSpellPart part : spell.recipe) {
                 if (SpellSchools.ELEMENTAL_EARTH.isPartOfSchool(part)) {
                     discount += part.getCastingCost() * .5;
                 }
             }
-            event.spell.addDiscount(discount);
+            event.currentCost -= discount;
         }
     }
 
@@ -78,11 +81,11 @@ public class FamiliarWhirlisprig extends FlyingFamiliarEntity implements ISpellC
     }
 
     @Override
-    public PlayState walkPredicate(AnimationEvent<?> event) {
+    public PlayState walkPredicate(AnimationState event) {
         if (event.isMoving()) {
-            event.getController().setAnimation(new AnimationBuilder().addAnimation("fly"));
+            event.getController().setAnimation(RawAnimation.begin().thenPlay("fly"));
         } else {
-            event.getController().setAnimation(new AnimationBuilder().addAnimation("idle"));
+            event.getController().setAnimation(RawAnimation.begin().thenPlay("idle"));
         }
         return PlayState.CONTINUE;
     }

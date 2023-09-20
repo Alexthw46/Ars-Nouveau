@@ -2,7 +2,7 @@ package com.hollingsworth.arsnouveau.common.block.tile;
 
 import com.hollingsworth.arsnouveau.client.container.CraftingTerminalMenu;
 import com.hollingsworth.arsnouveau.client.container.StoredItemStack;
-import com.hollingsworth.arsnouveau.setup.BlockRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.BlockRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
@@ -11,10 +11,12 @@ import net.minecraft.world.Container;
 import net.minecraft.world.Containers;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.*;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.ResultContainer;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.RecipeType;
@@ -22,19 +24,17 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.event.ForgeEventFactory;
 import net.minecraftforge.items.ItemHandlerHelper;
 import org.jetbrains.annotations.Nullable;
-import software.bernie.geckolib3.core.IAnimatable;
-import software.bernie.geckolib3.core.PlayState;
-import software.bernie.geckolib3.core.builder.AnimationBuilder;
-import software.bernie.geckolib3.core.controller.AnimationController;
-import software.bernie.geckolib3.core.manager.AnimationData;
-import software.bernie.geckolib3.core.manager.AnimationFactory;
-import software.bernie.geckolib3.util.GeckoLibUtil;
+import software.bernie.geckolib.animatable.GeoBlockEntity;
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.core.animation.AnimationController;
+import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.core.object.PlayState;
+import software.bernie.geckolib.util.GeckoLibUtil;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 
-public class CraftingLecternTile extends StorageLecternTile implements IAnimatable {
+public class CraftingLecternTile extends StorageLecternTile implements GeoBlockEntity {
 	private AbstractContainerMenu craftingContainer = new AbstractContainerMenu(MenuType.CRAFTING, 0) {
 		@Override
 		public boolean stillValid(Player player) {
@@ -54,7 +54,7 @@ public class CraftingLecternTile extends StorageLecternTile implements IAnimatab
 		}
 	};
 	private CraftingRecipe currentRecipe;
-	private final CraftingContainer craftMatrix = new CraftingContainer(craftingContainer, 3, 3);
+	private final CraftingContainer craftMatrix = new TransientCraftingContainer(craftingContainer, 3, 3);
 	private ResultContainer craftResult = new ResultContainer();
 	private HashSet<CraftingTerminalMenu> craftingListeners = new HashSet<>();
 
@@ -120,7 +120,7 @@ public class CraftingLecternTile extends StorageLecternTile implements IAnimatab
 			craft(player, tab);
 			craftedItemsList.add(crafted.copy());
 			amountCrafted += crafted.getCount();
-		} while(ItemStack.isSame(crafted, craftResult.getItem(0)) && (amountCrafted+crafted.getCount()) <= crafted.getMaxStackSize());
+		} while(ItemStack.isSameItem(crafted, craftResult.getItem(0)) && (amountCrafted+crafted.getCount()) <= crafted.getMaxStackSize());
 
 		for (ItemStack craftedItem : craftedItemsList) {
 			if (!player.getInventory().add(craftedItem.copy())) {
@@ -152,7 +152,7 @@ public class CraftingLecternTile extends StorageLecternTile implements IAnimatab
 					if(is == null) {
 						for(int j = 0;j<thePlayer.getInventory().getContainerSize();j++) {
 							ItemStack st = thePlayer.getInventory().getItem(j);
-							if(ItemStack.isSame(oldItem, st) && ItemStack.tagMatches(oldItem, st)) {
+							if(ItemStack.isSameItem(oldItem, st) && ItemStack.matches(oldItem, st)) {
 								st = thePlayer.getInventory().removeItem(j, 1);
 								if(!st.isEmpty()) {
 									is = new StoredItemStack(st, 1);
@@ -174,7 +174,7 @@ public class CraftingLecternTile extends StorageLecternTile implements IAnimatab
 					craftMatrix.setItem(i, rem);
 					continue;
 				}
-				if (ItemStack.isSame(slot, rem) && ItemStack.tagMatches(slot, rem)) {
+				if (ItemStack.isSameItem(slot, rem) && ItemStack.matches(slot, rem)) {
 					rem.grow(slot.getCount());
 					craftMatrix.setItem(i, rem);
 					continue;
@@ -205,7 +205,7 @@ public class CraftingLecternTile extends StorageLecternTile implements IAnimatab
 		if (currentRecipe == null) {
 			craftResult.setItem(0, ItemStack.EMPTY);
 		} else {
-			craftResult.setItem(0, currentRecipe.assemble(craftMatrix));
+			craftResult.setItem(0, currentRecipe.assemble(craftMatrix, level.registryAccess()));
 		}
 
 		craftingListeners.forEach(CraftingTerminalMenu::onCraftMatrixChanged);
@@ -225,35 +225,43 @@ public class CraftingLecternTile extends StorageLecternTile implements IAnimatab
 		onCraftingMatrixChanged();
 	}
 
-	public void handlerItemTransfer(Player player, ItemStack[][] items, @Nullable String tab) {
+	public void transferToGrid(Player player, ItemStack[][] ingredients, @Nullable String tab) {
 		clear(tab);
-		for (int i = 0;i < 9;i++) {
-			if (items[i] != null) {
-				ItemStack stack = ItemStack.EMPTY;
-				for (int j = 0;j < items[i].length;j++) {
-					ItemStack pulled = pullStack(items[i][j], tab);
-					if (!pulled.isEmpty()) {
-						stack = pulled;
-						break;
-					}
+		for (int i = 0; i < 9; i++) {
+			ItemStack[] ingredient = ingredients[i];
+			if (ingredient == null) {
+				continue;
+			}
+			Map<Item, Long> inv = itemCounts;
+			// sort ingredient by the amount of items in the inv map
+			ingredient = Arrays.stream(ingredient).filter(Objects::nonNull).sorted(Comparator.comparingLong(a -> inv.getOrDefault(((ItemStack)a).getItem(), 0L)).reversed()).toArray(ItemStack[]::new);
+
+			// Sort ingredient by the amount of items in this inventory
+			ItemStack stack = ItemStack.EMPTY;
+			for (ItemStack itemStack : ingredient) {
+				ItemStack pulled = pullStack(itemStack, tab);
+				if (!pulled.isEmpty()) {
+					stack = pulled;
+					break;
 				}
-				if (stack.isEmpty()) {
-					for (int j = 0;j < items[i].length;j++) {
-						boolean br = false;
-						for (int k = 0;k < player.getInventory().getContainerSize();k++) {
-							if(ItemStack.isSame(player.getInventory().getItem(k), items[i][j])) {
-								stack = player.getInventory().removeItem(k, 1);
-								br = true;
-								break;
-							}
-						}
-						if (br)
+			}
+			if (stack.isEmpty()) {
+				for (ItemStack itemStack : ingredient) {
+					boolean br = false;
+					Inventory playerInv = player.getInventory();
+					for (int k = 0; k < playerInv.getContainerSize(); k++) {
+						if (ItemStack.isSameItem(playerInv.getItem(k), itemStack)) {
+							stack = playerInv.removeItem(k, 1);
+							br = true;
 							break;
+						}
 					}
+					if (br)
+						break;
 				}
-				if (!stack.isEmpty()) {
-					craftMatrix.setItem(i, stack);
-				}
+			}
+			if (!stack.isEmpty()) {
+				craftMatrix.setItem(i, stack);
 			}
 		}
 		onCraftingMatrixChanged();
@@ -266,15 +274,15 @@ public class CraftingLecternTile extends StorageLecternTile implements IAnimatab
 	}
 
 	@Override
-	public void registerControllers(AnimationData data) {
-		data.addAnimationController(new AnimationController<>(this, "controller", 1, (event -> {
-			event.getController().setAnimation(new AnimationBuilder().addAnimation("ledger_float"));
+	public void registerControllers(AnimatableManager.ControllerRegistrar data) {
+		data.add(new AnimationController<>(this, "controller", 1, (event -> {
+			event.getController().setAnimation(RawAnimation.begin().thenPlay("ledger_float"));
 			return PlayState.CONTINUE;
 		})));
 	}
-	AnimationFactory animationFactory = GeckoLibUtil.createFactory(this);
+	software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache AnimatableInstanceCache = GeckoLibUtil.createInstanceCache(this);
 	@Override
-	public AnimationFactory getFactory() {
-		return animationFactory;
+	public AnimatableInstanceCache getAnimatableInstanceCache() {
+		return AnimatableInstanceCache;
 	}
 }

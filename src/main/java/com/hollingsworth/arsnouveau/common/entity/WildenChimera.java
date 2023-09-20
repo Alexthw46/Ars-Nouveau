@@ -10,15 +10,16 @@ import com.hollingsworth.arsnouveau.client.particle.ParticleColor;
 import com.hollingsworth.arsnouveau.client.particle.ParticleLineData;
 import com.hollingsworth.arsnouveau.client.particle.ParticleUtil;
 import com.hollingsworth.arsnouveau.common.entity.goal.chimera.*;
-import com.hollingsworth.arsnouveau.common.potions.ModPotions;
+import com.hollingsworth.arsnouveau.setup.registry.ModPotions;
 import com.hollingsworth.arsnouveau.common.potions.SnareEffect;
 import com.hollingsworth.arsnouveau.common.spell.augment.AugmentAmplify;
 import com.hollingsworth.arsnouveau.common.spell.effect.EffectDelay;
 import com.hollingsworth.arsnouveau.common.spell.effect.EffectKnockback;
 import com.hollingsworth.arsnouveau.common.spell.effect.EffectLaunch;
 import com.hollingsworth.arsnouveau.common.spell.method.MethodTouch;
-import com.hollingsworth.arsnouveau.setup.ItemsRegistry;
-import com.hollingsworth.arsnouveau.setup.SoundRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.ItemsRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.ModEntities;
+import com.hollingsworth.arsnouveau.setup.registry.SoundRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
@@ -33,11 +34,13 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.BossEvent;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -60,17 +63,17 @@ import net.minecraft.world.level.pathfinder.BlockPathTypes;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.fluids.FluidType;
-import software.bernie.geckolib3.core.IAnimatable;
-import software.bernie.geckolib3.core.PlayState;
-import software.bernie.geckolib3.core.builder.AnimationBuilder;
-import software.bernie.geckolib3.core.controller.AnimationController;
-import software.bernie.geckolib3.core.manager.AnimationData;
-import software.bernie.geckolib3.core.manager.AnimationFactory;
-import software.bernie.geckolib3.util.GeckoLibUtil;
+import software.bernie.geckolib.animatable.GeoEntity;
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.core.animation.AnimationController;
+import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.core.object.PlayState;
+import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.ArrayList;
 
-public class WildenChimera extends Monster implements IAnimatable {
+public class WildenChimera extends Monster implements GeoEntity {
     private final ServerBossEvent bossEvent = (ServerBossEvent) (new ServerBossEvent(this.getDisplayName(), BossEvent.BossBarColor.PURPLE, BossEvent.BossBarOverlay.PROGRESS)).setDarkenScreen(true).setCreateWorldFog(true);
     public static final EntityDataAccessor<Boolean> HAS_SPIKES = SynchedEntityData.defineId(WildenChimera.class, EntityDataSerializers.BOOLEAN);
     public static final EntityDataAccessor<Boolean> HAS_HORNS = SynchedEntityData.defineId(WildenChimera.class, EntityDataSerializers.BOOLEAN);
@@ -147,10 +150,10 @@ public class WildenChimera extends Monster implements IAnimatable {
     }
 
     @Override
-    public void registerControllers(AnimationData animationData) {
-        animationData.addAnimationController(new AnimationController<>(this, "walkController", 1, e ->{
+    public void registerControllers(AnimatableManager.ControllerRegistrar animatableManager) {
+        animatableManager.add(new AnimationController<>(this, "walkController", 1, e ->{
             if (!isDefensive() && e.isMoving() && !isFlying() && !isHowling() && !isSwimming() && !isRamPrep() && !isRamming()){
-                e.getController().setAnimation(new AnimationBuilder().addAnimation("run"));
+                e.getController().setAnimation(RawAnimation.begin().thenPlay("run"));
                 return PlayState.CONTINUE;
             }
 
@@ -158,69 +161,69 @@ public class WildenChimera extends Monster implements IAnimatable {
         }));
         crouchController = new AnimationController<>(this, "crouchController", 1, event -> {
             if (isDefensive() && !isFlying() && !this.isHowling()){
-                event.getController().setAnimation(new AnimationBuilder().addAnimation("defending"));
+                event.getController().setAnimation(RawAnimation.begin().thenPlay("defending"));
                 return PlayState.CONTINUE;
             }
             return PlayState.STOP;
         });
 
-        animationData.addAnimationController(crouchController);
-        animationData.addAnimationController(new AnimationController<>(this, "idleController", 1, (event ->{
+        animatableManager.add(crouchController);
+        animatableManager.add(new AnimationController<>(this, "idleController", 1, (event ->{
             if(!event.isMoving() && !isDefensive() && !isFlying() && !isHowling() && !isRamPrep() && !isRamming()){
-                event.getController().setAnimation(new AnimationBuilder().addAnimation("idle"));
+                event.getController().setAnimation(RawAnimation.begin().thenPlay("idle"));
                 return PlayState.CONTINUE;
             }
             return PlayState.STOP;
         })));
-        animationData.addAnimationController(new AnimationController<>(this, "flyController", 1, (event) ->{
+        animatableManager.add(new AnimationController<>(this, "flyController", 1, (event) ->{
             if(isFlying() && !isDiving()){
-                event.getController().setAnimation(new AnimationBuilder().addAnimation("fly_rising"));
+                event.getController().setAnimation(RawAnimation.begin().thenPlay("fly_rising"));
                 return PlayState.CONTINUE;
             }
             return PlayState.STOP;
         }));
-        animationData.addAnimationController(new AnimationController<>(this, "diveController", 1, (event) ->{
+        animatableManager.add(new AnimationController<>(this, "diveController", 1, (event) ->{
             if(isDiving()){
-                event.getController().setAnimation(new AnimationBuilder().addAnimation("dive"));
+                event.getController().setAnimation(RawAnimation.begin().thenPlay("dive"));
                 return PlayState.CONTINUE;
             }
             return PlayState.STOP;
         }));
-        animationData.addAnimationController(new AnimationController<>(this, "howlController", 1, e ->{
+        animatableManager.add(new AnimationController<>(this, "howlController", 1, e ->{
             if (isHowling()) {
-                e.getController().setAnimation(new AnimationBuilder().addAnimation("roar"));
+                e.getController().setAnimation(RawAnimation.begin().thenPlay("roar"));
                 return PlayState.CONTINUE;
             }
-            e.getController().markNeedsReload();
+            e.getController().forceAnimationReset();
             return PlayState.STOP;
         }));
-        animationData.addAnimationController(new AnimationController<>(this, "swimController", 1, e ->{
+        animatableManager.add(new AnimationController<>(this, "swimController", 1, e ->{
             if (!isDefensive() && e.isMoving() && !isFlying() && !isHowling() && isSwimming()){
-                e.getController().setAnimation(new AnimationBuilder().addAnimation("swim"));
+                e.getController().setAnimation(RawAnimation.begin().thenPlay("swim"));
                 return PlayState.CONTINUE;
             }
 
             return PlayState.STOP;
         }));
-        animationData.addAnimationController(new AnimationController<>(this, "ramController", 1, (event -> {
+        animatableManager.add(new AnimationController<>(this, "ramController", 1, (event -> {
             if(isRamming() && !isRamPrep()){
                 if(!this.hasWings()){
-                    event.getController().setAnimation(new AnimationBuilder().addAnimation("charge"));
+                    event.getController().setAnimation(RawAnimation.begin().thenPlay("charge"));
                 }
                 return PlayState.CONTINUE;
             }
             return PlayState.STOP;
         })));
-        animationData.addAnimationController(new AnimationController<>(this, "ramPrep", 1, (event -> {
+        animatableManager.add(new AnimationController<>(this, "ramPrep", 1, (event -> {
             if(isRamPrep() && !isRamming()){
                 if(this.hasWings()){
-                    event.getController().setAnimation(new AnimationBuilder().addAnimation("wing_charge_prep"));
+                    event.getController().setAnimation(RawAnimation.begin().thenPlay("wing_charge_prep"));
                 }else{
-                    event.getController().setAnimation(new AnimationBuilder().addAnimation("charge_prep"));
+                    event.getController().setAnimation(RawAnimation.begin().thenPlay("charge_prep"));
                 }
                 return PlayState.CONTINUE;
             }
-            event.getController().markNeedsReload();
+            event.getController().forceAnimationReset();
             return PlayState.STOP;
         })));
     }
@@ -377,22 +380,22 @@ public class WildenChimera extends Monster implements IAnimatable {
     }
 
     public boolean canDive() {
-        return !isRamGoal && diveCooldown <= 0 && hasWings() && !getPhaseSwapping() && !isFlying() && this.onGround && !isDefensive();
+        return !isRamGoal && diveCooldown <= 0 && hasWings() && !getPhaseSwapping() && !isFlying() && this.onGround() && !isDefensive();
     }
 
     public boolean canSpike() {
-        return !isRamGoal && spikeCooldown <= 0 && hasSpikes() && !getPhaseSwapping() && !isFlying() && this.onGround && this.getTarget() != null;
+        return !isRamGoal && spikeCooldown <= 0 && hasSpikes() && !getPhaseSwapping() && !isFlying() && this.onGround() && this.getTarget() != null;
     }
 
     public boolean canRam(boolean withWings) {
         if(withWings != hasWings()){
             return false;
         }
-        return !isRamGoal && ramCooldown <= 0 && hasHorns() && !getPhaseSwapping() && !isFlying() && !isDefensive() && getTarget() != null && getTarget().isOnGround() && this.isOnGround();
+        return !isRamGoal && ramCooldown <= 0 && hasHorns() && !getPhaseSwapping() && !isFlying() && !isDefensive() && getTarget() != null && getTarget().onGround() && this.onGround();
     }
 
     public boolean canSummon() {
-        return !isRamGoal && getTarget() != null && summonCooldown <= 0 && !isFlying() && !getPhaseSwapping() && !isDefensive() && this.onGround;
+        return !isRamGoal && getTarget() != null && summonCooldown <= 0 && !isFlying() && !getPhaseSwapping() && !isDefensive() && this.onGround();
     }
 
     public boolean canAttack() {
@@ -434,18 +437,18 @@ public class WildenChimera extends Monster implements IAnimatable {
 
     @Override
     public boolean hurt(DamageSource source, float amount) {
-        if (source == DamageSource.CACTUS || source == DamageSource.SWEET_BERRY_BUSH || source == DamageSource.IN_WALL || source == DamageSource.LAVA || source == DamageSource.DROWN)
+        if (source.is(DamageTypes.CACTUS) || source.is(DamageTypes.SWEET_BERRY_BUSH) || source.is(DamageTypes.IN_WALL)  || source.is(DamageTypes.LAVA) || source.is(DamageTypes.DROWN))
             return false;
-        if (source.msgId.equals("cold"))
+        if (source.type().msgId().equals("cold"))
             amount = amount / 2;
         if (this.getPhaseSwapping())
             return false;
 
         Entity entity = source.getEntity();
         if (entity instanceof LivingEntity entity1 && !entity.equals(this)) {
-            if (isDefensive() && !source.msgId.equals("thorns")) {
-                if (!source.isBypassArmor() && BlockUtil.distanceFrom(entity.position, position) <= 3) {
-                    entity.hurt(DamageSource.thorns(this), 6.0f);
+            if (isDefensive() && !source.type().msgId().equals("thorns")) {
+                if (!source.is(DamageTypeTags.BYPASSES_ARMOR) && BlockUtil.distanceFrom(entity.position, position) <= 3) {
+                    entity.hurt(level.damageSources().thorns(this), 6.0f);
                 }
             }
 
@@ -530,10 +533,10 @@ public class WildenChimera extends Monster implements IAnimatable {
         return 300 / (getPhase() + 1);
     }
 
-    AnimationFactory factory = GeckoLibUtil.createFactory(this);
+    AnimatableInstanceCache factory = GeckoLibUtil.createInstanceCache(this);
 
     @Override
-    public AnimationFactory getFactory() {
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
         return factory;
     }
 
@@ -772,7 +775,7 @@ public class WildenChimera extends Monster implements IAnimatable {
                     return;
                 }
                 float f1;
-                if (this.mob.isOnGround()) {
+                if (this.mob.onGround()) {
                     f1 = (float) (this.speedModifier * this.mob.getAttributeValue(Attributes.MOVEMENT_SPEED));
                 } else {
                     f1 = (float) (this.speedModifier * this.mob.getAttributeValue(Attributes.FLYING_SPEED));
@@ -798,7 +801,7 @@ public class WildenChimera extends Monster implements IAnimatable {
             double motionX = mob.getDeltaMovement().x;
             double motionY = mob.getDeltaMovement().y;
             double motionZ = mob.getDeltaMovement().z;
-            BlockPos dest = new BlockPos(mob.orbitOffset);
+            BlockPos dest = BlockPos.containing(mob.orbitOffset);
 
             double speedMod = 1.3;
             if (dest.getX() != 0 || dest.getY() != 0 || dest.getZ() != 0) {
@@ -818,7 +821,7 @@ public class WildenChimera extends Monster implements IAnimatable {
                 motionZ = (0.9 - weight) * motionZ + (speedMod + weight) * targetVector.z;
             }
             mob.setDeltaMovement(motionX, motionY, motionZ);
-            faceBlock(new BlockPos(mob.orbitOffset), mob);
+            faceBlock(BlockPos.containing(mob.orbitOffset), mob);
         }
     }
 

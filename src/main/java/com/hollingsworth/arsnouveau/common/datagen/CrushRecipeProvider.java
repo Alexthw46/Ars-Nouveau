@@ -1,35 +1,28 @@
 package com.hollingsworth.arsnouveau.common.datagen;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+
 import com.hollingsworth.arsnouveau.common.crafting.recipes.CrushRecipe;
 import net.minecraft.data.CachedOutput;
 import net.minecraft.data.DataGenerator;
-import net.minecraft.data.DataProvider;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraftforge.common.Tags;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CrushRecipeProvider implements DataProvider {
-    public final DataGenerator generator;
+public class CrushRecipeProvider extends SimpleDataProvider {
+
     public List<CrushRecipe> recipes = new ArrayList<>();
-    public static final Gson GSON = (new GsonBuilder()).setPrettyPrinting().create();
-    public static final Logger LOGGER = LogManager.getLogger();
 
     public CrushRecipeProvider(DataGenerator generatorIn) {
-        this.generator = generatorIn;
+        super(generatorIn);
     }
 
     @Override
-    public void run(CachedOutput cache) throws IOException {
+    public void collectJsons(CachedOutput pOutput) {
         recipes.add(new CrushRecipe("stone", Ingredient.of(Tags.Items.STONE))
                 .withItems(Items.GRAVEL.getDefaultInstance(), 1.0f));
         recipes.add(new CrushRecipe("gravel", Ingredient.of(Tags.Items.GRAVEL))
@@ -58,10 +51,10 @@ public class CrushRecipeProvider implements DataProvider {
 
         recipes.add(new CrushRecipe("terracotta", Ingredient.of(Items.TERRACOTTA)).withItems(Items.RED_SAND.getDefaultInstance()));
         recipes.add(new CrushRecipe("sugar_cane", Ingredient.of(Items.SUGAR_CANE)).withItems(new ItemStack(Items.SUGAR, 2)));
-        Path output = this.generator.getOutputFolder();
+        recipes.add(new CrushRecipe("sandstone_to_sand", Ingredient.of(Items.SANDSTONE)).withItems(Items.SAND.getDefaultInstance()));
         for (CrushRecipe g : recipes) {
             Path path = getRecipePath(output, g.getId().getPath());
-            DataProvider.saveStable(cache, g.asRecipe(), path);
+            saveStable(pOutput, g.asRecipe(), path);
         }
     }
 

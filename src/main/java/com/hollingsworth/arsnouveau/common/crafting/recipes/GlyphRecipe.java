@@ -6,7 +6,8 @@ import com.google.gson.JsonObject;
 import com.hollingsworth.arsnouveau.api.spell.AbstractSpellPart;
 import com.hollingsworth.arsnouveau.common.block.tile.ScribesTile;
 import com.hollingsworth.arsnouveau.common.items.Glyph;
-import com.hollingsworth.arsnouveau.setup.RecipeRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.RecipeRegistry;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
@@ -25,7 +26,7 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hollingsworth.arsnouveau.api.RegistryHelper.getRegistryName;
+import static com.hollingsworth.arsnouveau.setup.registry.RegistryHelper.getRegistryName;
 
 public class GlyphRecipe implements Recipe<ScribesTile> {
 
@@ -104,8 +105,8 @@ public class GlyphRecipe implements Recipe<ScribesTile> {
     }
 
     @Override
-    public ItemStack assemble(ScribesTile pContainer) {
-        return ItemStack.EMPTY;
+    public ItemStack assemble(ScribesTile p_44001_, RegistryAccess p_267165_) {
+        return output.copy();
     }
 
     @Override
@@ -114,7 +115,7 @@ public class GlyphRecipe implements Recipe<ScribesTile> {
     }
 
     @Override
-    public ItemStack getResultItem() {
+    public ItemStack getResultItem(RegistryAccess p_267052_) {
         return output.copy();
     }
 

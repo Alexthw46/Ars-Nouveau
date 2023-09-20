@@ -3,7 +3,8 @@ package com.hollingsworth.arsnouveau.common.entity;
 import com.hollingsworth.arsnouveau.common.entity.goal.stalker.DiveAttackGoal;
 import com.hollingsworth.arsnouveau.common.entity.goal.stalker.FlyHelper;
 import com.hollingsworth.arsnouveau.common.entity.goal.stalker.StartFlightGoal;
-import com.hollingsworth.arsnouveau.setup.Config;
+import com.hollingsworth.arsnouveau.setup.config.Config;
+import com.hollingsworth.arsnouveau.setup.registry.ModEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -23,16 +24,17 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import software.bernie.geckolib3.core.IAnimatable;
-import software.bernie.geckolib3.core.PlayState;
-import software.bernie.geckolib3.core.builder.AnimationBuilder;
-import software.bernie.geckolib3.core.controller.AnimationController;
-import software.bernie.geckolib3.core.event.predicate.AnimationEvent;
-import software.bernie.geckolib3.core.manager.AnimationData;
-import software.bernie.geckolib3.core.manager.AnimationFactory;
-import software.bernie.geckolib3.util.GeckoLibUtil;
+import software.bernie.geckolib.animatable.GeoEntity;
+import software.bernie.geckolib.core.animatable.GeoAnimatable;
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.core.animation.AnimationController;
+import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.core.object.PlayState;
+import software.bernie.geckolib.util.GeckoLibUtil;
+import software.bernie.geckolib.core.animation.AnimationState;
 
-public class WildenStalker extends Monster implements IAnimatable {
+public class WildenStalker extends Monster implements GeoEntity {
     int leapCooldown;
     public Vec3 orbitOffset = Vec3.ZERO;
     public BlockPos orbitPosition = BlockPos.ZERO;
@@ -76,7 +78,7 @@ public class WildenStalker extends Monster implements IAnimatable {
             if (leapCooldown > 0)
                 leapCooldown--;
 
-            if (this.isFlying() && this.isOnGround())
+            if (this.isFlying() && this.onGround())
                 this.setFlying(false);
 
             if (this.isFlying()) {
@@ -118,19 +120,19 @@ public class WildenStalker extends Monster implements IAnimatable {
         return 0.4F;
     }
 
-    private PlayState flyPredicate(AnimationEvent<?> event) {
+    private PlayState flyPredicate(software.bernie.geckolib.core.animation.AnimationState event) {
         if(isFlying()) {
-            event.getController().setAnimation(new AnimationBuilder().addAnimation("fly"));
+            event.getController().setAnimation(RawAnimation.begin().thenPlay("fly"));
             return PlayState.CONTINUE;
         }
         return PlayState.STOP;
     }
 
-    private PlayState groundPredicate(AnimationEvent<?> e) {
+    private PlayState groundPredicate(software.bernie.geckolib.core.animation.AnimationState e) {
         if(isFlying()){
             return PlayState.STOP;
         }else if(e.isMoving()){
-            e.getController().setAnimation(new AnimationBuilder().addAnimation("run"));
+            e.getController().setAnimation(RawAnimation.begin().thenPlay("run"));
             return PlayState.CONTINUE;
         }
         return PlayState.STOP;
@@ -140,28 +142,28 @@ public class WildenStalker extends Monster implements IAnimatable {
     AnimationController<WildenStalker> groundController;
     AnimationController<WildenStalker> idleController;
     @Override
-    public void registerControllers(AnimationData animationData) {
+    public void registerControllers(AnimatableManager.ControllerRegistrar animatableManager) {
         flyController = new AnimationController<>(this, "flyController", 1, this::flyPredicate);
-        animationData.addAnimationController(flyController);
+        animatableManager.add(flyController);
         groundController = new AnimationController<>(this, "groundController", 1, this::groundPredicate);
-        animationData.addAnimationController(groundController);
+        animatableManager.add(groundController);
         idleController = new AnimationController<>(this, "idleController", 1, this::idlePredicate);
 
-        animationData.addAnimationController(idleController);
+        animatableManager.add(idleController);
     }
 
-    private <T extends IAnimatable> PlayState idlePredicate(AnimationEvent<T> tAnimationEvent) {
-        if(tAnimationEvent.isMoving() || isFlying()){
+    private <T extends GeoAnimatable> PlayState idlePredicate(AnimationState<T> tAnimationState) {
+        if(tAnimationState.isMoving() || isFlying()){
             return PlayState.STOP;
         }
-        tAnimationEvent.getController().setAnimation(new AnimationBuilder().addAnimation("idle"));
+        tAnimationState.getController().setAnimation(RawAnimation.begin().thenPlay("idle"));
         return PlayState.CONTINUE;
     }
 
-    AnimationFactory factory = GeckoLibUtil.createFactory(this);
+    AnimatableInstanceCache factory = GeckoLibUtil.createInstanceCache(this);
 
     @Override
-    public AnimationFactory getFactory() {
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
         return factory;
     }
 
@@ -187,24 +189,24 @@ public class WildenStalker extends Monster implements IAnimatable {
             this.move(MoverType.SELF, this.getDeltaMovement());
             this.setDeltaMovement(this.getDeltaMovement().scale(0.5D));
         } else {
-            BlockPos ground = new BlockPos(this.getX(), this.getY() - 1.0D, this.getZ());
+            BlockPos ground = BlockPos.containing(this.getX(), this.getY() - 1.0D, this.getZ());
             float f = 0.91F;
-            if (this.onGround) {
+            if (this.onGround()) {
                 f = this.level.getBlockState(ground).getFriction(this.level, ground, this) * 0.91F;
             }
 
             float f1 = 0.16277137F / (f * f * f);
             f = 0.91F;
-            if (this.onGround) {
+            if (this.onGround()) {
                 f = this.level.getBlockState(ground).getFriction(this.level, ground, this) * 0.91F;
             }
 
-            this.moveRelative(this.onGround ? 0.1F * f1 : 0.02F, travelVector);
+            this.moveRelative(this.onGround() ? 0.1F * f1 : 0.02F, travelVector);
             this.move(MoverType.SELF, this.getDeltaMovement());
             this.setDeltaMovement(this.getDeltaMovement().scale(f));
         }
 
-        this.calculateEntityAnimation(this, false);
+        this.calculateEntityAnimation( false);
     }
 
     public static AttributeSupplier.Builder getModdedAttributes() {

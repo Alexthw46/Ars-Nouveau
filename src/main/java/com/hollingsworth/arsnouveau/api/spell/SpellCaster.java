@@ -9,7 +9,6 @@ import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class SpellCaster implements ISpellCaster {
@@ -26,7 +25,7 @@ public class SpellCaster implements ISpellCaster {
         this.stack = stack;
     }
 
-   @NotNull
+    @NotNull
     @Override
     public Spell getSpell() {
         return spells.getOrDefault(getCurrentSlot(), new Spell());
@@ -62,16 +61,6 @@ public class SpellCaster implements ISpellCaster {
     @Override
     public void setSpell(Spell spell) {
         setSpell(spell, getCurrentSlot());
-    }
-
-    @Override
-    public void setSpellRecipe(List<AbstractSpellPart> spellRecipe, int slot) {
-        if (spells.containsKey(slot)) {
-            spells.get(slot).setRecipe(spellRecipe);
-        } else {
-            spells.put(slot, new Spell(spellRecipe));
-        }
-        writeItem(stack);
     }
 
     @Override

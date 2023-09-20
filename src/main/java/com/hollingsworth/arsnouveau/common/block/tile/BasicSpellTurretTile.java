@@ -5,24 +5,25 @@ import com.hollingsworth.arsnouveau.api.spell.ISpellCaster;
 import com.hollingsworth.arsnouveau.api.spell.ISpellCasterProvider;
 import com.hollingsworth.arsnouveau.api.spell.TurretSpellCaster;
 import com.hollingsworth.arsnouveau.common.block.ITickable;
-import com.hollingsworth.arsnouveau.setup.BlockRegistry;
+import com.hollingsworth.arsnouveau.common.util.RegistryWrapper;
+import com.hollingsworth.arsnouveau.setup.registry.BlockRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import software.bernie.geckolib3.core.IAnimatable;
-import software.bernie.geckolib3.core.PlayState;
-import software.bernie.geckolib3.core.builder.AnimationBuilder;
-import software.bernie.geckolib3.core.controller.AnimationController;
-import software.bernie.geckolib3.core.event.predicate.AnimationEvent;
-import software.bernie.geckolib3.core.manager.AnimationData;
-import software.bernie.geckolib3.core.manager.AnimationFactory;
-import software.bernie.geckolib3.util.GeckoLibUtil;
+import software.bernie.geckolib.animatable.GeoBlockEntity;
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.core.animation.AnimationController;
+import software.bernie.geckolib.core.animation.AnimationState;
+import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.core.object.PlayState;
+import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.List;
 
-public class BasicSpellTurretTile extends ModdedTile implements ITooltipProvider, IAnimatable, IAnimationListener, ITickable, ISpellCasterProvider {
+public class BasicSpellTurretTile extends ModdedTile implements ITooltipProvider, GeoBlockEntity, IAnimationListener, ITickable, ISpellCasterProvider {
 
     boolean playRecoil;
     public TurretSpellCaster spellCaster = new TurretSpellCaster(new CompoundTag());
@@ -31,12 +32,17 @@ public class BasicSpellTurretTile extends ModdedTile implements ITooltipProvider
         super(p_i48289_1_, pos, state);
     }
 
+
+    public BasicSpellTurretTile(RegistryWrapper<? extends BlockEntityType<?>> p_i48289_1_, BlockPos pos, BlockState state) {
+        super(p_i48289_1_.get(), pos, state);
+    }
+
     public BasicSpellTurretTile(BlockPos pos, BlockState state) {
         super(BlockRegistry.BASIC_SPELL_TURRET_TILE, pos, state);
     }
 
     public int getManaCost() {
-        return this.spellCaster.getSpell().getDiscountedCost();
+        return this.spellCaster.getSpell().getCost();
     }
 
     @Override
@@ -58,10 +64,10 @@ public class BasicSpellTurretTile extends ModdedTile implements ITooltipProvider
         tooltip.add(Component.literal(spellCaster.getSpell().getDisplayString()));
     }
 
-    public PlayState walkPredicate(AnimationEvent<?> event) {
+    public PlayState walkPredicate(AnimationState<?> event) {
         if (playRecoil) {
-            event.getController().clearAnimationCache();
-            event.getController().setAnimation(new AnimationBuilder().addAnimation("recoil"));
+            event.getController().forceAnimationReset();
+            event.getController().setAnimation(RawAnimation.begin().thenPlay("recoil"));
             playRecoil = false;
         }
         return PlayState.CONTINUE;
@@ -70,15 +76,15 @@ public class BasicSpellTurretTile extends ModdedTile implements ITooltipProvider
     AnimationController castController;
 
     @Override
-    public void registerControllers(AnimationData data) {
+    public void registerControllers(AnimatableManager.ControllerRegistrar data) {
         castController = new AnimationController<>(this, "castController", 0, this::walkPredicate);
-        data.addAnimationController(castController);
+        data.add(castController);
     }
 
-    AnimationFactory factory = GeckoLibUtil.createFactory(this);
+    AnimatableInstanceCache factory = GeckoLibUtil.createInstanceCache(this);
 
     @Override
-    public AnimationFactory getFactory() {
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
         return factory;
     }
 

@@ -1,12 +1,11 @@
 package com.hollingsworth.arsnouveau.client;
 
 import com.hollingsworth.arsnouveau.ArsNouveau;
-import com.hollingsworth.arsnouveau.setup.Config;
+import com.hollingsworth.arsnouveau.setup.config.Config;
 import com.mojang.blaze3d.pipeline.TextureTarget;
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.math.Matrix4f;
 import net.minecraft.client.Camera;
 import net.minecraft.client.CloudStatus;
 import net.minecraft.client.Minecraft;
@@ -19,6 +18,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import org.joml.Matrix4f;
 
 import static com.hollingsworth.arsnouveau.client.ClientInfo.skyRenderTarget;
 
@@ -82,7 +82,9 @@ public class SkyTextureHandler {
     }
 
     public static void setupRenderTarget(int width, int height) {
-        final Minecraft instance = Minecraft.getInstance();
+        if(skyRenderTarget != null){
+            skyRenderTarget.destroyBuffers();
+        }
         skyRenderTarget = new TextureTarget(width, height, true, Minecraft.ON_OSX);
     }
 }

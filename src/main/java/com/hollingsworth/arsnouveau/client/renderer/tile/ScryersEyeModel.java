@@ -1,18 +1,13 @@
 package com.hollingsworth.arsnouveau.client.renderer.tile;
 
 import com.hollingsworth.arsnouveau.ArsNouveau;
-import com.hollingsworth.arsnouveau.client.ClientInfo;
 import com.hollingsworth.arsnouveau.common.block.tile.ScryersOculusTile;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
-import software.bernie.geckolib3.core.processor.IBone;
-import software.bernie.geckolib3.model.AnimatedGeoModel;
+import software.bernie.geckolib.model.GeoModel;
 
-public class ScryersEyeModel extends AnimatedGeoModel<ScryersOculusTile> {
-    public static ResourceLocation SQUINTING = new ResourceLocation(ArsNouveau.MODID, "textures/blocks/scryers_eye_squinting.png");
-    public static ResourceLocation ALERT = new ResourceLocation(ArsNouveau.MODID, "textures/blocks/scryers_eye_alert.png");
-    public static ResourceLocation IDLE = new ResourceLocation(ArsNouveau.MODID, "textures/blocks/scryers_eye_idle.png");
-    public static ResourceLocation SLEEPING = new ResourceLocation(ArsNouveau.MODID, "textures/blocks/scryers_eye_sleeping.png");
+public class ScryersEyeModel extends GeoModel<ScryersOculusTile> {
+    public static ResourceLocation SQUINTING = new ResourceLocation(ArsNouveau.MODID, "textures/block/scryers_eye_squinting.png");
+    public static ResourceLocation IDLE = new ResourceLocation(ArsNouveau.MODID, "textures/block/scryers_eye_idle.png");
     public static final ResourceLocation anim = new ResourceLocation(ArsNouveau.MODID, "animations/scryers_eye_animations.json");
     public static final ResourceLocation model = new ResourceLocation(ArsNouveau.MODID, "geo/scryers_eye.geo.json");
 
@@ -29,25 +24,5 @@ public class ScryersEyeModel extends AnimatedGeoModel<ScryersOculusTile> {
     @Override
     public ResourceLocation getAnimationResource(ScryersOculusTile animatable) {
         return anim;
-    }
-
-
-    @Override
-    public void setCustomAnimations(ScryersOculusTile pBlockEntity, int uniqueID) {
-        super.setCustomAnimations(pBlockEntity, uniqueID);
-        IBone eye = this.getAnimationProcessor().getBone("eye");
-        if (eye == null)
-            return;
-        // Taken from enchantment table
-        float f1;
-        for (f1 = pBlockEntity.rot - pBlockEntity.oRot; f1 >= (float) Math.PI; f1 -= ((float) Math.PI * 2F)) {
-        }
-
-        while (f1 < -(float) Math.PI) {
-            f1 += ((float) Math.PI * 2F);
-        }
-        float f2 = pBlockEntity.oRot + f1 * ClientInfo.partialTicks - 4.7f;
-        eye.setRotationY(-f2);
-        eye.setPositionY((Mth.sin((ClientInfo.ticksInGame + ClientInfo.partialTicks) / 10.0f)) / 2f);
     }
 }

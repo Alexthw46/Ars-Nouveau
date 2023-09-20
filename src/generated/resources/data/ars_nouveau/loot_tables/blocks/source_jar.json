@@ -16,11 +16,6 @@
               "ops": [
                 {
                   "op": "replace",
-                  "source": "inv",
-                  "target": "BlockEntityTag.inv"
-                },
-                {
-                  "op": "replace",
                   "source": "source",
                   "target": "BlockEntityTag.source"
                 }
@@ -41,8 +36,8 @@
           "name": "ars_nouveau:source_jar"
         }
       ],
-      "name": "source_jar",
       "rolls": 1.0
     }
-  ]
+  ],
+  "random_sequence": "ars_nouveau:blocks/source_jar"
 }

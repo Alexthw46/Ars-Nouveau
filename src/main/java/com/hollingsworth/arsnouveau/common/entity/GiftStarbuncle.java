@@ -4,7 +4,7 @@ import com.hollingsworth.arsnouveau.api.util.SummonUtil;
 import com.hollingsworth.arsnouveau.common.advancement.ANCriteriaTriggers;
 import com.hollingsworth.arsnouveau.common.compat.PatchouliHandler;
 import com.hollingsworth.arsnouveau.common.entity.goal.UntamedFindItemGoal;
-import com.hollingsworth.arsnouveau.setup.ItemsRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.ItemsRegistry;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -28,16 +28,16 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.Tags;
-import software.bernie.geckolib3.core.IAnimatable;
-import software.bernie.geckolib3.core.PlayState;
-import software.bernie.geckolib3.core.builder.AnimationBuilder;
-import software.bernie.geckolib3.core.controller.AnimationController;
-import software.bernie.geckolib3.core.event.predicate.AnimationEvent;
-import software.bernie.geckolib3.core.manager.AnimationData;
-import software.bernie.geckolib3.core.manager.AnimationFactory;
-import software.bernie.geckolib3.util.GeckoLibUtil;
+import software.bernie.geckolib.animatable.GeoEntity;
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.core.animation.AnimationController;
+import software.bernie.geckolib.core.animation.AnimationState;
+import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.core.object.PlayState;
+import software.bernie.geckolib.util.GeckoLibUtil;
 
-public class GiftStarbuncle extends PathfinderMob implements IAnimatable {
+public class GiftStarbuncle extends PathfinderMob implements GeoEntity {
     int tamingTime;
     public static final EntityDataAccessor<Boolean> BEING_TAMED = SynchedEntityData.defineId(GiftStarbuncle.class, EntityDataSerializers.BOOLEAN);
 
@@ -121,14 +121,14 @@ public class GiftStarbuncle extends PathfinderMob implements IAnimatable {
     }
 
     @Override
-    public void registerControllers(AnimationData animationData) {
-        animationData.addAnimationController(new AnimationController<>(this, "walkController", 1, this::animationPredicate));
-        animationData.addAnimationController(new AnimationController<>(this, "danceController", 1, this::dancePredicate));
+    public void registerControllers(AnimatableManager.ControllerRegistrar animatableManager) {
+        animatableManager.add(new AnimationController<>(this, "walkController", 1, this::animationPredicate));
+        animatableManager.add(new AnimationController<>(this, "danceController", 1, this::dancePredicate));
     }
 
-    private PlayState animationPredicate(AnimationEvent<?> event) {
+    private PlayState animationPredicate(AnimationState<?> event) {
         if (event.isMoving() || (level.isClientSide && PatchouliHandler.isPatchouliWorld())) {
-            event.getController().setAnimation(new AnimationBuilder().addAnimation("run"));
+            event.getController().setAnimation(RawAnimation.begin().thenPlay("run"));
             return PlayState.CONTINUE;
         }
         return PlayState.STOP;
@@ -139,18 +139,18 @@ public class GiftStarbuncle extends PathfinderMob implements IAnimatable {
         return SummonUtil.canSummonTakeDamage(pSource) && super.hurt(pSource, pAmount);
     }
 
-    private PlayState dancePredicate(AnimationEvent<?> event) {
+    private PlayState dancePredicate(AnimationState<?> event) {
         if (this.entityData.get(BEING_TAMED)) {
-            event.getController().setAnimation(new AnimationBuilder().addAnimation("dance_master"));
+            event.getController().setAnimation(RawAnimation.begin().thenPlay("dance_master"));
             return PlayState.CONTINUE;
         }
         return PlayState.STOP;
     }
 
-    AnimationFactory factory = GeckoLibUtil.createFactory(this);
+    AnimatableInstanceCache factory = GeckoLibUtil.createInstanceCache(this);
 
     @Override
-    public AnimationFactory getFactory() {
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
         return factory;
     }
 }

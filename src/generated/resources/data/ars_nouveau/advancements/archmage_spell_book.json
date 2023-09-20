@@ -33,5 +33,6 @@
     [
       "has_archmage_spell_book"
     ]
-  ]
+  ],
+  "sends_telemetry_event": false
 }

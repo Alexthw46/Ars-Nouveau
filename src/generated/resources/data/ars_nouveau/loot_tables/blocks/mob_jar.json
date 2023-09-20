@@ -41,8 +41,8 @@
           "name": "ars_nouveau:mob_jar"
         }
       ],
-      "name": "mob_jar",
       "rolls": 1.0
     }
-  ]
+  ],
+  "random_sequence": "ars_nouveau:blocks/mob_jar"
 }

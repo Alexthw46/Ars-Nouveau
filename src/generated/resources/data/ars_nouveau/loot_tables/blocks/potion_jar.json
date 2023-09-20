@@ -56,8 +56,8 @@
           "name": "ars_nouveau:potion_jar"
         }
       ],
-      "name": "potion_jar",
       "rolls": 1.0
     }
-  ]
+  ],
+  "random_sequence": "ars_nouveau:blocks/potion_jar"
 }

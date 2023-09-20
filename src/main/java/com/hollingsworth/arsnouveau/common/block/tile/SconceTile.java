@@ -12,7 +12,7 @@ import com.hollingsworth.arsnouveau.common.block.ITickable;
 import com.hollingsworth.arsnouveau.common.block.SconceBlock;
 import com.hollingsworth.arsnouveau.common.block.ScribesBlock;
 import com.hollingsworth.arsnouveau.common.spell.augment.AugmentDampen;
-import com.hollingsworth.arsnouveau.setup.BlockRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.BlockRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -30,7 +30,7 @@ public class SconceTile extends ModdedTile implements ILightable, ITickable, IDi
     public boolean lit;
 
     public SconceTile(BlockPos pos, BlockState state) {
-        this(BlockRegistry.SCONCE_TILE, pos, state);
+        super(BlockRegistry.SCONCE_TILE, pos, state);
     }
 
     public SconceTile(BlockEntityType type, BlockPos pos, BlockState state) {

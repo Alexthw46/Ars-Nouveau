@@ -11,12 +11,10 @@ import javax.annotation.Nullable;
 
 import static com.hollingsworth.arsnouveau.common.block.tile.SummoningTile.CONVERTED;
 
-import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
-
 public abstract class SummonBlock extends TickableModBlock {
 
     public SummonBlock(Properties properties) {
-        super(properties);
+        super(properties.pushReaction(PushReaction.BLOCK));
     }
 
     @Nullable
@@ -37,11 +35,4 @@ public abstract class SummonBlock extends TickableModBlock {
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(CONVERTED);
     }
-
-    @Override
-    public PushReaction getPistonPushReaction(BlockState p_149656_1_) {
-        return PushReaction.BLOCK;
-    }
-
-
 }

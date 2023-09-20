@@ -1,7 +1,7 @@
 package com.hollingsworth.arsnouveau.common.command;
 
 import com.google.common.collect.ImmutableList;
-import com.hollingsworth.arsnouveau.common.capability.CapabilityRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.CapabilityRegistry;
 import com.mojang.brigadier.CommandDispatcher;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -34,7 +34,7 @@ public class ResetCommand {
             CapabilityRegistry.getPlayerDataCap((LivingEntity) e).ifPresent(iPlayerCap -> iPlayerCap.setKnownGlyphs(new ArrayList<>()));
             CapabilityRegistry.getPlayerDataCap((LivingEntity) e).ifPresent(ifam -> ifam.setUnlockedFamiliars(new ArrayList<>()));
         }
-        source.sendSuccess(Component.translatable("ars_nouveau.reset.cleared"), true);
+        source.sendSuccess(() -> Component.translatable("ars_nouveau.reset.cleared"), true);
         return 1;
     }
 }

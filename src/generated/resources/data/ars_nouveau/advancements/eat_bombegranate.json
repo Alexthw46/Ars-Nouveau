@@ -31,5 +31,6 @@
     [
       "eat_bombegranate"
     ]
-  ]
+  ],
+  "sends_telemetry_event": false
 }

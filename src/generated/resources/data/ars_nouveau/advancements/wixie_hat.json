@@ -33,5 +33,6 @@
     [
       "has_wixie_hat"
     ]
-  ]
+  ],
+  "sends_telemetry_event": false
 }

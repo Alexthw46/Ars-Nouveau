@@ -25,5 +25,6 @@
     [
       "shrunk_starbuncle"
     ]
-  ]
+  ],
+  "sends_telemetry_event": false
 }

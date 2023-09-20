@@ -9,11 +9,12 @@ import com.hollingsworth.arsnouveau.api.util.SourceUtil;
 import com.hollingsworth.arsnouveau.client.particle.GlowParticleData;
 import com.hollingsworth.arsnouveau.client.particle.ParticleColor;
 import com.hollingsworth.arsnouveau.client.particle.ParticleUtil;
-import com.hollingsworth.arsnouveau.client.util.ColorPos;
+import com.hollingsworth.arsnouveau.client.particle.ColorPos;
 import com.hollingsworth.arsnouveau.common.block.ITickable;
 import com.hollingsworth.arsnouveau.common.entity.EntityFlyingItem;
 import com.hollingsworth.arsnouveau.common.util.PortUtil;
-import com.hollingsworth.arsnouveau.setup.BlockRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.BlockRegistry;
+import com.hollingsworth.arsnouveau.setup.config.Config;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -27,19 +28,20 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
-import software.bernie.geckolib3.core.IAnimatable;
-import software.bernie.geckolib3.core.PlayState;
-import software.bernie.geckolib3.core.builder.AnimationBuilder;
-import software.bernie.geckolib3.core.controller.AnimationController;
-import software.bernie.geckolib3.core.event.predicate.AnimationEvent;
-import software.bernie.geckolib3.core.manager.AnimationData;
-import software.bernie.geckolib3.core.manager.AnimationFactory;
-import software.bernie.geckolib3.util.GeckoLibUtil;
+import software.bernie.geckolib.animatable.GeoBlockEntity;
+import software.bernie.geckolib.core.animatable.GeoAnimatable;
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.core.animation.AnimationController;
+import software.bernie.geckolib.core.animation.AnimationState;
+import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.core.object.PlayState;
+import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class PotionMelderTile extends ModdedTile implements IAnimatable, ITickable, IWandable, ITooltipProvider {
+public class PotionMelderTile extends ModdedTile implements GeoBlockEntity, ITickable, IWandable, ITooltipProvider {
     int timeMixing;
     boolean isMixing;
     boolean hasSource;
@@ -48,7 +50,7 @@ public class PotionMelderTile extends ModdedTile implements IAnimatable, ITickab
     public List<BlockPos> fromJars = new ArrayList<>();
     public BlockPos toPos;
 
-    AnimationFactory manager = GeckoLibUtil.createFactory(this);
+    AnimatableInstanceCache manager = GeckoLibUtil.createInstanceCache(this);
 
     public PotionMelderTile(BlockPos pos, BlockState state) {
         super(BlockRegistry.POTION_MELDER_TYPE, pos, state);
@@ -70,7 +72,7 @@ public class PotionMelderTile extends ModdedTile implements IAnimatable, ITickab
             return;
         }
         if (!level.isClientSide && !hasSource && level.getGameTime() % 20 == 0) {
-            if (SourceUtil.takeSourceWithParticles(worldPosition, level, 5, 100) != null) {
+            if (SourceUtil.takeSourceWithParticles(worldPosition, level, 5, Config.MELDER_SOURCE_COST.get()) != null) {
                 hasSource = true;
                 updateBlock();
             }
@@ -86,7 +88,7 @@ public class PotionMelderTile extends ModdedTile implements IAnimatable, ITickab
         PotionJarTile tile1 = (PotionJarTile) level.getBlockEntity(fromJars.get(0));
         PotionJarTile tile2 = (PotionJarTile) level.getBlockEntity(fromJars.get(1));
         PotionData data = tile1.getData().mergeEffects(tile2.getData());
-        if (!combJar.canAccept(data, 100)) {
+        if (!combJar.canAccept(data, Config.MELDER_OUTPUT.get())) {
             isMixing = false;
             timeMixing = 0;
             return;
@@ -136,9 +138,9 @@ public class PotionMelderTile extends ModdedTile implements IAnimatable, ITickab
     }
 
     public void mergePotions(PotionJarTile combJar, PotionJarTile take1, PotionJarTile take2, PotionData data){
-        combJar.add(data, 100);
-        take1.remove(300);
-        take2.remove(300);
+        combJar.add(data, Config.MELDER_OUTPUT.get());
+        take1.remove(Config.MELDER_INPUT_COST.get());
+        take2.remove(Config.MELDER_INPUT_COST.get());
         hasSource = false;
         ParticleColor color2 = ParticleColor.fromInt(combJar.getColor());
         EntityFlyingItem item2 = new EntityFlyingItem(level, new Vec3(worldPosition.getX() + 0.5, worldPosition.getY() + 1.0, worldPosition.getZ()+ 0.5),
@@ -155,7 +157,7 @@ public class PotionMelderTile extends ModdedTile implements IAnimatable, ITickab
             return false;
         for(BlockPos p : fromJars){
             BlockEntity te = level.getBlockEntity(p);
-            if(!level.isLoaded(p) || !(te instanceof PotionJarTile jar) || jar.getAmount() < 300){
+            if(!level.isLoaded(p) || !(te instanceof PotionJarTile jar) || jar.getAmount() < Config.MELDER_INPUT_COST.get()){
                 return false;
             }
         }
@@ -219,19 +221,18 @@ public class PotionMelderTile extends ModdedTile implements IAnimatable, ITickab
         return BlockUtil.distanceFrom(pos1, pos2) <= 3;
     }
 
-    private <E extends BlockEntity & IAnimatable> PlayState idlePredicate(AnimationEvent<E> event) {
-        event.getController().setAnimation(new AnimationBuilder().addAnimation("stir"));
+    private <E extends BlockEntity & GeoAnimatable> PlayState idlePredicate(AnimationState<E> event) {
+        event.getController().setAnimation(RawAnimation.begin().thenPlay("stir"));
         return this.isMixing ? PlayState.CONTINUE : PlayState.STOP;
     }
 
     @Override
-    public void registerControllers(AnimationData animationData) {
-        animationData.addAnimationController(new AnimationController<>(this, "rotate_controller", 0, this::idlePredicate));
-        animationData.setResetSpeedInTicks(0.0);
+    public void registerControllers(AnimatableManager.ControllerRegistrar animatableManager) {
+        animatableManager.add(new AnimationController<>(this, "rotate_controller", 0, this::idlePredicate));
     }
 
     @Override
-    public AnimationFactory getFactory() {
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
         return manager;
     }
 
@@ -287,11 +288,12 @@ public class PotionMelderTile extends ModdedTile implements IAnimatable, ITickab
         if(fromJars.size() >= 2 && toPos != null && level.getBlockEntity(toPos) instanceof PotionJarTile combJar){
             PotionJarTile tile1 = (PotionJarTile) level.getBlockEntity(fromJars.get(0));
             PotionJarTile tile2 = (PotionJarTile) level.getBlockEntity(fromJars.get(1));
-            if(tile1.getAmount() < 300 || tile2.getAmount() < 300) {
+            int inputCost = Config.MELDER_INPUT_COST.get();
+            if(tile1 == null || tile1.getAmount() < inputCost || tile2 == null || tile2.getAmount() < inputCost) {
                 return;
             }
             PotionData data = getCombinedResult(tile1, tile2);
-            if(!combJar.canAccept(data, 100)){
+            if(!combJar.canAccept(data, Config.MELDER_OUTPUT.get())){
                 tooltip.add(Component.translatable("ars_nouveau.melder.destination_invalid").setStyle(Style.EMPTY.withColor(ChatFormatting.GOLD)));
             }
         }

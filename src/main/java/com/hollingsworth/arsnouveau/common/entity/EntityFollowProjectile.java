@@ -5,10 +5,12 @@ import com.hollingsworth.arsnouveau.api.util.NBTUtil;
 import com.hollingsworth.arsnouveau.client.particle.GlowParticleData;
 import com.hollingsworth.arsnouveau.client.particle.ParticleColor;
 import com.hollingsworth.arsnouveau.client.particle.ParticleUtil;
+import com.hollingsworth.arsnouveau.setup.registry.ModEntities;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -17,8 +19,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkHooks;
 import net.minecraftforge.network.PlayMessages;
-
-import net.minecraft.world.entity.Entity.RemovalReason;
 
 public class EntityFollowProjectile extends ColoredProjectile {
     public static final EntityDataAccessor<BlockPos> to = SynchedEntityData.defineId(EntityFollowProjectile.class, EntityDataSerializers.BLOCK_POS);
@@ -41,15 +41,15 @@ public class EntityFollowProjectile extends ColoredProjectile {
 
     public EntityFollowProjectile(Level worldIn, Vec3 from, Vec3 to) {
         this(ModEntities.ENTITY_FOLLOW_PROJ.get(), worldIn);
-        this.entityData.set(EntityFollowProjectile.to, new BlockPos(to));
-        this.entityData.set(EntityFollowProjectile.from, new BlockPos(from));
+        this.entityData.set(EntityFollowProjectile.to, BlockPos.containing(to));
+        this.entityData.set(EntityFollowProjectile.from, BlockPos.containing(from));
 //        this.age = 0;
         setPos(from.x + 0.5, from.y + 0.5, from.z + 0.5);
         this.entityData.set(RED, 255);
         this.entityData.set(GREEN, 25);
         this.entityData.set(BLUE, 180);
 
-        double distance = BlockUtil.distanceFrom(new BlockPos(from), new BlockPos(to));
+        double distance = BlockUtil.distanceFrom(BlockPos.containing(from), BlockPos.containing(to));
         setDespawnDistance((int) (distance + 10));
     }
 
@@ -175,7 +175,7 @@ public class EntityFollowProjectile extends ColoredProjectile {
     }
 
     @Override
-    public Packet<?> getAddEntityPacket() {
+    public Packet<ClientGamePacketListener> getAddEntityPacket() {
         return NetworkHooks.getEntitySpawningPacket(this);
     }
 

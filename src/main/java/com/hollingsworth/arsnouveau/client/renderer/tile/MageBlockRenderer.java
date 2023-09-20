@@ -8,12 +8,10 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import software.bernie.geckolib3.geo.render.built.GeoModel;
-import software.bernie.geckolib3.renderers.geo.GeoProjectilesRenderer;
+import software.bernie.geckolib.cache.object.BakedGeoModel;
+import software.bernie.geckolib.renderer.GeoEntityRenderer;
 
-import javax.annotation.Nullable;
-
-public class MageBlockRenderer extends GeoProjectilesRenderer<EnchantedMageblock> {
+public class MageBlockRenderer extends GeoEntityRenderer<EnchantedMageblock> {
 
     public static GenericModel model = new GenericModel("mage_block");
 
@@ -22,18 +20,12 @@ public class MageBlockRenderer extends GeoProjectilesRenderer<EnchantedMageblock
     }
 
     @Override
-    public void render(GeoModel model, EnchantedMageblock animatable, float partialTicks, RenderType type, PoseStack matrixStackIn, @Nullable MultiBufferSource renderTypeBuffer, @Nullable VertexConsumer vertexBuilder,
-                       int packedLightIn, int packedOverlayIn, float red, float green, float blue, float alpha) {
+    public void actuallyRender(PoseStack poseStack, EnchantedMageblock animatable, BakedGeoModel model, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
         ParticleColor color = animatable.getParticleColor();
-        matrixStackIn.pushPose();
-        matrixStackIn.translate(0, -0.01, 0);
-        super.render(model, animatable, partialTicks, type, matrixStackIn, renderTypeBuffer, vertexBuilder, packedLightIn, packedOverlayIn,
-                color.getRed(), color.getGreen(), color.getBlue(), alpha);
-        matrixStackIn.popPose();
+        super.actuallyRender(poseStack, animatable, model, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, color.getRed(), color.getGreen(), color.getBlue(), alpha);
     }
 
     public static GenericItemBlockRenderer getISTER() {
         return new GenericItemBlockRenderer(model);
     }
-
 }

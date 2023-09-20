@@ -4,7 +4,7 @@ import com.hollingsworth.arsnouveau.api.source.ISourceTile;
 import com.hollingsworth.arsnouveau.api.util.BlockUtil;
 import com.hollingsworth.arsnouveau.client.particle.ParticleColor;
 import com.hollingsworth.arsnouveau.client.particle.ParticleUtil;
-import com.hollingsworth.arsnouveau.setup.BlockRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.BlockRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
@@ -16,14 +16,14 @@ public class RelayWarpTile extends RelaySplitterTile {
     }
 
     public RelayWarpTile(BlockPos pos, BlockState state) {
-        super(BlockRegistry.RELAY_WARP_TILE, pos, state);
+        super(BlockRegistry.RELAY_WARP_TILE.get(), pos, state);
     }
 
     @Override
     public void createParticles(BlockPos from, BlockPos to) {
         if (level.getBlockEntity(to) instanceof RelayWarpTile) {
-            ParticleUtil.spawnTouchPacket(level, getBlockPos(), new ParticleColor.IntWrapper(220, 50, 220));
-            ParticleUtil.spawnTouchPacket(level, to, new ParticleColor.IntWrapper(220, 50, 220));
+            ParticleUtil.spawnTouchPacket(level, getBlockPos(), new ParticleColor(220, 50, 220));
+            ParticleUtil.spawnTouchPacket(level, to, new ParticleColor(220, 50, 220));
         } else {
             super.createParticles(from, to);
         }

@@ -1,7 +1,7 @@
 package com.hollingsworth.arsnouveau.common.block.tile;
 
 import com.hollingsworth.arsnouveau.api.client.ITooltipProvider;
-import com.hollingsworth.arsnouveau.setup.BlockRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.BlockRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
@@ -20,15 +20,15 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.ContainerOpenersCounter;
 import net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import software.bernie.geckolib3.core.IAnimatable;
-import software.bernie.geckolib3.core.manager.AnimationData;
-import software.bernie.geckolib3.core.manager.AnimationFactory;
-import software.bernie.geckolib3.util.GeckoLibUtil;
+import software.bernie.geckolib.animatable.GeoBlockEntity;
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.util.GeckoLibUtil;
 
 import javax.annotation.Nullable;
 import java.util.List;
 
-public class RepositoryTile extends RandomizableContainerBlockEntity implements IAnimatable, ITooltipProvider {
+public class RepositoryTile extends RandomizableContainerBlockEntity implements GeoBlockEntity, ITooltipProvider {
     public static String[][] CONFIGURATIONS = new String[][]{
             {"1","2_3","4_6","7_9","10_12","13_15","16_18","19_21","22_24", "25_27"},
             {"1","2_3","25_27","22_24","19_21","10_12","7_9","4_6","13_15","16_18"},
@@ -84,7 +84,7 @@ public class RepositoryTile extends RandomizableContainerBlockEntity implements 
     }
 
     public RepositoryTile(BlockPos pos, BlockState state) {
-        super(BlockRegistry.REPOSITORY_TILE, pos, state);
+        super(BlockRegistry.REPOSITORY_TILE.get(), pos, state);
     }
 
     @Override
@@ -185,12 +185,12 @@ public class RepositoryTile extends RandomizableContainerBlockEntity implements 
     }
 
     @Override
-    public void registerControllers(AnimationData data) {}
+    public void registerControllers(AnimatableManager.ControllerRegistrar data) {}
 
-    AnimationFactory factory = GeckoLibUtil.createFactory(this);
+    AnimatableInstanceCache factory = GeckoLibUtil.createInstanceCache(this);
 
     @Override
-    public AnimationFactory getFactory() {
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
         return factory;
     }
 

@@ -2,7 +2,7 @@ package com.hollingsworth.arsnouveau.common.block;
 
 import com.hollingsworth.arsnouveau.api.potion.PotionData;
 import com.hollingsworth.arsnouveau.common.block.tile.PotionJarTile;
-import com.hollingsworth.arsnouveau.setup.BlockRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.BlockRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -32,6 +32,7 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
+import net.minecraft.world.level.pathfinder.PathComputationType;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -49,6 +50,10 @@ public class PotionJar extends ModBlock implements SimpleWaterloggedBlock, Entit
     public PotionJar(Properties properties) {
         super(properties);
         registerDefaultState(defaultBlockState().setValue(BlockStateProperties.WATERLOGGED, false));
+    }
+
+    public PotionJar(){
+        this(ModBlock.defaultProperties().noOcclusion());
     }
 
     @Override
@@ -79,8 +84,8 @@ public class PotionJar extends ModBlock implements SimpleWaterloggedBlock, Entit
             if (tile.canAccept(new PotionData(stack),100)) {
                 tile.add(new PotionData(stack), 100);
                 if (!player.isCreative()) {
-                    player.addItem(new ItemStack(Items.GLASS_BOTTLE));
                     stack.shrink(1);
+                    player.addItem(new ItemStack(Items.GLASS_BOTTLE));
                 }
             }
             return super.use(state, worldIn, pos, player, handIn, hit);
@@ -143,7 +148,7 @@ public class PotionJar extends ModBlock implements SimpleWaterloggedBlock, Entit
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
         FluidState fluidState = context.getLevel().getFluidState(context.getClickedPos());
-        context.getLevel().scheduleTick(context.getClickedPos(), BlockRegistry.POTION_JAR, 1);
+        context.getLevel().scheduleTick(context.getClickedPos(), BlockRegistry.POTION_JAR.get(), 1);
         return this.defaultBlockState().setValue(WATERLOGGED, fluidState.getType() == Fluids.WATER);
     }
 
@@ -174,4 +179,9 @@ public class PotionJar extends ModBlock implements SimpleWaterloggedBlock, Entit
             Block.box(5, 9, 5, 11, 14, 11),
             Block.box(6, 13, 6, 10, 16, 10)
     ).reduce((v1, v2) -> Shapes.join(v1, v2, BooleanOp.OR)).get();
+
+    @Override
+    public boolean isPathfindable(BlockState pState, BlockGetter pLevel, BlockPos pPos, PathComputationType pType) {
+        return false;
+    }
 }

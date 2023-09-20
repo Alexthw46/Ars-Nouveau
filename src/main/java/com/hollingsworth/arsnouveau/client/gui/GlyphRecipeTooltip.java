@@ -1,12 +1,9 @@
 package com.hollingsworth.arsnouveau.client.gui;
 
 import com.hollingsworth.arsnouveau.client.ClientInfo;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiComponent;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
-import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
@@ -38,7 +35,8 @@ public class GlyphRecipeTooltip implements ClientTooltipComponent {
         return this.gridSizeX() * SLOT_SIZE_X + 2;
     }
 
-    public void renderImage(Font pFont, int pMouseX, int pMouseY, PoseStack pPoseStack, ItemRenderer pItemRenderer, int pBlitOffset) {
+
+    public void renderImage(Font pFont, int pMouseX, int pMouseY, GuiGraphics graphics) {
         if (this.items.isEmpty())
             return;
         int i = this.gridSizeX();
@@ -50,47 +48,45 @@ public class GlyphRecipeTooltip implements ClientTooltipComponent {
             for (int i1 = 0; i1 < i; ++i1) {
                 int j1 = pMouseX + i1 * SLOT_SIZE_X + BORDER_WIDTH;
                 int k1 = pMouseY + l * SLOT_SIZE_Y + BORDER_WIDTH;
-                this.renderSlot(j1, k1, k++, overWEight, pFont, pPoseStack, pItemRenderer, pBlitOffset);
+                this.renderSlot(j1, k1, k++, overWEight, pFont,graphics);
             }
         }
 
-        this.drawBorder(pMouseX, pMouseY, i, j, pPoseStack, pBlitOffset);
+        this.drawBorder(pMouseX, pMouseY, i, j, graphics);
     }
 
-    private void renderSlot(int pX, int pY, int pItemIndex, boolean pIsBundleFull, Font pFont, PoseStack pPoseStack, ItemRenderer pItemRenderer, int pBlitOffset) {
+    private void renderSlot(int pX, int pY, int pItemIndex, boolean pIsBundleFull, Font pFont, GuiGraphics graphics) {
         if (pItemIndex >= this.items.size()) {
-            this.blit(pPoseStack, pX, pY, pBlitOffset, pIsBundleFull ? GlyphRecipeTooltip.Texture.BLOCKED_SLOT : GlyphRecipeTooltip.Texture.SLOT);
+            this.blit(graphics, pX, pY, pIsBundleFull ? GlyphRecipeTooltip.Texture.BLOCKED_SLOT : GlyphRecipeTooltip.Texture.SLOT);
         } else {
             List<ItemStack> items = new ArrayList<>(List.of(this.items.get(pItemIndex).getItems()));
             ItemStack itemstack = items.get((ClientInfo.ticksInGame / 20) % items.size());
-            this.blit(pPoseStack, pX, pY, pBlitOffset, GlyphRecipeTooltip.Texture.SLOT);
-            pItemRenderer.renderAndDecorateItem(itemstack, pX + BORDER_WIDTH, pY + BORDER_WIDTH, pItemIndex);
-            pItemRenderer.renderGuiItemDecorations(pFont, itemstack, pX + BORDER_WIDTH, pY + BORDER_WIDTH);
+            this.blit(graphics, pX, pY, GlyphRecipeTooltip.Texture.SLOT);
+            graphics.renderItem(itemstack, pX + BORDER_WIDTH, pY + BORDER_WIDTH, pItemIndex);
+            graphics.renderItemDecorations(pFont, itemstack, pX + BORDER_WIDTH, pY + BORDER_WIDTH);
         }
     }
 
-    private void drawBorder(int pX, int pY, int pSlotWidth, int pSlotHeight, PoseStack pPoseStack, int pBlitOffset) {
-        this.blit(pPoseStack, pX, pY, pBlitOffset, GlyphRecipeTooltip.Texture.BORDER_CORNER_TOP);
-        this.blit(pPoseStack, pX + pSlotWidth * SLOT_SIZE_X + BORDER_WIDTH, pY, pBlitOffset, GlyphRecipeTooltip.Texture.BORDER_CORNER_TOP);
+    private void drawBorder(int pX, int pY, int pSlotWidth, int pSlotHeight, GuiGraphics pPoseStack) {
+        this.blit(pPoseStack, pX, pY, GlyphRecipeTooltip.Texture.BORDER_CORNER_TOP);
+        this.blit(pPoseStack, pX + pSlotWidth * SLOT_SIZE_X + BORDER_WIDTH, pY, GlyphRecipeTooltip.Texture.BORDER_CORNER_TOP);
 
         for (int i = 0; i < pSlotWidth; ++i) {
-            this.blit(pPoseStack, pX + BORDER_WIDTH + i * SLOT_SIZE_X, pY, pBlitOffset, GlyphRecipeTooltip.Texture.BORDER_HORIZONTAL_TOP);
-            this.blit(pPoseStack, pX + BORDER_WIDTH + i * SLOT_SIZE_X, pY + pSlotHeight * SLOT_SIZE_Y, pBlitOffset, GlyphRecipeTooltip.Texture.BORDER_HORIZONTAL_BOTTOM);
+            this.blit(pPoseStack, pX + BORDER_WIDTH + i * SLOT_SIZE_X, pY, GlyphRecipeTooltip.Texture.BORDER_HORIZONTAL_TOP);
+            this.blit(pPoseStack, pX + BORDER_WIDTH + i * SLOT_SIZE_X, pY + pSlotHeight * SLOT_SIZE_Y, GlyphRecipeTooltip.Texture.BORDER_HORIZONTAL_BOTTOM);
         }
 
         for (int j = 0; j < pSlotHeight; ++j) {
-            this.blit(pPoseStack, pX, pY + j * SLOT_SIZE_Y + BORDER_WIDTH, pBlitOffset, GlyphRecipeTooltip.Texture.BORDER_VERTICAL);
-            this.blit(pPoseStack, pX + pSlotWidth * SLOT_SIZE_X + BORDER_WIDTH, pY + j * SLOT_SIZE_Y + BORDER_WIDTH, pBlitOffset, GlyphRecipeTooltip.Texture.BORDER_VERTICAL);
+            this.blit(pPoseStack, pX, pY + j * SLOT_SIZE_Y + BORDER_WIDTH, GlyphRecipeTooltip.Texture.BORDER_VERTICAL);
+            this.blit(pPoseStack, pX + pSlotWidth * SLOT_SIZE_X + BORDER_WIDTH, pY + j * SLOT_SIZE_Y + BORDER_WIDTH, GlyphRecipeTooltip.Texture.BORDER_VERTICAL);
         }
 
-        this.blit(pPoseStack, pX, pY + pSlotHeight * SLOT_SIZE_Y, pBlitOffset, GlyphRecipeTooltip.Texture.BORDER_CORNER_BOTTOM);
-        this.blit(pPoseStack, pX + pSlotWidth * SLOT_SIZE_X + BORDER_WIDTH, pY + pSlotHeight * SLOT_SIZE_Y, pBlitOffset, GlyphRecipeTooltip.Texture.BORDER_CORNER_BOTTOM);
+        this.blit(pPoseStack, pX, pY + pSlotHeight * SLOT_SIZE_Y, GlyphRecipeTooltip.Texture.BORDER_CORNER_BOTTOM);
+        this.blit(pPoseStack, pX + pSlotWidth * SLOT_SIZE_X + BORDER_WIDTH, pY + pSlotHeight * SLOT_SIZE_Y, GlyphRecipeTooltip.Texture.BORDER_CORNER_BOTTOM);
     }
 
-    private void blit(PoseStack pPoseStack, int pX, int pY, int pBlitOffset, GlyphRecipeTooltip.Texture pTexture) {
-        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-        RenderSystem.setShaderTexture(0, TEXTURE_LOCATION);
-        GuiComponent.blit(pPoseStack, pX, pY, pBlitOffset, (float) pTexture.x, (float) pTexture.y, pTexture.w, pTexture.h, TEX_SIZE, TEX_SIZE);
+    private void blit(GuiGraphics graphics, int pX, int pY, GlyphRecipeTooltip.Texture pTexture) {
+        graphics.blit(TEXTURE_LOCATION, pX, pY, (float) pTexture.x, (float) pTexture.y, pTexture.w, pTexture.h, TEX_SIZE, TEX_SIZE);
     }
 
     private int gridSizeX() {

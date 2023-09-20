@@ -3,7 +3,6 @@ package com.hollingsworth.arsnouveau.common.entity;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.EvokerFangs;
@@ -12,9 +11,6 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.UUID;
-
-// Copy of EvokerFangsEntity with the ability to override damage
-import net.minecraft.world.entity.Entity.RemovalReason;
 
 public class EntityEvokerFangs extends EvokerFangs {
 
@@ -90,12 +86,12 @@ public class EntityEvokerFangs extends EvokerFangs {
         LivingEntity livingentity = this.getOwner();
         if (p_190551_1_.isAlive() && !p_190551_1_.isInvulnerable() && p_190551_1_ != livingentity) {
             if (livingentity == null) {
-                p_190551_1_.hurt(DamageSource.MAGIC, damage);
+                p_190551_1_.hurt(level.damageSources().magic(), damage);
             } else {
                 if (livingentity.isAlliedTo(p_190551_1_)) {
                     return;
                 }
-                p_190551_1_.hurt(DamageSource.indirectMagic(this, livingentity), damage);
+                p_190551_1_.hurt(level.damageSources().indirectMagic(this, livingentity), damage);
             }
         }
     }

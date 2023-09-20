@@ -4,9 +4,10 @@ import com.hollingsworth.arsnouveau.api.event.SpellModifierEvent;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.level.Level;
-import software.bernie.geckolib3.core.PlayState;
-import software.bernie.geckolib3.core.builder.AnimationBuilder;
-import software.bernie.geckolib3.core.event.predicate.AnimationEvent;
+import software.bernie.geckolib.core.animation.AnimationState;
+import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.core.object.PlayState;
+
 
 public class FamiliarJabberwog extends FlyingFamiliarEntity {
 
@@ -23,13 +24,15 @@ public class FamiliarJabberwog extends FlyingFamiliarEntity {
     }
 
     @Override
-    public PlayState walkPredicate(AnimationEvent<?> event) {
+    public PlayState walkPredicate(AnimationState event) {
         if (event.isMoving()) {
-            event.getController().setAnimation(new AnimationBuilder().addAnimation("hop"));
+            event.getController().setAnimation(RawAnimation.begin().thenPlay("hop"));
             return PlayState.CONTINUE;
         }
         return PlayState.STOP;
     }
+
+
 
     @Override
     public EntityType<?> getType() {

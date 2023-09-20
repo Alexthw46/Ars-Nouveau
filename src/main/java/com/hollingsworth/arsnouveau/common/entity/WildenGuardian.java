@@ -4,13 +4,16 @@ import com.hollingsworth.arsnouveau.api.util.BlockUtil;
 import com.hollingsworth.arsnouveau.client.particle.ParticleUtil;
 import com.hollingsworth.arsnouveau.common.entity.goal.ConditionalMeleeGoal;
 import com.hollingsworth.arsnouveau.common.entity.goal.ConditionalWaterAvoidingGoal;
-import com.hollingsworth.arsnouveau.setup.Config;
+import com.hollingsworth.arsnouveau.setup.config.Config;
+import com.hollingsworth.arsnouveau.setup.registry.ModEntities;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -24,17 +27,18 @@ import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
-import software.bernie.geckolib3.core.IAnimatable;
-import software.bernie.geckolib3.core.PlayState;
-import software.bernie.geckolib3.core.builder.AnimationBuilder;
-import software.bernie.geckolib3.core.controller.AnimationController;
-import software.bernie.geckolib3.core.event.predicate.AnimationEvent;
-import software.bernie.geckolib3.core.manager.AnimationData;
-import software.bernie.geckolib3.core.manager.AnimationFactory;
-import software.bernie.geckolib3.util.GeckoLibUtil;
+import software.bernie.geckolib.animatable.GeoEntity;
+import software.bernie.geckolib.core.animatable.GeoAnimatable;
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.core.animation.AnimationController;
+import software.bernie.geckolib.core.animation.AnimationState;
+import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.core.object.PlayState;
+import software.bernie.geckolib.util.GeckoLibUtil;
 
-public class WildenGuardian extends Monster implements IAnimatable {
-    AnimationFactory manager = GeckoLibUtil.createFactory(this);
+public class WildenGuardian extends Monster implements GeoEntity {
+    AnimatableInstanceCache manager = GeckoLibUtil.createInstanceCache(this);
     public int armorCooldown;
     public int armorTimeRemaining;
     public static final EntityDataAccessor<Boolean> IS_ARMORED = SynchedEntityData.defineId(WildenGuardian.class, EntityDataSerializers.BOOLEAN);
@@ -84,11 +88,11 @@ public class WildenGuardian extends Monster implements IAnimatable {
             armorTimeRemaining = 100;
             this.navigation.stop();
         }
-        if (!level.isClientSide && isArmored() && !damageSrc.isBypassArmor()) {
+        if (!level.isClientSide && isArmored() && !damageSrc.is(DamageTypeTags.BYPASSES_ARMOR)) {
             damageAmount *= 0.75;
 
-            if (damageSrc.getEntity() != null && BlockUtil.distanceFrom(damageSrc.getEntity().position, this.position) <= 2.0 && !damageSrc.msgId.equals("thorns")) {
-                damageSrc.getEntity().hurt(DamageSource.thorns(this), 3.0f);
+            if (damageSrc.getEntity() != null && BlockUtil.distanceFrom(damageSrc.getEntity().position, this.position) <= 2.0 && !damageSrc.type().msgId().equals("thorns")) {
+                damageSrc.getEntity().hurt(level.damageSources().thorns(this), 3.0f);
             }
 
         }
@@ -97,7 +101,7 @@ public class WildenGuardian extends Monster implements IAnimatable {
 
     @Override
     public boolean hurt(DamageSource pSource, float pAmount) {
-        if(pSource == DamageSource.DROWN){
+        if(pSource.is(DamageTypes.DROWN)){
             return false;
         }
         return super.hurt(pSource, pAmount);
@@ -142,25 +146,25 @@ public class WildenGuardian extends Monster implements IAnimatable {
         }
     }
 
-    private <T extends IAnimatable> PlayState runPredicate(AnimationEvent<T> tAnimationEvent) {
+    private <T extends GeoAnimatable> PlayState runPredicate(AnimationState<T> tAnimationState) {
         if(this.isArmored()){
             return PlayState.STOP;
         }
-        if(tAnimationEvent.isMoving()){
-            tAnimationEvent.getController().setAnimation(new AnimationBuilder().addAnimation("run"));
+        if(tAnimationState.isMoving()){
+            tAnimationState.getController().setAnimation(RawAnimation.begin().thenPlay("run"));
             return PlayState.CONTINUE;
         }
         return PlayState.STOP;
     }
 
-    private <T extends IAnimatable> PlayState idlePredicate(AnimationEvent<T> tAnimationEvent) {
+    private <T extends GeoAnimatable> PlayState idlePredicate(AnimationState<T> tAnimationState) {
         if(this.isArmored()){
             return PlayState.STOP;
         }
-        if(tAnimationEvent.isMoving()){
+        if(tAnimationState.isMoving()){
             return PlayState.STOP;
         }
-        tAnimationEvent.getController().setAnimation(new AnimationBuilder().addAnimation("idle"));
+        tAnimationState.getController().setAnimation(RawAnimation.begin().thenPlay("idle"));
         return PlayState.CONTINUE;
     }
 
@@ -170,9 +174,9 @@ public class WildenGuardian extends Monster implements IAnimatable {
         this.entityData.define(IS_ARMORED, false);
     }
 
-    private PlayState defendPredicate(AnimationEvent<?> event) {
+    private PlayState defendPredicate(AnimationState<?> event) {
         if(this.isArmored()){
-            event.getController().setAnimation(new AnimationBuilder().addAnimation("defending"));
+            event.getController().setAnimation(RawAnimation.begin().thenPlay("defending"));
             return PlayState.CONTINUE;
         }
         return PlayState.STOP;
@@ -182,13 +186,13 @@ public class WildenGuardian extends Monster implements IAnimatable {
     AnimationController<WildenGuardian> runController;
     AnimationController<WildenGuardian> idleController;
     @Override
-    public void registerControllers(AnimationData animationData) {
+    public void registerControllers(AnimatableManager.ControllerRegistrar animatableManager) {
         controller = new AnimationController<>(this, "attackController", 1, this::defendPredicate);
         runController = new AnimationController<>(this, "runController", 1, this::runPredicate);
         idleController = new AnimationController<>(this, "idleController", 1, this::idlePredicate);
-        animationData.addAnimationController(controller);
-        animationData.addAnimationController(runController);
-        animationData.addAnimationController(idleController);
+        animatableManager.add(controller);
+        animatableManager.add(runController);
+        animatableManager.add(idleController);
     }
 
     public int getAttackDuration() {
@@ -210,7 +214,7 @@ public class WildenGuardian extends Monster implements IAnimatable {
     }
 
     @Override
-    public AnimationFactory getFactory() {
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
         return manager;
     }
 

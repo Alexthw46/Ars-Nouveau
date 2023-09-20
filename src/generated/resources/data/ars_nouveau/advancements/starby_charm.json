@@ -33,5 +33,6 @@
     [
       "has_starbuncle_charm"
     ]
-  ]
+  ],
+  "sends_telemetry_event": false
 }

@@ -5,10 +5,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentCategory;
 
-import net.minecraft.world.item.enchantment.Enchantment.Rarity;
-
 public class ReactiveEnchantment extends Enchantment {
-    protected ReactiveEnchantment() {
+    public ReactiveEnchantment() {
         super(Rarity.VERY_RARE, EnchantmentCategory.WEARABLE, new EquipmentSlot[]{EquipmentSlot.CHEST, EquipmentSlot.FEET, EquipmentSlot.HEAD, EquipmentSlot.LEGS});
     }
 

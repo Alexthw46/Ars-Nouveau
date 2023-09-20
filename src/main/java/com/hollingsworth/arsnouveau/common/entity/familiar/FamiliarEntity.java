@@ -7,7 +7,7 @@ import com.hollingsworth.arsnouveau.api.event.FamiliarSummonEvent;
 import com.hollingsworth.arsnouveau.api.familiar.IFamiliar;
 import com.hollingsworth.arsnouveau.api.familiar.PersistentFamiliarData;
 import com.hollingsworth.arsnouveau.client.particle.ParticleUtil;
-import com.hollingsworth.arsnouveau.common.capability.CapabilityRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.CapabilityRegistry;
 import com.hollingsworth.arsnouveau.common.capability.IPlayerCap;
 import com.hollingsworth.arsnouveau.common.entity.goal.familiar.FamOwnerHurtByTargetGoal;
 import com.hollingsworth.arsnouveau.common.entity.goal.familiar.FamOwnerHurtTargetGoal;
@@ -16,12 +16,14 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -34,18 +36,18 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.network.NetworkHooks;
-import software.bernie.geckolib3.core.IAnimatable;
-import software.bernie.geckolib3.core.PlayState;
-import software.bernie.geckolib3.core.controller.AnimationController;
-import software.bernie.geckolib3.core.event.predicate.AnimationEvent;
-import software.bernie.geckolib3.core.manager.AnimationData;
-import software.bernie.geckolib3.core.manager.AnimationFactory;
-import software.bernie.geckolib3.util.GeckoLibUtil;
+import software.bernie.geckolib.animatable.GeoEntity;
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.core.animation.AnimationController;
+import software.bernie.geckolib.core.animation.AnimationState;
+import software.bernie.geckolib.core.object.PlayState;
+import software.bernie.geckolib.util.GeckoLibUtil;
 
 import javax.annotation.Nullable;
 import java.util.*;
 
-public class FamiliarEntity extends PathfinderMob implements IAnimatable, IFamiliar, IDispellable, IDecoratable, IVariantTextureProvider<FamiliarEntity> {
+public class FamiliarEntity extends PathfinderMob implements GeoEntity, IFamiliar, IDispellable, IDecoratable, IVariantTextureProvider<FamiliarEntity> {
 
     public double manaReserveModifier = 0.15;
     private static final EntityDataAccessor<Optional<UUID>> OWNER_UUID = SynchedEntityData.defineId(FamiliarEntity.class, EntityDataSerializers.OPTIONAL_UUID);
@@ -103,7 +105,7 @@ public class FamiliarEntity extends PathfinderMob implements IAnimatable, IFamil
 
     @Override
     public boolean hurt(DamageSource source, float amount) {
-        if (source == DamageSource.DROWN || source == DamageSource.IN_WALL || source == DamageSource.FLY_INTO_WALL || source == DamageSource.FALL)
+        if (source.is(DamageTypes.DROWN) || source.is(DamageTypes.FLY_INTO_WALL) || source.is(DamageTypes.IN_WALL) || source.is(DamageTypes.FALL))
             return false;
         if (source.getEntity() == null)
             return false;
@@ -123,21 +125,21 @@ public class FamiliarEntity extends PathfinderMob implements IAnimatable, IFamil
         this.targetSelector.addGoal(2, new FamOwnerHurtTargetGoal(this));
     }
 
-    public PlayState walkPredicate(AnimationEvent<?> event) {
+    public PlayState walkPredicate(AnimationState event) {
         return PlayState.CONTINUE;
     }
 
     public AnimationController<?> controller;
 
     @Override
-    public void registerControllers(AnimationData data) {
+    public void registerControllers(AnimatableManager.ControllerRegistrar data) {
         controller = new AnimationController<>(this, "walkController", 1, this::walkPredicate);
-        data.addAnimationController(controller);
+        data.add(controller);
     }
 
 
     public boolean canTeleport() {
-        return getOwner() != null && getOwner().isOnGround();
+        return getOwner() != null && getOwner().onGround();
     }
 
     public @Nullable LivingEntity getOwner() {
@@ -147,10 +149,10 @@ public class FamiliarEntity extends PathfinderMob implements IAnimatable, IFamil
         return (LivingEntity) ((ServerLevel) level).getEntity(getOwnerID());
     }
 
-    public AnimationFactory factory = GeckoLibUtil.createFactory(this);
+    public AnimatableInstanceCache factory = GeckoLibUtil.createInstanceCache(this);
 
     @Override
-    public AnimationFactory getFactory() {
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
         return factory;
     }
 
@@ -167,7 +169,7 @@ public class FamiliarEntity extends PathfinderMob implements IAnimatable, IFamil
         return holderID;
     }
 
-    @Override // TODO: Make abstract
+    @Override
     public void setHolderID(ResourceLocation id) {
         this.holderID = id;
     }
@@ -198,7 +200,7 @@ public class FamiliarEntity extends PathfinderMob implements IAnimatable, IFamil
     }
 
     @Override
-    public Packet<?> getAddEntityPacket() {
+    public Packet<ClientGamePacketListener> getAddEntityPacket() {
         return NetworkHooks.getEntitySpawningPacket(this);
     }
 

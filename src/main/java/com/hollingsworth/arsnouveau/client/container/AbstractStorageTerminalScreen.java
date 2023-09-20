@@ -6,7 +6,6 @@ import com.google.common.cache.LoadingCache;
 import com.hollingsworth.arsnouveau.ArsNouveau;
 import com.hollingsworth.arsnouveau.client.ClientInfo;
 import com.hollingsworth.arsnouveau.client.gui.NoShadowTextField;
-import com.hollingsworth.arsnouveau.client.gui.book.BaseBook;
 import com.hollingsworth.arsnouveau.client.gui.buttons.StateButton;
 import com.hollingsworth.arsnouveau.client.gui.buttons.StorageSettingsButton;
 import com.hollingsworth.arsnouveau.client.gui.buttons.StorageTabButton;
@@ -16,6 +15,7 @@ import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.nbt.CompoundTag;
@@ -40,7 +40,7 @@ public abstract class AbstractStorageTerminalScreen<T extends StorageTerminalMen
 	private static final LoadingCache<StoredItemStack, List<String>> tooltipCache = CacheBuilder.newBuilder().expireAfterAccess(5, TimeUnit.SECONDS).build(new CacheLoader<>() {
 
 		@Override
-		public List<String> load(StoredItemStack key) throws Exception {
+		public List<String> load(StoredItemStack key) {
 			return key.getStack().getTooltipLines(Minecraft.getInstance().player, getTooltipFlag()).stream().map(Component::getString).collect(Collectors.toList());
 		}
 
@@ -62,6 +62,7 @@ public abstract class AbstractStorageTerminalScreen<T extends StorageTerminalMen
 	protected int controllMode;
 	protected int rowCount;
 	protected int searchType;
+	protected boolean expanded;
 	private String searchLast = "";
 	protected boolean loadedSearch = false;
 	private StoredItemStack.IStoredItemStackComparator comparator = new StoredItemStack.ComparatorAmount(false);
@@ -89,6 +90,7 @@ public abstract class AbstractStorageTerminalScreen<T extends StorageTerminalMen
 			buttonSortingType.state = s.sortType;
 			buttonDirection.state = s.reverseSort ? 1 : 0;
 			buttonSearchType.state = searchType;
+			expanded = s.expanded;
 		}
 		if(menu.tabNames != null && !menu.tabNames.isEmpty()){
 			for(StorageTabButton tabButton : tabButtons){
@@ -107,7 +109,7 @@ public abstract class AbstractStorageTerminalScreen<T extends StorageTerminalMen
 		if(!loadedSearch && menu.search != null) {
 			loadedSearch = true;
 			searchField.setValue(menu.search);
-			searchField.setFocus(true);
+			searchField.setFocused(true);
 			if (searchField.getValue().isEmpty()) {
 				searchField.setSuggestion(Component.translatable("ars_nouveau.spell_book_gui.search").getString());
 			}else{
@@ -133,7 +135,8 @@ public abstract class AbstractStorageTerminalScreen<T extends StorageTerminalMen
 				controllMode,
 				comparator.isReversed(),
 				comparator.type(),
-				searchType
+				searchType,
+				expanded
 		);
 	}
 
@@ -143,7 +146,7 @@ public abstract class AbstractStorageTerminalScreen<T extends StorageTerminalMen
 		inventoryLabelY = imageHeight - 92;
 		super.init();
 
-		this.searchField = new NoShadowTextField(getFont(), this.leftPos + 114, this.topPos + 6, 60, this.getFont().lineHeight, Component.translatable("narrator.ars_nouveau.search"));
+		this.searchField = new NoShadowTextField(getFont(), this.leftPos + 115, this.topPos + 6, 60, this.getFont().lineHeight, Component.translatable("narrator.ars_nouveau.search"));
 		this.searchField.setMaxLength(100);
 		this.searchField.setBordered(false);
 		this.searchField.setVisible(true);
@@ -240,6 +243,7 @@ public abstract class AbstractStorageTerminalScreen<T extends StorageTerminalMen
 					}
 				}
 			} catch (Exception e) {
+				e.printStackTrace();
 			}
 			Collections.sort(getMenu().itemListClientSorted, menu.noSort ? sortComp : comparator);
 			if(!searchLast.equals(searchString)) {
@@ -275,7 +279,8 @@ public abstract class AbstractStorageTerminalScreen<T extends StorageTerminalMen
 	}
 
 	@Override
-	public void render(PoseStack st, int mouseX, int mouseY, float partialTicks) {
+	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+		PoseStack st = graphics.pose();
 		boolean flag = GLFW.glfwGetMouseButton(Minecraft.getInstance().getWindow().getWindow(), GLFW.GLFW_MOUSE_BUTTON_LEFT) != GLFW.GLFW_RELEASE;
 		int i = this.leftPos;
 		int j = this.topPos;
@@ -316,15 +321,14 @@ public abstract class AbstractStorageTerminalScreen<T extends StorageTerminalMen
 			this.currentScroll = Mth.clamp(this.currentScroll, 0.0F, 1.0F);
 			getMenu().scrollTo(this.currentScroll);
 		}
-		super.render(st, mouseX, mouseY, partialTicks);
+		super.render(graphics, mouseX, mouseY, partialTicks);
 
 		RenderSystem.setShader(GameRenderer::getPositionTexShader);
 		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-		RenderSystem.setShaderTexture(0, scrollBall);
 		i = k;
 		j = l;
 		k = j1;
-		blit(st, i, j + 3 + (int) ((k - j - 14) * this.currentScroll), 0, 0, 12, 12, 12, 12);
+		graphics.blit(scrollBall, i, j + 3 + (int) ((k - j - 14) * this.currentScroll), 0, 0, 12, 12, 12, 12);
 
 
 		if(this.menu.getCarried().isEmpty() && slotIDUnderMouse != -1) {
@@ -333,38 +337,39 @@ public abstract class AbstractStorageTerminalScreen<T extends StorageTerminalMen
 				if (slot.stack.getQuantity() > 9999) {
 					ClientInfo.setTooltip(Component.translatable("tooltip.ars_nouveau.amount", slot.stack.getQuantity()));
 				}
-				renderTooltip(st, slot.stack.getActualStack(), mouseX, mouseY);
+				graphics.renderTooltip(font, slot.stack.getActualStack(), mouseX, mouseY);
 				ClientInfo.setTooltip();
 			}
 		} else
-			this.renderTooltip(st, mouseX, mouseY);
+			this.renderTooltip(graphics, mouseX, mouseY);
 
 		if (buttonSortingType.isHoveredOrFocused()) {
-			renderTooltip(st, Component.translatable("tooltip.ars_nouveau.sorting_" + buttonSortingType.state), mouseX, mouseY);
+			graphics.renderTooltip(font, Component.translatable("tooltip.ars_nouveau.sorting_" + buttonSortingType.state), mouseX, mouseY);
 		}
 		if (buttonSearchType.isHoveredOrFocused()) {
-			renderTooltip(st, Component.translatable("tooltip.ars_nouveau.search_" + buttonSearchType.state, IAutoFillTerminal.getHandlerName()), mouseX, mouseY);
+			graphics.renderTooltip(font, Component.translatable("tooltip.ars_nouveau.search_" + buttonSearchType.state, IAutoFillTerminal.getHandlerName()), mouseX, mouseY);
 		}
 		if(buttonDirection.isHoveredOrFocused()){
-			renderTooltip(st, Component.translatable("tooltip.ars_nouveau.direction_" + buttonDirection.state, IAutoFillTerminal.getHandlerName()), mouseX, mouseY);
+			graphics.renderTooltip(font, Component.translatable("tooltip.ars_nouveau.direction_" + buttonDirection.state, IAutoFillTerminal.getHandlerName()), mouseX, mouseY);
 		}
 		for(StorageTabButton tabButton : tabButtons) {
 			if(tabButton.isHoveredOrFocused() && tabButton.isAll){
-				renderTooltip(st, Component.translatable("tooltip.ars_nouveau.master_tab"), mouseX, mouseY);
+				graphics.renderTooltip(font, Component.translatable("tooltip.ars_nouveau.master_tab"), mouseX, mouseY);
 			}else if (tabButton.isHoveredOrFocused() && tabButton.highlightText != null) {
-				renderTooltip(st, Component.literal(tabButton.highlightText), mouseX, mouseY);
+				graphics.renderTooltip(font, Component.literal(tabButton.highlightText), mouseX, mouseY);
 			}
 		}
 	}
 
 	@Override
-	protected void renderLabels(PoseStack st, int mouseX, int mouseY) {
+	protected void renderLabels(GuiGraphics p_281635_, int mouseX, int mouseY) {
+		PoseStack st = p_281635_.pose();
 		st.pushPose();
-		slotIDUnderMouse = drawSlots(st, mouseX, mouseY);
+		slotIDUnderMouse = drawSlots(p_281635_, mouseX, mouseY);
 		st.popPose();
 	}
 
-	protected int drawSlots(PoseStack st, int mouseX, int mouseY) {
+	protected int drawSlots(GuiGraphics st, int mouseX, int mouseY) {
 		StorageTerminalMenu term = getMenu();
 		int slotHover = -1;
 		for (int i = 0;i < term.storageSlotList.size();i++) {
@@ -375,44 +380,40 @@ public abstract class AbstractStorageTerminalScreen<T extends StorageTerminalMen
 		return slotHover;
 	}
 
-	protected boolean drawSlot(PoseStack st, SlotStorage slot, int mouseX, int mouseY) {
+	protected boolean drawSlot(GuiGraphics st, SlotStorage slot, int mouseX, int mouseY) {
 		if (slot.stack != null) {
-			this.setBlitOffset(100);
-			this.itemRenderer.blitOffset = 100.0F;
-
 			ItemStack stack = slot.stack.getStack().copy().split(1);
 			int i = slot.xDisplayPosition, j = slot.yDisplayPosition;
 
-			this.itemRenderer.renderAndDecorateItem(this.minecraft.player, stack, i, j, 0);
-			this.itemRenderer.renderGuiItemDecorations(this.font, stack, i, j, null);
+			st.renderItem(stack, i, j);
+			st.renderItemDecorations(this.font, stack, i, j, null);
 
 			drawStackSize(st, getFont(), slot.stack.getQuantity(), i, j);
-
-			this.itemRenderer.blitOffset = 0.0F;
-			this.setBlitOffset(0);
 		}
 
 		if (mouseX >= getGuiLeft() + slot.xDisplayPosition - 1 && mouseY >= getGuiTop() + slot.yDisplayPosition - 1 && mouseX < getGuiLeft() + slot.xDisplayPosition + 17 && mouseY < getGuiTop() + slot.yDisplayPosition + 17) {
 			int l = slot.xDisplayPosition;
 			int t = slot.yDisplayPosition;
-			renderSlotHighlight(st, l, t, this.getBlitOffset());
+
+			renderSlotHighlight(st, l, t, 0);
 			return true;
 		}
 		return false;
 	}
 
-	private void drawStackSize(PoseStack st, Font fr, long size, int x, int y) {
+	private void drawStackSize(GuiGraphics graphics, Font fr, long size, int x, int y) {
 		float scaleFactor = 0.6f;
 		RenderSystem.disableDepthTest();
 		RenderSystem.disableBlend();
 		String stackSize = NumberFormatUtil.formatNumber(size);
+		PoseStack st = graphics.pose();
 		st.pushPose();
 		st.scale(scaleFactor, scaleFactor, scaleFactor);
 		st.translate(0, 0, 450);
 		float inverseScaleFactor = 1.0f / scaleFactor;
 		int X = (int) (((float) x + 0 + 16.0f - fr.width(stackSize) * scaleFactor) * inverseScaleFactor);
 		int Y = (int) (((float) y + 0 + 16.0f - 7.0f * scaleFactor) * inverseScaleFactor);
-		fr.drawShadow(st, stackSize, X, Y, 16777215);
+		graphics.drawString(font, stackSize, X, Y, 16777215);
 		st.popPose();
 		RenderSystem.enableDepthTest();
 	}
@@ -423,6 +424,7 @@ public abstract class AbstractStorageTerminalScreen<T extends StorageTerminalMen
 
 	@Override
 	public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+		this.searchField.mouseClicked(mouseX, mouseY, mouseButton);
 		if (slotIDUnderMouse > -1) {
 			if (isPullOne(mouseButton)) {
 				if (getMenu().getSlotByID(slotIDUnderMouse).stack != null && getMenu().getSlotByID(slotIDUnderMouse).stack.getQuantity() > 0) {
@@ -453,13 +455,8 @@ public abstract class AbstractStorageTerminalScreen<T extends StorageTerminalMen
 			}
 		} else if (GLFW.glfwGetKey(mc.getWindow().getWindow(), GLFW.GLFW_KEY_SPACE) != GLFW.GLFW_RELEASE) {
 			storageSlotClick(null, SPACE_CLICK, false);
-		} else {
-			if(this.searchField.mouseClicked(mouseX, mouseY, mouseButton))
-				return true;
-			else
-				return super.mouseClicked(mouseX, mouseY, mouseButton);
 		}
-		return true;
+		return super.mouseClicked(mouseX, mouseY, mouseButton);
 	}
 
 	protected void storageSlotClick(StoredItemStack slotStack, StorageTerminalMenu.SlotAction act, boolean pullOne) {
@@ -518,12 +515,9 @@ public abstract class AbstractStorageTerminalScreen<T extends StorageTerminalMen
 	public abstract ResourceLocation getGui();
 
 	@Override
-	protected void renderBg(PoseStack st, float partialTicks, int mouseX, int mouseY) {
-		RenderSystem.setShader(GameRenderer::getPositionTexShader);
-		RenderSystem.setShaderTexture(0, getGui());
-		this.blit(st, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
-		BaseBook.drawFromTexture(new ResourceLocation(ArsNouveau.MODID, "textures/gui/search_paper.png"), this.leftPos + 102, this.topPos + 3, 0, 0, 72, 15, 72, 15, st);
-
+	protected void renderBg(GuiGraphics graphics, float partialTicks, int mouseX, int mouseY) {
+		graphics.blit(getGui(), this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
+		graphics.blit(new ResourceLocation(ArsNouveau.MODID, "textures/gui/search_paper.png"), this.leftPos + 102, this.topPos + 3, 0, 0, 72, 15, 72, 15);
 	}
 
 	protected void onUpdateSearch(String text) {}

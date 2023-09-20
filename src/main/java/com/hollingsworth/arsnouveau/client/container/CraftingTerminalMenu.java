@@ -1,8 +1,8 @@
 package com.hollingsworth.arsnouveau.client.container;
 
 import com.google.common.collect.Lists;
-import com.hollingsworth.arsnouveau.common.menu.MenuRegistry;
 import com.hollingsworth.arsnouveau.common.block.tile.CraftingLecternTile;
+import com.hollingsworth.arsnouveau.setup.registry.MenuRegistry;
 import net.minecraft.client.RecipeBookCategories;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -17,19 +17,42 @@ import net.minecraft.world.inventory.*;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Recipe;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
 public class CraftingTerminalMenu extends StorageTerminalMenu implements IAutoFillTerminal {
 	public static class SlotCrafting extends Slot {
+		public boolean active;
+
 		public SlotCrafting(Container inventoryIn, int index, int xPosition, int yPosition) {
 			super(inventoryIn, index, xPosition, yPosition);
+			active = true;
+		}
+
+		@Override
+		public boolean isActive() {
+			return super.isActive() && active;
 		}
 	}
 
+	public static class ActiveResultSlot extends ResultSlot{
+		public boolean active;
+
+		public ActiveResultSlot(Player pPlayer, CraftingContainer pCraftSlots, Container pContainer, int pSlot, int pXPosition, int pYPosition) {
+			super(pPlayer, pCraftSlots, pContainer, pSlot, pXPosition, pYPosition);
+			active = true;
+		}
+
+		@Override
+		public boolean isActive() {
+			return active;
+		}
+	}
+	protected List<SlotCrafting> craftSlotList = new ArrayList<>();
 	private final CraftingContainer craftMatrix;
 	private final ResultContainer craftResult;
-	private Slot craftingResultSlot;
+	private ActiveResultSlot craftingResultSlot;
 	private final List<ContainerListener> listeners = Lists.newArrayList();
 
 	@Override
@@ -55,7 +78,7 @@ public class CraftingTerminalMenu extends StorageTerminalMenu implements IAutoFi
 
 	public CraftingTerminalMenu(int id, Inventory inv) {
 		super(MenuRegistry.STORAGE.get(), id, inv);
-		craftMatrix = new CraftingContainer(this, 3, 3);
+		craftMatrix = new TransientCraftingContainer(this, 3, 3);
 		craftResult = new ResultContainer();
 		init();
 		this.addPlayerSlots(inv, 13, 157);
@@ -64,14 +87,15 @@ public class CraftingTerminalMenu extends StorageTerminalMenu implements IAutoFi
 	@Override
 	public void removed(Player playerIn) {
 		super.removed(playerIn);
-		if(te != null)
-			((CraftingLecternTile) te).unregisterCrafting(this);
+		if(te instanceof CraftingLecternTile craftingLecternTile) {
+			craftingLecternTile.unregisterCrafting(this);
+		}
 	}
 
 	private void init() {
 		int x = -4;
 		int y = 70;
-		this.addSlot(craftingResultSlot = new ResultSlot(pinv.player, craftMatrix, craftResult, 0, x + 130, y + 37) {
+		this.addSlot(craftingResultSlot = new ActiveResultSlot(pinv.player, craftMatrix, craftResult, 0, x + 130, y + 37) {
 			@Override
 			public void onTake(Player thePlayer, ItemStack stack) {
 				if (thePlayer.level.isClientSide)
@@ -82,17 +106,31 @@ public class CraftingTerminalMenu extends StorageTerminalMenu implements IAutoFi
 				}
 			}
 		});
-
-		for(int i = 0; i < 3; ++i) {
-			for(int j = 0; j < 3; ++j) {
-				this.addSlot(new SlotCrafting(craftMatrix, j + i * 3, x + 36 + j * 18,  89 + i * 18));
+		if(this.terminalData == null || !terminalData.expanded) {
+			for (int i = 0; i < 3; ++i) {
+				for (int j = 0; j < 3; ++j) {
+					SlotCrafting slot = new SlotCrafting(craftMatrix, j + i * 3, x + 36 + j * 18,  89 + i * 18);
+					this.addSlot(slot);
+					this.craftSlotList.add(slot);
+				}
 			}
 		}
 	}
 
 	@Override
 	protected void addStorageSlots() {
-		addStorageSlots(3, 13, 21);
+		addStorageSlots(13, 21);
+	}
+
+	@Override
+	public void addStorageSlots(int slotOffsetX, int slotOffsetY) {
+		super.addStorageSlots(slotOffsetX, slotOffsetY);
+		if(craftSlotList != null && terminalData != null){
+			for(SlotCrafting slot : craftSlotList){
+				slot.active = !terminalData.expanded;
+			}
+			craftingResultSlot.active = !terminalData.expanded;
+		}
 	}
 
 	@Override
@@ -252,7 +290,7 @@ public class CraftingTerminalMenu extends StorageTerminalMenu implements IAutoFi
 			}
 
 			@Override
-			protected void clearGrid(boolean bool) {
+			protected void clearGrid() {
 				((CraftingLecternTile) te).clear(selectedTab);
 				this.menu.clearCraftingContent();
 			}
@@ -275,7 +313,7 @@ public class CraftingTerminalMenu extends StorageTerminalMenu implements IAutoFi
 					stacks[slot][j] = ItemStack.of(tag);
 				}
 			}
-			((CraftingLecternTile) te).handlerItemTransfer(pinv.player, stacks, selectedTab);
+			((CraftingLecternTile) te).transferToGrid(pinv.player, stacks, selectedTab);
 		}
 	}
 

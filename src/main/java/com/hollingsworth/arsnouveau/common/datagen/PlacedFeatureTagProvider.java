@@ -1,25 +1,30 @@
 package com.hollingsworth.arsnouveau.common.datagen;
 
+
 import com.hollingsworth.arsnouveau.ArsNouveau;
-import com.hollingsworth.arsnouveau.common.world.WorldEvent;
-import net.minecraft.core.Registry;
-import net.minecraft.data.BuiltinRegistries;
-import net.minecraft.data.DataGenerator;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.data.PackOutput;
 import net.minecraft.data.tags.TagsProvider;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
+import net.minecraftforge.common.data.ExistingFileHelper;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.concurrent.CompletableFuture;
 
 public class PlacedFeatureTagProvider extends TagsProvider<PlacedFeature> {
-    public static TagKey<PlacedFeature> ARCHWOOD_TREES = TagKey.create(Registry.PLACED_FEATURE_REGISTRY, new ResourceLocation(ArsNouveau.MODID, "archwood_trees"));
-    public static TagKey<PlacedFeature> SOURCE_BERRIES = TagKey.create(Registry.PLACED_FEATURE_REGISTRY, new ResourceLocation(ArsNouveau.MODID, "source_berries"));
+    public static TagKey<PlacedFeature> ARCHWOOD_TREES = TagKey.create(Registries.PLACED_FEATURE, new ResourceLocation(ArsNouveau.MODID, "archwood_trees"));
+    public static TagKey<PlacedFeature> SOURCE_BERRIES = TagKey.create(Registries.PLACED_FEATURE, new ResourceLocation(ArsNouveau.MODID, "source_berries"));
 
-    public PlacedFeatureTagProvider(DataGenerator p_211094_, String modId, @org.jetbrains.annotations.Nullable net.minecraftforge.common.data.ExistingFileHelper existingFileHelper) {
-        super(p_211094_, BuiltinRegistries.PLACED_FEATURE, modId, existingFileHelper);
+    public PlacedFeatureTagProvider(PackOutput pOutput, CompletableFuture<HolderLookup.Provider> pProvider, @Nullable ExistingFileHelper existingFileHelper) {
+        super(pOutput, Registries.PLACED_FEATURE, pProvider, ArsNouveau.MODID, existingFileHelper);
     }
 
-    protected void addTags() {
-        this.tag(ARCHWOOD_TREES).add(WorldEvent.PLACED_MIXED.get());
-        this.tag(SOURCE_BERRIES).add(WorldEvent.BERRY_BUSH_PATCH_CONFIG.get());
+    @Override
+    protected void addTags(HolderLookup.Provider pProvider) {
+        this.tag(ARCHWOOD_TREES);
+        this.tag(SOURCE_BERRIES);
     }
 }

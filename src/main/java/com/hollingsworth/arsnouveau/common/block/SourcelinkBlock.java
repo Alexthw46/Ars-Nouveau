@@ -4,10 +4,7 @@ import com.hollingsworth.arsnouveau.common.block.tile.SourcelinkTile;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
-
-import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
 
 public abstract class SourcelinkBlock extends TickableModBlock {
     public SourcelinkBlock(Properties properties) {
@@ -27,10 +24,4 @@ public abstract class SourcelinkBlock extends TickableModBlock {
             return;
         tile.doRandomAction();
     }
-
-    @Override
-    public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.ENTITYBLOCK_ANIMATED;
-    }
-
 }
