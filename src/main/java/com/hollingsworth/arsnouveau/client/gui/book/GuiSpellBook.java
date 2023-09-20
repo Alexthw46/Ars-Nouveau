@@ -467,9 +467,8 @@ public class GuiSpellBook extends BaseBook {
         this.selectedSpellSlot = this.selected_slot.slotNum;
         updateCraftingSlots(this.selectedSpellSlot);
         spell_name.setValue(CasterUtil.getCaster(bookStack).getSpellName(selectedSpellSlot));
-        this.spellWindowOffset = 0;
         this.spell = CasterUtil.getCaster(bookStack).getSpell(selectedSpellSlot).recipe;
-        validate();
+        updateWindowOffset(0); //includes validation
     }
 
     @Override
@@ -626,7 +625,7 @@ public class GuiSpellBook extends BaseBook {
      */
     private void validate() {
         int firstBlankSlot = -1;
-        int offset = craftingCells.get(0).slotNum;
+        int offset = spellWindowOffset;//craftingCells.get(0).slotNum;
         List<AbstractSpellPart> recipe = new LinkedList<>(spell.subList(0, offset));
 
         // Reset the crafting slots and build the recipe to validate

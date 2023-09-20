@@ -186,8 +186,13 @@ public abstract class AbstractSpellPart implements Comparable<AbstractSpellPart>
         this.augmentLimits = SpellPartConfigUtil.buildAugmentLimitsConfig(builder, defaults);
     }
 
+    /**
+     * Registers the augment cost configuration entry for augment cost overrides.
+     */
     protected void buildAugmentCostOverrideConfig(ForgeConfigSpec.Builder builder, Map<ResourceLocation, Integer> defaults) {
         this.augmentCosts = SpellPartConfigUtil.buildAugmentCosts(builder, defaults);
+    }
+
     /**
      * Registers the glyph_limits configuration entry for combo limits.
      */
@@ -203,6 +208,16 @@ public abstract class AbstractSpellPart implements Comparable<AbstractSpellPart>
         return defaults;
     }
 
+    protected Map<ResourceLocation, Integer> getDefaultAugmentCostOverrides(Map<ResourceLocation, Integer> defaults) {
+        addAugmentCostOverrides(defaults);
+        return defaults;
+    }
+
+    protected Set<ResourceLocation> getDefaultInvalidCombos(Set<ResourceLocation> defaults) {
+        addDefaultInvalidCombos(defaults);
+        return defaults;
+    }
+
     /**
      * Adds default augment limits to the given map, used to generate the config.
      */
@@ -210,11 +225,6 @@ public abstract class AbstractSpellPart implements Comparable<AbstractSpellPart>
 
 
     protected void addAugmentCostOverrides(Map<ResourceLocation, Integer> defaults) {}
-
-    protected Set<ResourceLocation> getDefaultInvalidCombos(Set<ResourceLocation> defaults) {
-        addDefaultInvalidCombos(defaults);
-        return defaults;
-    }
 
     protected void addDefaultInvalidCombos(Set<ResourceLocation> defaults) {
     }

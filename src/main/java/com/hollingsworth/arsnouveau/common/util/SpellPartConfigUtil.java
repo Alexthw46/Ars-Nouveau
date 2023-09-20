@@ -129,7 +129,7 @@ public class SpellPartConfigUtil {
     public static AugmentCosts buildAugmentCosts(ForgeConfigSpec.Builder builder, Map<ResourceLocation, Integer> defaults) {
         ForgeConfigSpec.ConfigValue<List<? extends String>> configValue = builder
                 .comment("How much an augment should cost when used on this effect or form. This overrides the default cost in the augment config.", "Example entry: \"" + GlyphLib.AugmentAmplifyID + "=50\"")
-                .defineList("augment_cost_overrides", writeConfig(defaults), SpellPartConfigUtil::validateAugmentLimits);
+                .defineList("augment_cost_overrides", writeAugmentConfig(defaults), SpellPartConfigUtil::validateAugmentLimits);
 
         return new AugmentCosts(configValue);
     }
