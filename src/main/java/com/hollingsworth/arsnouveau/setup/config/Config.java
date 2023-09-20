@@ -55,6 +55,10 @@ public class Config {
     public static ForgeConfigSpec.IntValue TOUCH_LIGHT_DURATION;
 
     public static ForgeConfigSpec.BooleanValue SPAWN_TOMES;
+    public static ForgeConfigSpec.BooleanValue INFINITE_SPELLS;
+    public static ForgeConfigSpec.IntValue NOT_SO_INFINITE_SPELLS;
+
+
     public static ForgeConfigSpec.BooleanValue ALTERNATE_PORTAL_RENDER;
 
     public static ForgeConfigSpec.BooleanValue DISABLE_SKY_SHADER;
@@ -143,6 +147,11 @@ public class Config {
 
         SERVER_BUILDER.comment("Debug").push("debug");
         MAX_LOG_EVENTS = SERVER_BUILDER.comment("Max number of log events to keep on entities. Lowering this number may make it difficult to debug why your entities are stuck.").defineInRange("maxLogEvents", 100, 0, Integer.MAX_VALUE);
+        SERVER_BUILDER.pop();
+
+        SERVER_BUILDER.comment("Beta Features").push("beta");
+        INFINITE_SPELLS = SERVER_BUILDER.comment("Allow crafting infinite spells. This is a beta feature and may cause crashes.").define("infiniteSpells", false);
+        NOT_SO_INFINITE_SPELLS = SERVER_BUILDER.comment("Limits the crafting infinite spells beta, set a cap to the number of additional glyphs. This is a beta feature and may cause crashes.").defineInRange("infiniteSpellLimit", 30, 10, 1000);
         SERVER_BUILDER.pop();
 
         COMMON_CONFIG = SERVER_BUILDER.build();
