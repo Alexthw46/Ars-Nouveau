@@ -22,6 +22,7 @@ import com.hollingsworth.arsnouveau.common.network.Networking;
 import com.hollingsworth.arsnouveau.common.network.PacketUpdateCaster;
 import com.hollingsworth.arsnouveau.common.spell.validation.CombinedSpellValidator;
 import com.hollingsworth.arsnouveau.common.spell.validation.GlyphMaxTierValidator;
+import com.hollingsworth.arsnouveau.setup.config.Config;
 import com.hollingsworth.arsnouveau.setup.registry.CapabilityRegistry;
 import com.hollingsworth.arsnouveau.setup.registry.ItemsRegistry;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -41,6 +42,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextColor;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 
@@ -203,9 +205,11 @@ public class GuiSpellBook extends BaseBook {
 
         validate();
 
-        addRenderableWidget(new PageButton(bookRight - 25, bookBottom - 30, true, i -> updateWindowOffset(spellWindowOffset + 1), true));
-        addRenderableWidget(new PageButton(bookLeft, bookBottom - 30, false, i -> updateWindowOffset(spellWindowOffset - 1), true));
-
+        //infinite spells
+        if (Config.INFINITE_SPELLS.get()) {
+            addRenderableWidget(new PageButton(bookRight - 25, bookBottom - 30, true, i -> updateWindowOffset(spellWindowOffset + 1), true));
+            addRenderableWidget(new PageButton(bookLeft, bookBottom - 30, false, i -> updateWindowOffset(spellWindowOffset - 1), true));
+        }
         List<AbstractSpellPart> recipe = CasterUtil.getCaster(bookStack).getSpell(selectedSlot).recipe;
         spell = new ArrayList<>(recipe);
     }
@@ -502,7 +506,7 @@ public class GuiSpellBook extends BaseBook {
     }
 
     public void updateWindowOffset(int offset) {
-        this.spellWindowOffset = Math.max(0, offset);
+        this.spellWindowOffset = Mth.clamp(offset, 0, Config.NOT_SO_INFINITE_SPELLS.get());
         for (int i = 0; i < 10; i++) {
             CraftingButton craftingButton = craftingCells.get(i);
             craftingButton.slotNum = spellWindowOffset + i;
