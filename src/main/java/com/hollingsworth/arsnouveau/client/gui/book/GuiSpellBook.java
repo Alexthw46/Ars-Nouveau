@@ -530,7 +530,6 @@ public class GuiSpellBook extends BaseBook {
             slot.clear();
         }
         spell.clear();
-        this.selectedSpellSlot = 0;
         if (allWereEmpty) spell_name.setValue("");
 
         validate();
