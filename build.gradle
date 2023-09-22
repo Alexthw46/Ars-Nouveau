@@ -27,7 +27,7 @@ apply plugin: 'org.parchmentmc.librarian.forgegradle'
 apply plugin: 'eclipse'
 apply plugin: 'maven-publish'
 
-version = { mod_version }
+version = "${mod_version}"
 //configurations {
 //    library
 //    shade // <- Create a 'shade' configuration
@@ -61,7 +61,7 @@ minecraft {
     // Simply re-run your setup task after changing the mappings to update your workspace.
 
     mappings channel: 'parchment', version: '2023.07.02-1.20.1'
-	accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
+    accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
     // makeObfSourceJar = false // an Srg named sources jar is made by default. uncomment this to disable.
 
     // accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
@@ -75,7 +75,7 @@ minecraft {
             property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
             property 'mixin.env.remapRefMap', 'true'
             property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
-            arg "-mixin.config="+"ars_nouveau"+".mixins.json"
+            arg "-mixin.config=" + "ars_nouveau" + ".mixins.json"
             // Recommended logging level for the console
             property 'forge.logging.console.level', 'debug'
 
@@ -92,7 +92,7 @@ minecraft {
             property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
             property 'mixin.env.remapRefMap', 'true'
             property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
-            arg "-mixin.config="+"ars_nouveau"+".mixins.json"
+            arg "-mixin.config=" + "ars_nouveau" + ".mixins.json"
             // Recommended logging level for the console
             property 'forge.logging.console.level', 'debug'
 
@@ -224,14 +224,14 @@ dependencies {
 jar {
     manifest {
         attributes([
-            "Specification-Title": "ArsNouveau",
-            "Specification-Vendor": "baileyh",
-            "Specification-Version": "1", // We are version 1 of ourselves
-            "Implementation-Title": project.name,
-            "Implementation-Version": "${version}",
-            "Implementation-Vendor" :"baileyh",
-            "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
-            "MixinConfigs": "ars_nouveau.mixins.json"
+                "Specification-Title"     : "ArsNouveau",
+                "Specification-Vendor"    : "baileyh",
+                "Specification-Version"   : "1", // We are version 1 of ourselves
+                "Implementation-Title"    : project.name,
+                "Implementation-Version"  : "${version}",
+                "Implementation-Vendor"   : "baileyh",
+                "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
+                "MixinConfigs"            : "ars_nouveau.mixins.json"
         ])
     }
 }
