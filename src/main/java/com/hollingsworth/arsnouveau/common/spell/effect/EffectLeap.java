@@ -34,7 +34,7 @@ public class EffectLeap extends AbstractEffect {
         Entity entity = rayTraceResult.getEntity();
         double bonus;
         Vec3 vector;
-        if (NERF.get() && entity == shooter && !shooter.isOnGround()) {
+        if (NERF.get() && entity == shooter && (!shooter.onGround() || shooter.isInWater())) {
             return;
         }
         if (entity instanceof LivingEntity) {

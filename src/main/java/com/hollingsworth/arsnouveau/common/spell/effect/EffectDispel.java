@@ -6,6 +6,8 @@ import com.hollingsworth.arsnouveau.api.spell.*;
 import com.hollingsworth.arsnouveau.common.lib.GlyphLib;
 import com.hollingsworth.arsnouveau.common.lib.PotionEffectTags;
 import net.minecraft.core.Registry;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
@@ -32,8 +34,9 @@ public class EffectDispel extends AbstractEffect {
         if (rayTraceResult.getEntity() instanceof LivingEntity entity) {
             Collection<MobEffectInstance> effects = entity.getActiveEffects();
             MobEffectInstance[] array = effects.toArray(new MobEffectInstance[0]);
-            var blacklist = Registry.MOB_EFFECT.getTag(PotionEffectTags.DISPEL_DENY);
-            var whitelist = Registry.MOB_EFFECT.getTag(PotionEffectTags.DISPEL_ALLOW);
+            Registry<MobEffect> registry = world.registryAccess().registryOrThrow(Registries.MOB_EFFECT);
+            var blacklist = registry.getTag(PotionEffectTags.DISPEL_DENY);
+            var whitelist = registry.getTag(PotionEffectTags.DISPEL_ALLOW);
             for (MobEffectInstance e : array) {
                 if (e.isCurativeItem(new ItemStack(Items.MILK_BUCKET))) {
                     if (blacklist.isPresent() && blacklist.get().stream().anyMatch(effect -> effect.get() == e.getEffect()))

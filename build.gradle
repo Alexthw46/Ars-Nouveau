@@ -27,7 +27,7 @@ apply plugin: 'org.parchmentmc.librarian.forgegradle'
 apply plugin: 'eclipse'
 apply plugin: 'maven-publish'
 
-version = '4.4.0'
+version = { mod_version }
 //configurations {
 //    library
 //    shade // <- Create a 'shade' configuration

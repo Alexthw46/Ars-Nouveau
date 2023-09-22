@@ -44,20 +44,20 @@ public interface IDamageEffect {
             return false;
         ServerLevel server = (ServerLevel) world;
 
-        float totalDamage = (float) (baseDamage + stats.getDamageModifier();
-            //add the spell damage from attributes
-            if (shooter.getAttributes().hasAttribute(PerkAttributes.SPELL_DAMAGE_BONUS.get()) totalDamage +=
-                shooter.getAttributeValue(PerkAttributes.SPELL_DAMAGE_BONUS.get());
+        double startingDamage = baseDamage + stats.getDamageModifier();
+        //add the spell damage from attributes
+        if (shooter.getAttributes().hasAttribute(PerkAttributes.SPELL_DAMAGE_BONUS.get()))
+            startingDamage += shooter.getAttributeValue(PerkAttributes.SPELL_DAMAGE_BONUS.get());
 
         //randomize damage buff or debuff
         if (stats.isRandomized())
-            totalDamage += stats.getBuffCount(AugmentShuffle.INSTANCE) * server.random.nextIntBetweenInclusive(-1, 1);
+            startingDamage += stats.getBuffCount(AugmentShuffle.INSTANCE) * server.random.nextIntBetweenInclusive(-1, 1);
 
-        SpellDamageEvent.Pre preDamage = new SpellDamageEvent.Pre(source, shooter, entity, totalDamage, spellContext);
+        SpellDamageEvent.Pre preDamage = new SpellDamageEvent.Pre(source, shooter, entity, (float) startingDamage, spellContext);
         MinecraftForge.EVENT_BUS.post(preDamage);
 
         source = preDamage.damageSource;
-        totalDamage = preDamage.damage;
+        float totalDamage = preDamage.damage;
         if (totalDamage <= 0 || preDamage.isCanceled())
             return false;
 
