@@ -15,7 +15,10 @@ import java.util.Optional;
 
 public class PotionEffectTags {
     private static final HashMap<TagKey<MobEffect>, ArrayList<MobEffect>> potionEffects = new HashMap<>();
+    
     public static final TagKey<MobEffect> UNSTABLE_GIFTS = TagKey.create(Registries.MOB_EFFECT, new ResourceLocation(ArsNouveau.MODID, "unstable_gifts"));
+    public static final TagKey<MobEffect> DISPEL_DENY = TagKey.create(Registries.MOB_EFFECT, new ResourceLocation(ArsNouveau.MODID, "deny_dispel"));
+    public static final TagKey<MobEffect> DISPEL_ALLOW = TagKey.create(Registries.MOB_EFFECT, new ResourceLocation(ArsNouveau.MODID, "allow_dispel"));
 
     public static ArrayList<MobEffect> getEffects(Level level, TagKey<MobEffect> tag) {
         return potionEffects.computeIfAbsent(tag, (_key) -> {
