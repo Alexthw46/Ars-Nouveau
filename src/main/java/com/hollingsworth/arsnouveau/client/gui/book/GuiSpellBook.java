@@ -582,7 +582,7 @@ public class GuiSpellBook extends BaseBook {
         //manabar
         int manaLength = 96;
         if (maxManaCache > 0) {
-            manaLength *= (float) (maxManaCache - currentCostCache) / maxManaCache;
+            manaLength = manaLength * ((maxManaCache - currentCostCache) / maxManaCache);
         } else manaLength = 0;
 
         int offsetLeft = 89;
@@ -629,7 +629,8 @@ public class GuiSpellBook extends BaseBook {
     private void validate() {
         int firstBlankSlot = -1;
         int offset = spellWindowOffset;//craftingCells.get(0).slotNum;
-        List<AbstractSpellPart> recipe = new LinkedList<>(spell.subList(0, offset));
+
+        List<AbstractSpellPart> recipe = new LinkedList<>(spell.subList(0, Math.min(offset, spell.size())));
 
         // Reset the crafting slots and build the recipe to validate
         for (int i = 0; i < craftingCells.size(); i++) {
