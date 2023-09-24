@@ -55,8 +55,6 @@ public class Config {
     public static ForgeConfigSpec.IntValue TOUCH_LIGHT_DURATION;
 
     public static ForgeConfigSpec.BooleanValue SPAWN_TOMES;
-    public static ForgeConfigSpec.BooleanValue INFINITE_SPELLS;
-    public static ForgeConfigSpec.IntValue NOT_SO_INFINITE_SPELLS;
 
 
     public static ForgeConfigSpec.BooleanValue ALTERNATE_PORTAL_RENDER;
@@ -90,7 +88,7 @@ public class Config {
     }
 
     static {
-        ForgeConfigSpec.Builder SERVER_BUILDER = new ForgeConfigSpec.Builder();
+        ForgeConfigSpec.Builder COMMON_BUILDER = new ForgeConfigSpec.Builder();
         ForgeConfigSpec.Builder CLIENT_BUILDER = new ForgeConfigSpec.Builder();
 
         CLIENT_BUILDER.comment("Lighting").push("lights");
@@ -113,48 +111,44 @@ public class Config {
         CLIENT_BUILDER.comment("Misc").push("misc");
         ALTERNATE_PORTAL_RENDER = CLIENT_BUILDER.comment("Use simplified renderer for Warp Portals").define("no_end_portal_render", false);
         DISABLE_SKY_SHADER = CLIENT_BUILDER.comment("Disables the skyweave renderer. Disable if your sky is broken with shaders.").define("disable_skyweave", false);
-        SERVER_BUILDER.comment("General settings").push(CATEGORY_GENERAL);
-        DIMENSION_BLACKLIST = SERVER_BUILDER.comment("Dimensions where hostile mobs will not spawn. Ex: [\"minecraft:overworld\", \"undergarden:undergarden\"]. . Run /forge dimensions for a list.").defineList("dimensionBlacklist", new ArrayList<>(), (o) -> true);
-        SPAWN_BOOK = SERVER_BUILDER.comment("Spawn a book in the players inventory on login").define("spawnBook", true);
-        INFORM_LIGHTS = SERVER_BUILDER.comment("Inform the player of Dynamic lights once.").define("informLights", true);
-        SYLPH_MANA_COST = SERVER_BUILDER.comment("How much mana whirlisprigs consume per generation").defineInRange("sylphManaCost", 250, 0, 10000);
-        WHIRLISPRIG_MAX_PROGRESS = SERVER_BUILDER.comment("How much progress whirlisprigs must accumulate before creating resources")
+        COMMON_BUILDER.comment("General settings").push(CATEGORY_GENERAL);
+        DIMENSION_BLACKLIST = COMMON_BUILDER.comment("Dimensions where hostile mobs will not spawn. Ex: [\"minecraft:overworld\", \"undergarden:undergarden\"]. . Run /forge dimensions for a list.").defineList("dimensionBlacklist", new ArrayList<>(), (o) -> true);
+        SPAWN_BOOK = COMMON_BUILDER.comment("Spawn a book in the players inventory on login").define("spawnBook", true);
+        INFORM_LIGHTS = COMMON_BUILDER.comment("Inform the player of Dynamic lights once.").define("informLights", true);
+        SYLPH_MANA_COST = COMMON_BUILDER.comment("How much mana whirlisprigs consume per generation").defineInRange("sylphManaCost", 250, 0, 10000);
+        WHIRLISPRIG_MAX_PROGRESS = COMMON_BUILDER.comment("How much progress whirlisprigs must accumulate before creating resources")
                 .defineInRange("whirlisprigProgress", 250, 0, 10000);
-        HUNTER_ATTACK_ANIMALS = SERVER_BUILDER.comment("Should the Wilden Hunter attack animals?").define("hunterHuntsAnimals", false);
-        STALKER_ATTACK_ANIMALS = SERVER_BUILDER.comment("Should the Wilden Stalker attack animals?").define("stalkerHuntsAnimals", false);
-        GUARDIAN_ATTACK_ANIMALS = SERVER_BUILDER.comment("Should the Wilden Defender attack animals?").define("defenderHuntsAnimals", false);
-        CHIMERA_DIVE_DESTRUCTIVE = SERVER_BUILDER.comment("Should the Wilden Chimera dive bomb destroy blocks?").define("destructiveDiveBomb", true);
+        HUNTER_ATTACK_ANIMALS = COMMON_BUILDER.comment("Should the Wilden Hunter attack animals?").define("hunterHuntsAnimals", false);
+        STALKER_ATTACK_ANIMALS = COMMON_BUILDER.comment("Should the Wilden Stalker attack animals?").define("stalkerHuntsAnimals", false);
+        GUARDIAN_ATTACK_ANIMALS = COMMON_BUILDER.comment("Should the Wilden Defender attack animals?").define("defenderHuntsAnimals", false);
+        CHIMERA_DIVE_DESTRUCTIVE = COMMON_BUILDER.comment("Should the Wilden Chimera dive bomb destroy blocks?").define("destructiveDiveBomb", true);
 
-        ARCHWOOD_FOREST_WEIGHT = SERVER_BUILDER.comment("Archwood forest spawn weight").defineInRange("archwoodForest", 2, 0, Integer.MAX_VALUE);
-        BOOKWYRM_LIMIT = SERVER_BUILDER.comment("How many inventories can lectern support per bookwyrm").defineInRange("bookwyrmLimit", 8, 1, Integer.MAX_VALUE);
-        SERVER_BUILDER.pop();
-        SERVER_BUILDER.push(DRYGMY_CATEGORY);
-        DRYGMY_MANA_COST = SERVER_BUILDER.comment("How much source drygmys consume per generation").defineInRange("drygmyManaCost", 1000, 0, 10000);
-        DRYGMY_MAX_PROGRESS = SERVER_BUILDER.comment("How many channels must occur before a drygmy produces loot").defineInRange("drygmyMaxProgress", 20, 0, 300);
-        DRYGMY_UNIQUE_BONUS = SERVER_BUILDER.comment("Bonus number of items a drygmy produces per unique mob").defineInRange("drygmyUniqueBonus", 2, 0, 300);
-        DRYGMY_BASE_ITEM = SERVER_BUILDER.comment("Base number of items a drygmy produces per cycle before bonuses.").defineInRange("drygmyBaseItems", 1, Integer.MIN_VALUE, Integer.MAX_VALUE);
-        DRYGMY_QUANTITY_CAP = SERVER_BUILDER.comment("Max Bonus number of items a drygmy produces from nearby entities. Each entity equals 1 item.").defineInRange("drygmyQuantityCap", 5, 0, 300);
-        SERVER_BUILDER.pop();
+        ARCHWOOD_FOREST_WEIGHT = COMMON_BUILDER.comment("Archwood forest spawn weight").defineInRange("archwoodForest", 2, 0, Integer.MAX_VALUE);
+        BOOKWYRM_LIMIT = COMMON_BUILDER.comment("How many inventories can lectern support per bookwyrm").defineInRange("bookwyrmLimit", 8, 1, Integer.MAX_VALUE);
+        COMMON_BUILDER.pop();
+        COMMON_BUILDER.push(DRYGMY_CATEGORY);
+        DRYGMY_MANA_COST = COMMON_BUILDER.comment("How much source drygmys consume per generation").defineInRange("drygmyManaCost", 1000, 0, 10000);
+        DRYGMY_MAX_PROGRESS = COMMON_BUILDER.comment("How many channels must occur before a drygmy produces loot").defineInRange("drygmyMaxProgress", 20, 0, 300);
+        DRYGMY_UNIQUE_BONUS = COMMON_BUILDER.comment("Bonus number of items a drygmy produces per unique mob").defineInRange("drygmyUniqueBonus", 2, 0, 300);
+        DRYGMY_BASE_ITEM = COMMON_BUILDER.comment("Base number of items a drygmy produces per cycle before bonuses.").defineInRange("drygmyBaseItems", 1, Integer.MIN_VALUE, Integer.MAX_VALUE);
+        DRYGMY_QUANTITY_CAP = COMMON_BUILDER.comment("Max Bonus number of items a drygmy produces from nearby entities. Each entity equals 1 item.").defineInRange("drygmyQuantityCap", 5, 0, 300);
+        COMMON_BUILDER.pop();
 
-        SERVER_BUILDER.comment("Items").push("item");
-        SPAWN_TOMES = SERVER_BUILDER.comment("Spawn Caster Tomes in Dungeon Loot?").define("spawnTomes", true);
-        SERVER_BUILDER.pop();
-        SERVER_BUILDER.comment("Blocks").push("block");
-        MELDER_INPUT_COST = SERVER_BUILDER.comment("How much potion a melder takes from each input jar. 100 = 1 potion").defineInRange("melderInputCost", 200, 100, Integer.MAX_VALUE);
-        MELDER_OUTPUT = SERVER_BUILDER.comment("How much potion a melder outputs per cycle. 100 = 1 potion").defineInRange("melderOutput", 100, 100, Integer.MAX_VALUE);
-        MELDER_SOURCE_COST = SERVER_BUILDER.comment("How much source a melder takes per cycle").defineInRange("melderSourceCost", 300, 0, Integer.MAX_VALUE);
-        SERVER_BUILDER.pop();
+        COMMON_BUILDER.comment("Items").push("item");
+        SPAWN_TOMES = COMMON_BUILDER.comment("Spawn Caster Tomes in Dungeon Loot?").define("spawnTomes", true);
+        COMMON_BUILDER.pop();
+        COMMON_BUILDER.comment("Blocks").push("block");
+        MELDER_INPUT_COST = COMMON_BUILDER.comment("How much potion a melder takes from each input jar. 100 = 1 potion").defineInRange("melderInputCost", 200, 100, Integer.MAX_VALUE);
+        MELDER_OUTPUT = COMMON_BUILDER.comment("How much potion a melder outputs per cycle. 100 = 1 potion").defineInRange("melderOutput", 100, 100, Integer.MAX_VALUE);
+        MELDER_SOURCE_COST = COMMON_BUILDER.comment("How much source a melder takes per cycle").defineInRange("melderSourceCost", 300, 0, Integer.MAX_VALUE);
+        COMMON_BUILDER.pop();
 
-        SERVER_BUILDER.comment("Debug").push("debug");
-        MAX_LOG_EVENTS = SERVER_BUILDER.comment("Max number of log events to keep on entities. Lowering this number may make it difficult to debug why your entities are stuck.").defineInRange("maxLogEvents", 100, 0, Integer.MAX_VALUE);
-        SERVER_BUILDER.pop();
+        COMMON_BUILDER.comment("Debug").push("debug");
+        MAX_LOG_EVENTS = COMMON_BUILDER.comment("Max number of log events to keep on entities. Lowering this number may make it difficult to debug why your entities are stuck.").defineInRange("maxLogEvents", 100, 0, Integer.MAX_VALUE);
+        COMMON_BUILDER.pop();
 
-        SERVER_BUILDER.comment("Beta Features").push("beta");
-        INFINITE_SPELLS = SERVER_BUILDER.comment("Allow crafting infinite spells. This is a beta feature and may cause crashes.").define("infiniteSpells", false);
-        NOT_SO_INFINITE_SPELLS = SERVER_BUILDER.comment("Limits the crafting infinite spells beta, set a cap to the number of additional glyphs. This is a beta feature and may cause crashes.").defineInRange("infiniteSpellLimit", 30, 10, 1000);
-        SERVER_BUILDER.pop();
 
-        COMMON_CONFIG = SERVER_BUILDER.build();
+        COMMON_CONFIG = COMMON_BUILDER.build();
         CLIENT_CONFIG = CLIENT_BUILDER.build();
     }
 

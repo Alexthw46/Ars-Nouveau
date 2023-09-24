@@ -22,7 +22,7 @@ import com.hollingsworth.arsnouveau.common.network.Networking;
 import com.hollingsworth.arsnouveau.common.network.PacketUpdateCaster;
 import com.hollingsworth.arsnouveau.common.spell.validation.CombinedSpellValidator;
 import com.hollingsworth.arsnouveau.common.spell.validation.GlyphMaxTierValidator;
-import com.hollingsworth.arsnouveau.setup.config.Config;
+import com.hollingsworth.arsnouveau.setup.config.ServerConfig;
 import com.hollingsworth.arsnouveau.setup.registry.CapabilityRegistry;
 import com.hollingsworth.arsnouveau.setup.registry.ItemsRegistry;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -48,10 +48,7 @@ import net.minecraft.world.item.ItemStack;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.hollingsworth.arsnouveau.api.util.ManaUtil.getPlayerDiscounts;
@@ -77,6 +74,9 @@ public class GuiSpellBook extends BaseBook {
     public int page = 0;
     public PageButton nextButton;
     public PageButton previousButton;
+
+    public PageButton nextGlyphButton;
+    public PageButton prevGlyphButton;
     public ISpellValidator spellValidator;
     public String previousString = "";
     public ItemStack bookStack;
@@ -205,13 +205,15 @@ public class GuiSpellBook extends BaseBook {
 
         validate();
 
-        //infinite spells
-        if (Config.INFINITE_SPELLS.get()) {
-            addRenderableWidget(new PageButton(bookRight - 25, bookBottom - 30, true, i -> updateWindowOffset(spellWindowOffset + 1), true));
-            addRenderableWidget(new PageButton(bookLeft, bookBottom - 30, false, i -> updateWindowOffset(spellWindowOffset - 1), true));
-        }
         List<AbstractSpellPart> recipe = CasterUtil.getCaster(bookStack).getSpell(selectedSlot).recipe;
         spell = new ArrayList<>(recipe);
+
+        //infinite spells
+        if (ServerConfig.INFINITE_SPELLS.get()) {
+            this.nextGlyphButton = addRenderableWidget(new PageButton(bookRight - 25, bookBottom - 30, true, i -> updateWindowOffset(spellWindowOffset + 1), true));
+            this.prevGlyphButton = addRenderableWidget(new PageButton(bookLeft, bookBottom - 30, false, i -> updateWindowOffset(spellWindowOffset - 1), true));
+            updateWindowOffset(0);
+        }
     }
 
     public int getNumPages() {
@@ -441,6 +443,11 @@ public class GuiSpellBook extends BaseBook {
         if (((CraftingButton) button).slotNum < spell.size()) {
             spell.set(((CraftingButton) button).slotNum, null);
         }
+        //sanitize the spell if manually cleared
+        if (spell.stream().allMatch(Objects::isNull)) {
+            spell.clear();
+        }
+        if (nextGlyphButton != null) updateNextGlyphArrow();
         validate();
     }
 
@@ -457,10 +464,22 @@ public class GuiSpellBook extends BaseBook {
                     } else {
                         spell.set(b.slotNum, button1.abstractSpellPart);
                     }
+                    if (nextGlyphButton != null) updateNextGlyphArrow();
                     validate();
                     return;
                 }
             }
+        }
+
+    }
+
+    private void updateNextGlyphArrow() {
+        if (spellWindowOffset >= ServerConfig.NOT_SO_INFINITE_SPELLS.get() || spellWindowOffset >= spell.size() - 1) {
+            nextGlyphButton.active = false;
+            nextGlyphButton.visible = false;
+        } else {
+            nextGlyphButton.active = true;
+            nextGlyphButton.visible = true;
         }
     }
 
@@ -506,7 +525,9 @@ public class GuiSpellBook extends BaseBook {
     }
 
     public void updateWindowOffset(int offset) {
-        this.spellWindowOffset = Mth.clamp(offset, 0, Config.NOT_SO_INFINITE_SPELLS.get());
+        //do nothing if the spell is empty and nextGlyphButton is clicked
+        if (spellWindowOffset == 0 && offset > 0 && spell.stream().allMatch(Objects::isNull)) return;
+        this.spellWindowOffset = Mth.clamp(offset, 0, ServerConfig.NOT_SO_INFINITE_SPELLS.get());
         for (int i = 0; i < 10; i++) {
             CraftingButton craftingButton = craftingCells.get(i);
             craftingButton.slotNum = spellWindowOffset + i;
@@ -517,6 +538,16 @@ public class GuiSpellBook extends BaseBook {
                 craftingButton.setAbstractSpellPart(spell.get(spellWindowOffset + i));
             }
         }
+        if (spellWindowOffset <= 0) {
+            prevGlyphButton.active = false;
+            prevGlyphButton.visible = false;
+        } else {
+            prevGlyphButton.active = true;
+            prevGlyphButton.visible = true;
+        }
+
+        updateNextGlyphArrow();
+
         validate();
     }
 
