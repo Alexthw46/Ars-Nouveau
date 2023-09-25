@@ -526,28 +526,29 @@ public class GuiSpellBook extends BaseBook {
 
     public void updateWindowOffset(int offset) {
         //do nothing if the spell is empty and nextGlyphButton is clicked
-        if (spellWindowOffset == 0 && offset > 0 && spell.stream().allMatch(Objects::isNull)) return;
-        this.spellWindowOffset = Mth.clamp(offset, 0, ServerConfig.NOT_SO_INFINITE_SPELLS.get());
-        for (int i = 0; i < 10; i++) {
-            CraftingButton craftingButton = craftingCells.get(i);
-            craftingButton.slotNum = spellWindowOffset + i;
-            if (spellWindowOffset + i >= spell.size() || spell.get(spellWindowOffset + i) == null) {
-                craftingButton.clear();
-            } else {
-                craftingButton.spellTag = spell.get(spellWindowOffset + i).getRegistryName();
-                craftingButton.setAbstractSpellPart(spell.get(spellWindowOffset + i));
+        if (ServerConfig.INFINITE_SPELLS.get())
+            if (spellWindowOffset != 0 || offset <= 0 || !spell.stream().allMatch(Objects::isNull)) {
+                this.spellWindowOffset = Mth.clamp(offset, 0, ServerConfig.NOT_SO_INFINITE_SPELLS.get());
+                for (int i = 0; i < 10; i++) {
+                    CraftingButton craftingButton = craftingCells.get(i);
+                    craftingButton.slotNum = spellWindowOffset + i;
+                    if (spellWindowOffset + i >= spell.size() || spell.get(spellWindowOffset + i) == null) {
+                        craftingButton.clear();
+                    } else {
+                        craftingButton.spellTag = spell.get(spellWindowOffset + i).getRegistryName();
+                        craftingButton.setAbstractSpellPart(spell.get(spellWindowOffset + i));
+                    }
+                }
+                if (spellWindowOffset <= 0) {
+                    prevGlyphButton.active = false;
+                    prevGlyphButton.visible = false;
+                } else {
+                    prevGlyphButton.active = true;
+                    prevGlyphButton.visible = true;
+                }
+
+                updateNextGlyphArrow();
             }
-        }
-        if (spellWindowOffset <= 0) {
-            prevGlyphButton.active = false;
-            prevGlyphButton.visible = false;
-        } else {
-            prevGlyphButton.active = true;
-            prevGlyphButton.visible = true;
-        }
-
-        updateNextGlyphArrow();
-
         validate();
     }
 
