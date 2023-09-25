@@ -44,6 +44,7 @@ public class GlyphRecipeProvider extends SimpleDataProvider {
         add(get(AugmentPierce.INSTANCE).withItem(Items.ARROW).withItem(ItemsRegistry.WILDEN_SPIKE));
         add(get(AugmentSensitive.INSTANCE).withItem(Items.SCAFFOLDING).withItem(Items.POPPY).withItem(Items.WATER_BUCKET));
         add(get(AugmentSplit.INSTANCE).withItem(BlockRegistry.RELAY_SPLITTER).withItem(ItemsRegistry.WILDEN_SPIKE).withItem(Items.STONECUTTER));
+        add(get(AugmentShuffle.INSTANCE).withItem(ItemsRegistry.MANIPULATION_ESSENCE).withItem(Items.DROPPER).withItem(Items.SUSPICIOUS_STEW));
 
         add(get(MethodOrbit.INSTANCE).withItem(Items.COMPASS).withItem(Items.ENDER_EYE).withIngredient(Ingredient.of(Tags.Items.RODS_BLAZE)));
         add(get(MethodProjectile.INSTANCE).withItem(Items.FLETCHING_TABLE).withItem(Items.ARROW));

@@ -62,7 +62,7 @@ public class EffectHarm extends AbstractEffect implements IDamageEffect, IPotion
         return augmentSetOf(
                 AugmentAmplify.INSTANCE, AugmentDampen.INSTANCE,
                 AugmentExtendTime.INSTANCE, AugmentDurationDown.INSTANCE,
-                AugmentFortune.INSTANCE
+                AugmentFortune.INSTANCE, AugmentShuffle.INSTANCE
         );
     }
 

@@ -5,6 +5,7 @@ import com.hollingsworth.arsnouveau.common.lib.GlyphLib;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.HitResult;
+import net.minecraftforge.common.ForgeConfigSpec;
 
 public class AugmentShuffle extends AbstractAugment {
 
@@ -19,6 +20,14 @@ public class AugmentShuffle extends AbstractAugment {
         return builder.randomize();
     }
 
+    public ForgeConfigSpec.ConfigValue<Boolean> ROLL_EACH;
+
+    @Override
+    public void buildConfig(ForgeConfigSpec.Builder builder) {
+        super.buildConfig(builder);
+        ROLL_EACH = builder.comment("Used for damage. If true, each additional shuffle will roll a new random value. If false, a single roll will be multiplied by the number of shuffles.").define("roll_each", false);
+    }
+
     public SpellTier defaultTier() {
         return SpellTier.TWO;
     }
@@ -30,6 +39,6 @@ public class AugmentShuffle extends AbstractAugment {
 
     @Override
     public String getBookDescription() {
-        return "Randomize the behavior of some glyphs. If used with spells like Place Block and Exchange, it will randomize the block that is placed between the blocks in your hotbar.";
+        return "Randomize the behavior of some glyphs. If used with spells like Place Block and Exchange, it will randomize the block that is placed between the blocks in your hotbar. If used on a spell that deals damage, it will randomly decrease or increase damage.";
     }
 }

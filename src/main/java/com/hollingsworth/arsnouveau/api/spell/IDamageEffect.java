@@ -50,8 +50,13 @@ public interface IDamageEffect {
             startingDamage += shooter.getAttributeValue(PerkAttributes.SPELL_DAMAGE_BONUS.get());
 
         //randomize damage buff or debuff
-        if (stats.isRandomized())
-            startingDamage += stats.getBuffCount(AugmentShuffle.INSTANCE) * server.random.nextIntBetweenInclusive(-1, 1);
+        if (stats.isRandomized()) {
+            int shuffles = stats.getBuffCount(AugmentShuffle.INSTANCE);
+            if (AugmentShuffle.INSTANCE.ROLL_EACH.get()) {
+                for (int i = 0; i < shuffles; i++)
+                    startingDamage += server.random.nextIntBetweenInclusive(-1, 1);
+            } else startingDamage += server.random.nextIntBetweenInclusive(-1, 1) * shuffles;
+        }
 
         SpellDamageEvent.Pre preDamage = new SpellDamageEvent.Pre(source, shooter, entity, (float) startingDamage, spellContext);
         MinecraftForge.EVENT_BUS.post(preDamage);

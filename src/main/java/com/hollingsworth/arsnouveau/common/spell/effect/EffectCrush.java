@@ -11,7 +11,6 @@ import com.hollingsworth.arsnouveau.setup.registry.DamageTypesRegistry;
 import com.hollingsworth.arsnouveau.setup.registry.RecipeRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -68,6 +67,11 @@ public class EffectCrush extends AbstractEffect implements IDamageEffect {
         List<CrushRecipe> recipes = world.getRecipeManager().getAllRecipesFor(RecipeRegistry.CRUSH_TYPE.get());
         CrushRecipe lastHit = null; // Cache this for AOE hits
         for (BlockPos p : SpellUtil.calcAOEBlocks(shooter, rayTraceResult.getBlockPos(), rayTraceResult, spellStats.getAoeMultiplier(), spellStats.getBuffCount(AugmentPierce.INSTANCE))) {
+
+            if (spellStats.isRandomized() && world.random.nextFloat() < spellStats.getBuffCount(AugmentShuffle.INSTANCE) * 0.25F) {
+                continue;
+            }
+
             BlockState state = world.getBlockState(p);
             Item item = state.getBlock().asItem();
             if (lastHit == null || !lastHit.matches(item.getDefaultInstance(), world)) {
@@ -151,7 +155,7 @@ public class EffectCrush extends AbstractEffect implements IDamageEffect {
         return augmentSetOf(
                 AugmentAmplify.INSTANCE, AugmentDampen.INSTANCE,
                 AugmentAOE.INSTANCE, AugmentPierce.INSTANCE,
-                AugmentFortune.INSTANCE, AugmentSensitive.INSTANCE
+                AugmentFortune.INSTANCE, AugmentSensitive.INSTANCE, AugmentShuffle.INSTANCE
         );
     }
 
