@@ -24,7 +24,6 @@ import com.hollingsworth.arsnouveau.common.spell.validation.CombinedSpellValidat
 import com.hollingsworth.arsnouveau.common.spell.validation.GlyphMaxTierValidator;
 import com.hollingsworth.arsnouveau.setup.config.ServerConfig;
 import com.hollingsworth.arsnouveau.setup.registry.CapabilityRegistry;
-
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -184,7 +183,7 @@ public class GuiSpellBook extends BaseBook {
         addRenderableWidget(searchBar);
 
         // clipboard, copy and paste buttons
-        this.clipboardW = addRenderableWidget(
+        clipboardW = addRenderableWidget(
                 new ClipboardWidget(this)
         );
         addRenderableWidget(new CopyButton(this).withTooltip(Component.translatable("ars_nouveau.spell_book_gui.copy")));
@@ -418,7 +417,7 @@ public class GuiSpellBook extends BaseBook {
 
     public void onColorClick(Button button) {
         ParticleColor color = SpellCasterRegistry.from(bookStack).getColor(selectedSpellSlot);
-        Minecraft.getInstance().setScreen(new GuiColorScreen(color.getRedInt(), color.getGreenInt(), color.getBlueInt(), selectedSpellSlot, this.hand));
+        Minecraft.getInstance().setScreen(new GuiColorScreen(color.getRedInt(), color.getGreenInt(), color.getBlueInt(), selectedSpellSlot, this.hand, this));
     }
 
     public void onSoundsClick(Button button) {
@@ -889,7 +888,7 @@ public class GuiSpellBook extends BaseBook {
             getMinecraft().keyboardHandler.setClipboard(hasAltDown() ? spellToJson(new Spell(spell)) : spellToBinaryBase64(new Spell(spell, spellname)));
         } else if (spell != null && !spell.isEmpty()) {
             clipboard = new ArrayList<>(spell);
-            this.clipboardW.setClipboard(clipboard);
+            clipboardW.setClipboard(clipboard);
         }
     }
 
