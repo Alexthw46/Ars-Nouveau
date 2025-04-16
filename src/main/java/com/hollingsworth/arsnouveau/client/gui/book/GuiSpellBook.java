@@ -1,5 +1,7 @@
 package com.hollingsworth.arsnouveau.client.gui.book;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import com.hollingsworth.arsnouveau.ArsNouveau;
 import com.hollingsworth.arsnouveau.api.ArsNouveauAPI;
 import com.hollingsworth.arsnouveau.api.registry.GlyphRegistry;
@@ -11,7 +13,6 @@ import com.hollingsworth.arsnouveau.client.ClientInfo;
 import com.hollingsworth.arsnouveau.client.gui.Color;
 import com.hollingsworth.arsnouveau.client.gui.GuiUtils;
 import com.hollingsworth.arsnouveau.client.gui.NoShadowTextField;
-import com.hollingsworth.arsnouveau.client.gui.SchoolTooltip;
 import com.hollingsworth.arsnouveau.client.gui.buttons.*;
 import com.hollingsworth.arsnouveau.client.gui.utils.RenderUtils;
 import com.hollingsworth.arsnouveau.client.particle.ParticleColor;
@@ -23,19 +24,18 @@ import com.hollingsworth.arsnouveau.common.spell.validation.CombinedSpellValidat
 import com.hollingsworth.arsnouveau.common.spell.validation.GlyphMaxTierValidator;
 import com.hollingsworth.arsnouveau.setup.config.ServerConfig;
 import com.hollingsworth.arsnouveau.setup.registry.CapabilityRegistry;
-import com.hollingsworth.arsnouveau.setup.registry.CreativeTabRegistry;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.ChatFormatting;
-import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Renderable;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.PageButton;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.sounds.SoundManager;
@@ -45,17 +45,20 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.tooltip.TooltipComponent;
 import net.minecraft.world.item.ItemStack;
 import org.lwjgl.glfw.GLFW;
 
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.*;
 
 import static com.hollingsworth.arsnouveau.api.util.ManaUtil.getPlayerDiscounts;
 
 public class GuiSpellBook extends BaseBook {
+
+    public List<AbstractSpellPart> clipboard = new ArrayList<>();
+    public ClipboardWidget clipboardW;
 
     public int numLinks = 10;
 
@@ -179,6 +182,14 @@ public class GuiSpellBook extends BaseBook {
         searchBar.setResponder(this::onSearchChanged);
         addRenderableWidget(spell_name);
         addRenderableWidget(searchBar);
+
+        // clipboard, copy and paste buttons
+        this.clipboardW = addRenderableWidget(
+                new ClipboardWidget(this)
+        );
+        addRenderableWidget(new CopyButton(this).withTooltip(Component.translatable("ars_nouveau.spell_book_gui.copy")));
+        addRenderableWidget(new PasteButton(this).withTooltip(Component.translatable("ars_nouveau.spell_book_gui.paste")));
+
         // Add spell slots
         for (int i = 0; i < 10; i++) {
             String name = caster.getSpellName(i);
@@ -210,6 +221,7 @@ public class GuiSpellBook extends BaseBook {
             updateWindowOffset(0);
         }
         validate();
+
     }
 
     public int getNumPages() {
@@ -405,8 +417,8 @@ public class GuiSpellBook extends BaseBook {
     }
 
     public void onColorClick(Button button) {
-        ParticleColor.IntWrapper color = SpellCasterRegistry.from(bookStack).getColor(selectedSpellSlot).toWrapper();
-        Minecraft.getInstance().setScreen(new GuiColorScreen(color.r, color.g, color.b, selectedSpellSlot, this.hand, this));
+        ParticleColor color = SpellCasterRegistry.from(bookStack).getColor(selectedSpellSlot);
+        Minecraft.getInstance().setScreen(new GuiColorScreen(color.getRedInt(), color.getGreenInt(), color.getBlueInt(), selectedSpellSlot, this.hand));
     }
 
     public void onSoundsClick(Button button) {
@@ -871,14 +883,96 @@ public class GuiSpellBook extends BaseBook {
         }
     }
 
-    protected TooltipComponent collectComponent(int mouseX, int mouseY) {
-        for (Renderable renderable : renderables) {
-            if (renderable instanceof GlyphButton widget) {
-                if (GuiUtils.isMouseInRelativeRange(mouseX, mouseY, widget)) {
-                    return widget.abstractSpellPart.spellSchools.isEmpty() ? null : new SchoolTooltip(widget.abstractSpellPart);
-                }
+    public void onCopyOrExport(Button ignoredB) {
+        if (hasShiftDown() && clipboard != null && !clipboard.isEmpty()) {
+            // copy the spell to the clipboard
+            getMinecraft().keyboardHandler.setClipboard(hasAltDown() ? spellToJson(new Spell(spell)) : spellToBinaryBase64(new Spell(spell, spellname)));
+        } else if (spell != null && !spell.isEmpty()) {
+            clipboard = new ArrayList<>(spell);
+            this.clipboardW.setClipboard(clipboard);
+        }
+    }
+
+    public static String spellToJson(Spell spell) {
+        JsonObject json = new JsonObject();
+        json.addProperty("version", 1);
+        json.addProperty("name", spell.name());
+
+        JsonArray parts = new JsonArray();
+        for (AbstractSpellPart part : spell.recipe()) {
+            if (part != null) {
+                parts.add(part.getRegistryName().toString());
             }
         }
-        return null;
+        json.add("parts", parts);
+        return json.toString();
+    }
+
+    public static String spellToBinaryBase64(Spell spell) {
+        try {
+            ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+            DataOutputStream out = new DataOutputStream(byteStream);
+
+            out.writeByte(2); // version
+            out.writeUTF(spell.name());
+            out.writeInt(spell.unsafeList().size());
+
+            for (AbstractSpellPart part : spell.recipe()) {
+                if (part != null) {
+                    out.writeUTF(part.getRegistryName().toString());
+                }
+            }
+
+            out.close();
+            return Base64.getEncoder().encodeToString(byteStream.toByteArray());
+
+        } catch (IOException e) {
+            System.out.println("Error writing spell to binary: " + e.getMessage());
+            return "";
+        }
+    }
+
+
+    public void onPasteOrImport(Button ignoredB) {
+        if (Screen.hasShiftDown()) {
+            String clipboardString = Minecraft.getInstance().keyboardHandler.getClipboard();
+            if (!clipboardString.isEmpty()) {
+                Spell spell = hasAltDown() ? Spell.fromJson(clipboardString) : Spell.fromBinaryBase64(clipboardString);
+                if (spell.isValid()) {
+                    clipboard = spell.mutable().recipe;
+                    spell_name.setValue(spell.name());
+                    clipboardW.setClipboard(clipboard);
+                }
+            }
+        } else {
+            if (clipboard == null || clipboard.isEmpty()) {
+                return;
+            }
+            // before pasting, trim the spell to the max size supported by the spell book
+            int maxSize = 10 + getExtraGlyphSlots();
+            spell = clipboard.size() > maxSize ? clipboard.subList(0, maxSize) : new ArrayList<>(clipboard);
+            // reset the crafting cells and validate the spell
+            resetCraftingCells();
+            onCreateClick(null);
+        }
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        // only react if ctrl is pressed
+        if (hasControlDown() && !spell_name.isFocused() && !searchBar.isFocused()) {
+            if (isCopy(keyCode)) {
+                onCopyOrExport(null);
+                return true;
+            } else if (isPaste(keyCode)) {
+                onPasteOrImport(null);
+                return true;
+            } else if (isCut(keyCode)) {
+                onCopyOrExport(null);
+                clear(null);
+                return true;
+            }
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
     }
 }
