@@ -72,6 +72,7 @@ public abstract class EntityMixin {
         return original || AlliesSavedData.getAllies(serverLevel, dealer.getUUID()).contains(target.getUUID());
     }
 
+    /**
      * Used to make the glowing effect on mobs use the tag applied by {@link EffectLight}.
      */
     @Inject(method = "getTeamColor", at = @At("RETURN"), cancellable = true)

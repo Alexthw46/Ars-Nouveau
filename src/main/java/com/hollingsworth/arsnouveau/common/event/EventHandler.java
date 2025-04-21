@@ -340,6 +340,7 @@ public class EventHandler {
         LearnGlyphCommand.register(event.getDispatcher());
         AdoptCommand.register(event.getDispatcher());
         DroplessMobsCommand.register(event.getDispatcher());
+        DebugNumberCommand.register(event.getDispatcher());
         if(!FMLEnvironment.production){
             ExportDocsCommand.register(event.getDispatcher());
         }
