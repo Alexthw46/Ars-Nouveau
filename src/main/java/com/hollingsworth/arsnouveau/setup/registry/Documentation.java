@@ -21,7 +21,6 @@ import com.hollingsworth.arsnouveau.common.items.RitualTablet;
 import com.hollingsworth.arsnouveau.common.lib.LibBlockNames;
 import com.hollingsworth.arsnouveau.common.lib.RitualLib;
 import com.hollingsworth.arsnouveau.common.perk.EmptyPerk;
-import com.hollingsworth.arsnouveau.common.spell.method.MethodProjectile;
 import com.hollingsworth.arsnouveau.common.util.Log;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
@@ -72,6 +71,12 @@ public class Documentation {
         DocCategory ENCHANTMENTS = DocumentationRegistry.ENCHANTING;
         DocCategory FAMILIARS = DocumentationRegistry.FAMILIARS;
         DocCategory MOD_NEWS = DocumentationRegistry.GETTING_STARTED;
+
+        addPage(new DocEntryBuilder(GETTING_STARTED, "spell_casting")
+                .withIcon(ItemsRegistry.NOVICE_SPELLBOOK)
+                .withSortNum(1)
+                .withIntroPage()
+                .withCraftingPages(ItemsRegistry.NOVICE_SPELLBOOK));
         for (AbstractSpellPart spellPart : GlyphRegistry.getSpellpartMap().values()) {
             ItemStack renderStack = spellPart.glyphItem.getDefaultInstance();
             var entry = new DocEntry(spellPart.getRegistryName(), renderStack, Component.literal(spellPart.getLocaleName()));
@@ -298,7 +303,11 @@ public class Documentation {
                 .addConnectedSearch(BlockRegistry.BOMBEGRANTE_POD)
                 .addConnectedSearch(BlockRegistry.MENDOSTEEN_POD)
                 .addConnectedSearch(BlockRegistry.FROSTAYA_POD)
-                .addConnectedSearch(BlockRegistry.BASTION_POD));
+                .addConnectedSearch(BlockRegistry.BASTION_POD)
+                .addConnectedSearch(BlockRegistry.BLAZING_LOG)
+                .addConnectedSearch(BlockRegistry.CASCADING_LOG)
+                .addConnectedSearch(BlockRegistry.VEXING_LOG)
+                .addConnectedSearch(BlockRegistry.FLOURISHING_LOG));
 
 
         addPage(new DocEntryBuilder(RESOURCES, "decorative")
@@ -693,34 +702,28 @@ public class Documentation {
                 .withIcon(ItemsRegistry.NOVICE_SPELLBOOK)
                 .withSortNum(1)
                 .withIntroPage()
-                .withLocalizedText()
                 .withCraftingPages(ItemsRegistry.NOVICE_SPELLBOOK))
                 .withRelations(spellBooks);
 
         addPage(new DocEntryBuilder(GETTING_STARTED, "introduction_to_glyphs")
                 .withSortNum(2)
                 .withIcon(ItemsRegistry.NOVICE_SPELLBOOK)
-                .withIntroPage()
-                .withLocalizedText()
-                .withLocalizedText());
+                .withIntroPage());
 
         addPage(new DocEntryBuilder(GETTING_STARTED, "introduction_to_spellcrafting")
                 .withSortNum(3)
                 .withIcon(ItemsRegistry.NOVICE_SPELLBOOK)
-                .withIntroPage()
-                .withLocalizedText());
+                .withIntroPage());
 
         addPage(new DocEntryBuilder(GETTING_STARTED, "spellcasting")
                 .withSortNum(4)
                 .withIcon(ItemsRegistry.NOVICE_SPELLBOOK)
-                .withIntroPage()
-                .withLocalizedText());
+                .withIntroPage());
 
         addPage(new DocEntryBuilder(GETTING_STARTED, "spell_mana")
                 .withSortNum(5)
                 .withIcon(ItemsRegistry.NOVICE_SPELLBOOK)
-                .withIntroPage()
-                .withLocalizedText());
+                .withIntroPage());
 
         addPage(new DocEntryBuilder(GETTING_STARTED, "learning_glyphs")
                 .withSortNum(6)
@@ -737,15 +740,13 @@ public class Documentation {
         addPage(new DocEntryBuilder(GETTING_STARTED, "source")
                 .withSortNum(8)
                 .withIcon(BlockRegistry.SOURCE_JAR)
-                .withIntroPage()
-                .withLocalizedText())
+                .withIntroPage())
                 .withRelations(sourceJar, agronomic, mycelial, relay);
 
         addPage(new DocEntryBuilder(GETTING_STARTED, "magical_crafting")
                 .withSortNum(9)
                 .withIcon(BlockRegistry.IMBUEMENT_BLOCK)
-                .withIntroPage()
-                .withLocalizedText())
+                .withIntroPage())
                 .withRelations(imbuementChamber, enchantingApparatus, armorEntry, magebloom);
 
         addPage(new DocEntryBuilder(GETTING_STARTED, "magical_automation")
@@ -831,14 +832,14 @@ public class Documentation {
         return addPage(new DocEntryBuilder(category, stack.getDescriptionId())
                 .withIcon(item)
                 .withSortNum(order)
-                .withPage(TextEntry.create(Component.translatable(registryName.getNamespace() + ".page." + registryName.getPath()), stack.getItem().getDescription(), stack)).withCraftingPages(item));
+                .withIntroPageNoIncrement(registryName.getNamespace() + ".page." + registryName.getPath()).withCraftingPages(item));
     }
 
     public static DocEntry addBasicItem(ItemLike item, DocCategory category, ResourceLocation recipeId) {
         ResourceLocation registryName = getRegistryName(item.asItem());
         return addPage(new DocEntryBuilder(category, item.asItem().getDescriptionId())
                 .withIcon(item.asItem())
-                .withPage(TextEntry.create(Component.translatable(registryName.getNamespace() + ".page." + getRegistryName(item.asItem()).getPath())))
+                .withIntroPageNoIncrement(registryName.getNamespace() + ".page." + getRegistryName(item.asItem()).getPath())
                 .withPage(getRecipePages(recipeId)));
     }
 

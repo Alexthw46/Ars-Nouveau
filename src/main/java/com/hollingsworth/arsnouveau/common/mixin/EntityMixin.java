@@ -9,11 +9,12 @@ import com.hollingsworth.arsnouveau.common.spell.effect.EffectLight;
 import com.hollingsworth.arsnouveau.setup.registry.ModPotions;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import net.minecraft.server.level.ServerLevel;
+import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Unique;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.common.NeoForge;
 import org.spongepowered.asm.mixin.Shadow;
@@ -51,9 +52,8 @@ public abstract class EntityMixin {
         NeoForge.EVENT_BUS.post(new EntityPreRemovalEvent(this.level, (Entity) (Object) this));
     }
 
-@Unique
-    private static boolean ars_nouveau$isWet(LivingEntity livingEntity) {
-      return livingEntity.hasEffect(ModPotions.SOAKED_EFFECT) || livingEntity.getVehicle() instanceof BubbleEntity;
+    private static boolean isWet(LivingEntity livingEntity){
+        return livingEntity.hasEffect(ModPotions.SOAKED_EFFECT) || livingEntity.getVehicle() instanceof BubbleEntity;
     }
 
     /**
@@ -91,5 +91,10 @@ public abstract class EntityMixin {
             }
 
         }
+    }
+
+    @WrapMethod(method = "getGravity")
+    public double wrapGravity(Operation<Double> original) {
+        return original.call();
     }
 }
