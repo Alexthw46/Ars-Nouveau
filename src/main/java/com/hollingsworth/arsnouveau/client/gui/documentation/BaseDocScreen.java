@@ -72,8 +72,8 @@ public class BaseDocScreen extends BaseScreen {
         addRenderableWidget(backButton);
 
         int nextPageYOffset = screenBottom - 20;
-        rightArrow = new NuggetImageButton(screenRight -  DocAssets.ARROW_RIGHT.width() - 1, nextPageYOffset ,  DocAssets.ARROW_RIGHT.width(),  DocAssets.ARROW_RIGHT.height(), DocAssets.ARROW_RIGHT.location(), DocAssets.ARROW_RIGHT_HOVER.location(), this::onRightArrowClick);
-        leftArrow = new NuggetImageButton(screenLeft + 1, nextPageYOffset, DocAssets.ARROW_RIGHT.width(),  DocAssets.ARROW_RIGHT.height(), DocAssets.ARROW_LEFT.location(), DocAssets.ARROW_LEFT_HOVER.location(), this::onLeftArrowClick);
+        rightArrow = new NuggetImageButton(screenRight - DocAssets.ARROW_RIGHT.width() - 1, nextPageYOffset, DocAssets.ARROW_RIGHT.width(), DocAssets.ARROW_RIGHT.height(), DocAssets.ARROW_RIGHT.location(), DocAssets.ARROW_RIGHT_HOVER.location(), this::onRightArrowClick);
+        leftArrow = new NuggetImageButton(screenLeft + 1, nextPageYOffset, DocAssets.ARROW_RIGHT.width(), DocAssets.ARROW_RIGHT.height(), DocAssets.ARROW_LEFT.location(), DocAssets.ARROW_LEFT_HOVER.location(), this::onLeftArrowClick);
 
         addRenderableWidget(leftArrow);
         addRenderableWidget(rightArrow);
@@ -134,7 +134,7 @@ public class BaseDocScreen extends BaseScreen {
             ResourceLocation entryId = bookmarks.get(i);
             DocEntry entry = DocumentationRegistry.getEntry(entryId);
 
-            BookmarkButton slot = addRenderableWidget(new BookmarkButton(screenLeft + 281, screenTop + 1 + 15 * (i + 1), entry, (b) ->{
+            BookmarkButton slot = addRenderableWidget(new BookmarkButton(screenLeft + 281, screenTop + 1 + 15 * (i + 1), entry, (b) -> {
                 if(entry == null) return;
                 boolean isShiftDown = InputConstants.isKeyDown(Minecraft.getInstance().getWindow().getWindow(), Minecraft.getInstance().options.keyShift.getKey().getValue());
                 if(isShiftDown){

@@ -65,7 +65,7 @@ public class EntriesScreen extends BaseDocScreen{
         boolean offset = to - from == 8;
         for(int i = 0; i < sliced.size(); i++){
             DocEntry entry = sliced.get(i);
-            var button = new DocEntryButton(screenLeft + LEFT_PAGE_OFFSET, screenTop + PAGE_TOP_OFFSET + 3  +  (16 * i) + (offset ? 16 : 0), entry, (b) -> {
+            var button = new DocEntryButton(screenLeft + LEFT_PAGE_OFFSET, screenTop + PAGE_TOP_OFFSET + 3 + (16 * i) + (offset ? 16 : 0), entry, (b) -> {
                 transition(new PageHolderScreen(entry));
             });
             addRenderableWidget(button);

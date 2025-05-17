@@ -50,7 +50,7 @@ public class SummonAnimHeadCommand {
             animHeadSummon.blockState = Blocks.PLAYER_HEAD.defaultBlockState();
             CompoundTag compoundtag = new CompoundTag();
             ResolvableProfile resolvableProfile = new ResolvableProfile(Optional.of(player_name), Optional.empty(), new PropertyMap());
-            resolvableProfile.resolve().thenApply((profile) ->{
+            resolvableProfile.resolve().thenApply((profile) -> {
                 compoundtag.put("profile", ANCodecs.encode(ResolvableProfile.CODEC, profile));
                 animHeadSummon.head_data = compoundtag;
                 animHeadSummon.setPos(source.getPosition());

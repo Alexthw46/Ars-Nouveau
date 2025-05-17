@@ -165,7 +165,7 @@ public class DrygmyTile extends SummoningTile implements ITooltipProvider, IWand
             }
 
             var key = entity.getLootTable();
-            if(key == null){
+            if (key == null) {
                 Log.getLogger().warn("Entity is missing loot table, report to that mods author! : {}", entity.getType().getDescriptionId());
                 continue;
             }

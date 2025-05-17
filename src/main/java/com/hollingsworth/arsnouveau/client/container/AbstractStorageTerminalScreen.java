@@ -176,8 +176,8 @@ public abstract class AbstractStorageTerminalScreen<T extends StorageTerminalMen
 		this.searchField.setBordered(false);
 		this.searchField.setVisible(true);
 		this.searchField.setValue(searchLast);
-		this.setFocused(this.searchField);
-		this.searchField.active = false;
+        this.setFocused(this.searchField);
+        this.searchField.active = false;
 		searchLast = "";
 		addRenderableWidget(searchField);
 
@@ -544,35 +544,35 @@ public abstract class AbstractStorageTerminalScreen<T extends StorageTerminalMen
 	}
 
 	@Override
-	public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-		if (keyCode == 256) {
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (keyCode == 256) {
 			this.onClose();
 			return true;
 		}
 
-		if (!(keyCode >= GLFW.GLFW_KEY_LEFT_SHIFT && keyCode <= GLFW.GLFW_KEY_MENU) && !searchField.isFocused() || !searchField.active) {
-			var prevFocus = this.getFocused();
-			this.clearFocus();
-			this.setFocused(searchField);
-			searchField.active = true;
-			if (!searchField.keyPressed(keyCode, scanCode, modifiers)) {
-				searchField.active = false;
-				this.clearFocus();
-				this.setFocused(prevFocus);
-				return false;
-			}
-			return true;
-		}
+        if (!(keyCode >= GLFW.GLFW_KEY_LEFT_SHIFT && keyCode <= GLFW.GLFW_KEY_MENU) && !searchField.isFocused() || !searchField.active) {
+            var prevFocus = this.getFocused();
+            this.clearFocus();
+            this.setFocused(searchField);
+            searchField.active = true;
+            if (!searchField.keyPressed(keyCode, scanCode, modifiers)) {
+                searchField.active = false;
+                this.clearFocus();
+                this.setFocused(prevFocus);
+                return false;
+            }
+            return true;
+        }
 
-		return this.searchField.canConsumeInput() && this.searchField.keyPressed(keyCode, scanCode, modifiers);
+        return this.searchField.canConsumeInput() && this.searchField.keyPressed(keyCode, scanCode, modifiers);
 	}
 
 	@Override
-	public boolean charTyped(char codePoint, int modifiers) {
-		if (super.charTyped(codePoint, modifiers)) {
-			return true;
-		}
-		
+    public boolean charTyped(char codePoint, int modifiers) {
+        if (super.charTyped(codePoint, modifiers)) {
+            return true;
+        }
+
         if (!searchField.isFocused() || !searchField.active) {
             this.clearFocus();
             this.setFocused(searchField);

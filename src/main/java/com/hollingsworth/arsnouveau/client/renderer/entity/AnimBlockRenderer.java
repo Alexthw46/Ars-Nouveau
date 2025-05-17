@@ -67,7 +67,7 @@ public class AnimBlockRenderer<BOBBY extends AnimBlockSummon> extends GeoEntityR
 
     @Override
     public void render(BOBBY animatable, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
-        if(animatable.isDeadOrDying()){
+        if (animatable.isDeadOrDying()) {
             return;
         }
         poseStack.pushPose();

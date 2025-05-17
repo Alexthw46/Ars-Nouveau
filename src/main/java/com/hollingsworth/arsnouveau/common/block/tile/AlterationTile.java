@@ -187,7 +187,7 @@ public class AlterationTile extends ModdedTile implements GeoBlockEntity, ITicka
         for(int i = 0; i < count; i++){
             CompoundTag perkTag = compound.getCompound("perk" + i);
             ItemStack perk = ItemStack.parseOptional(pRegistries, perkTag);
-            if(!perk.isEmpty()) {
+            if (!perk.isEmpty()) {
                 perkList.add(perk);
             }
         }

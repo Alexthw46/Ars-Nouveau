@@ -4,20 +4,21 @@ import com.hollingsworth.arsnouveau.api.event.EntityPreRemovalEvent;
 import com.hollingsworth.arsnouveau.client.ClientInfo;
 import com.hollingsworth.arsnouveau.client.gui.Color;
 import com.hollingsworth.arsnouveau.common.entity.BubbleEntity;
-import com.hollingsworth.arsnouveau.common.world.saved_data.AlliesSavedData;
 import com.hollingsworth.arsnouveau.common.spell.effect.EffectLight;
+import com.hollingsworth.arsnouveau.common.world.saved_data.AlliesSavedData;
 import com.hollingsworth.arsnouveau.setup.registry.ModPotions;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
-import net.minecraft.server.level.ServerLevel;
 import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import org.spongepowered.asm.mixin.Mixin;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.common.NeoForge;
+import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -52,7 +53,8 @@ public abstract class EntityMixin {
         NeoForge.EVENT_BUS.post(new EntityPreRemovalEvent(this.level, (Entity) (Object) this));
     }
 
-    private static boolean isWet(LivingEntity livingEntity){
+    @Unique
+    private static boolean ars_nouveau$isWet(LivingEntity livingEntity) {
         return livingEntity.hasEffect(ModPotions.SOAKED_EFFECT) || livingEntity.getVehicle() instanceof BubbleEntity;
     }
 

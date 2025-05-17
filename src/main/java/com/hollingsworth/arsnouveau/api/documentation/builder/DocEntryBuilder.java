@@ -127,11 +127,11 @@ public class DocEntryBuilder {
 
     public DocEntryBuilder withIntroPageNoIncrement(String key) {
         List<NuggetMultilLineLabel> labels = DocClientUtils.splitToFitTitlePage(Component.translatable(key));
-        for(int i = 0; i < labels.size(); i++){
+        for (int i = 0; i < labels.size(); i++) {
             NuggetMultilLineLabel label = labels.get(i);
-            if(i == 0) {
+            if (i == 0) {
                 pages.add(TextEntry.create(label, Component.translatable(titleKey), displayItem));
-            }else{
+            } else {
                 pages.add(TextEntry.create(label));
             }
         }

@@ -169,16 +169,16 @@ public class DocClientUtils {
         Font font = Minecraft.getInstance().font;
         List<FormattedText> list = Lists.newArrayList();
         String content = text.getString();
-        font.getSplitter().splitLines(content, PARAGRAPH_WIDTH,  Style.EMPTY.withFont(Minecraft.UNIFORM_FONT), true,  (style, currentPos, width) ->{
+        font.getSplitter().splitLines(content, PARAGRAPH_WIDTH, Style.EMPTY.withFont(Minecraft.UNIFORM_FONT), true, (style, currentPos, width) -> {
             String s2 = content.substring(currentPos, width);
             boolean addLine = false;
-            if(StringUtils.endsWith(s2, "\n")) {
+            if (StringUtils.endsWith(s2, "\n")) {
                 s2 = StringUtils.stripEnd(s2, "\n").trim();
                 addLine = true;
             }
-            if(!s2.isEmpty()) {
+            if (!s2.isEmpty()) {
                 list.add(FormattedText.of(s2, style));
-                if(addLine){
+                if (addLine) {
                     list.add(FormattedText.of(" ", style));
                 }
             }
@@ -196,16 +196,16 @@ public class DocClientUtils {
             int end = Math.min(i + secondMaxRows, list.size());
             List<Component> sublist = formattedToComponent(list.subList(i, end));
             // Removes empty lines at the start of the sublist and recalculates the end index so we have no gaps
-            while(true){
-                if(sublist.isEmpty()){
+            while (true) {
+                if (sublist.isEmpty()) {
                     break;
                 }
-                if(sublist.getFirst().getString().trim().isEmpty()){
+                if (sublist.getFirst().getString().trim().isEmpty()) {
                     sublist.removeFirst();
                     i++;
                     end = Math.min(i + secondMaxRows, list.size());
                     sublist = formattedToComponent(list.subList(i, end));
-                }else{
+                } else {
                     break;
                 }
             }

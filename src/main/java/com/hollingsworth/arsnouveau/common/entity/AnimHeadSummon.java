@@ -13,7 +13,7 @@ import net.minecraft.world.item.component.ResolvableProfile;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
-public class AnimHeadSummon extends AnimBlockSummon  {
+public class AnimHeadSummon extends AnimBlockSummon {
 
 
     public AnimHeadSummon(EntityType<? extends TamableAnimal> pEntityType, Level pLevel) {

@@ -157,7 +157,7 @@ public class AnimBlockSummon extends TamableAnimal implements GeoEntity, ISummon
     }
 
     public void returnToFallingBlock(BlockState blockState) {
-        if(hasConverted || blockState == null)
+        if (hasConverted || blockState == null)
             return;
         hasConverted = true;
         EnchantedFallingBlock fallingBlock = new EnchantedFallingBlock(level, blockPosition(), blockState);
