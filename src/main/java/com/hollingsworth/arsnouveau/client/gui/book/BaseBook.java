@@ -2,6 +2,7 @@ package com.hollingsworth.arsnouveau.client.gui.book;
 
 import com.hollingsworth.arsnouveau.ArsNouveau;
 import com.hollingsworth.arsnouveau.api.registry.FamiliarRegistry;
+import com.hollingsworth.arsnouveau.api.documentation.DocAssets;
 import com.hollingsworth.arsnouveau.api.spell.SpellValidationError;
 import com.hollingsworth.arsnouveau.client.gui.BookSlider;
 import com.hollingsworth.arsnouveau.client.gui.GuiUtils;
@@ -10,6 +11,7 @@ import com.hollingsworth.arsnouveau.client.gui.buttons.ANButton;
 import com.hollingsworth.arsnouveau.client.gui.buttons.GuiImageButton;
 import com.hollingsworth.arsnouveau.common.capability.IPlayerCap;
 import com.hollingsworth.arsnouveau.setup.registry.CapabilityRegistry;
+import com.hollingsworth.arsnouveau.client.gui.buttons.SaveButton;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.Util;
@@ -29,9 +31,15 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class BaseBook extends ModdedScreen {
-
+    public static final int FONT_COLOR = -8355712;
     public static final int FULL_WIDTH = 290;
     public static final int FULL_HEIGHT = 188;
+    public static final int LEFT_PAGE_OFFSET = 19;
+    public static final int RIGHT_PAGE_OFFSET = 153;
+    public static final int PAGE_TOP_OFFSET = 17;
+    public static final int ONE_PAGE_WIDTH = 118;
+    public static final int ONE_PAGE_HEIGHT = 146;
+
     public static ResourceLocation background = ArsNouveau.prefix( "textures/gui/spell_book_template.png");
     public int bookLeft;
     public int bookTop;
@@ -39,6 +47,7 @@ public class BaseBook extends ModdedScreen {
     public int bookBottom;
     public List<SpellValidationError> validationErrors = new ArrayList<>();
     public Screen parent;
+    public SaveButton saveButton;
 
     public BaseBook() {
         super(Component.literal(""));
@@ -68,6 +77,10 @@ public class BaseBook extends ModdedScreen {
                 throw new RuntimeException(e);
             }
         }).withTooltip(Component.translatable("ars_nouveau.gui.discord")));
+    }
+
+    public void addSaveButton(Button.OnPress onPress) {
+        saveButton = addRenderableWidget(new SaveButton(bookRight - DocAssets.SAVE_ICON.width() - 18, bookBottom - DocAssets.SAVE_ICON.height() + 2, onPress));
     }
 
     @Override
