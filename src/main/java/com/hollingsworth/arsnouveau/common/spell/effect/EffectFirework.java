@@ -9,6 +9,7 @@ import com.hollingsworth.arsnouveau.common.lib.GlyphLib;
 import com.hollingsworth.arsnouveau.common.spell.augment.AugmentAmplify;
 import com.hollingsworth.arsnouveau.common.spell.augment.AugmentExtendTime;
 import com.hollingsworth.arsnouveau.common.spell.augment.AugmentSplit;
+import com.hollingsworth.arsnouveau.setup.registry.FireworkShapes;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.core.BlockPos;
@@ -153,7 +154,7 @@ public class EffectFirework extends AbstractEffect implements IDamageEffect {
     public static FireworkExplosion getRandomStar() {
 
         Random random = new Random();
-        FireworkExplosion.Shape fireworkrocketitem$shape = shapes[random.nextInt(shapes.length)];
+        FireworkExplosion.Shape fireworkrocketitem$shape = FireworkShapes.STARBUNClE_SHAPE.getValue();
         IntArrayList list = new IntArrayList();
         for (int i = 0; i < random.nextInt(8); i++) {
             list.add(getColorfulDyes().get(random.nextInt(getColorfulDyes().size())).getFireworkColor());

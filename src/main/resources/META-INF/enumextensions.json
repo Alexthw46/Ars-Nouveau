@@ -1,0 +1,13 @@
+{
+  "entries": [
+    {
+      "enum": "net/minecraft/world/item/component/FireworkExplosion$Shape",
+      "name": "ars_nouveau_starbuncle",
+      "constructor": "(ILjava/lang/String;)V",
+      "parameters": {
+        "class": "com/hollingsworth/arsnouveau/setup/registry/FireworkShapes",
+        "field": "STARBUNClE_SHAPE"
+      }
+    }
+  ]
+}

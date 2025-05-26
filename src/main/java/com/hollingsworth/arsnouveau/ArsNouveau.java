@@ -24,6 +24,7 @@ import com.hollingsworth.arsnouveau.setup.proxy.ServerProxy;
 import com.hollingsworth.arsnouveau.setup.registry.*;
 import com.hollingsworth.arsnouveau.setup.reward.Rewards;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.crafting.FireworkStarRecipe;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.ComposterBlock;
 import net.minecraft.world.level.block.FlowerPotBlock;
@@ -68,7 +69,7 @@ public class ArsNouveau {
                 ticketHelper.removeAllTickets(uuid);
         }));
     });
-    public static boolean isDebug = false && !FMLEnvironment.production;
+    public static boolean isDebug = false;
     public ArsNouveau(IEventBus modEventBus, ModContainer modContainer){
         NeoForge.EVENT_BUS.addListener(FMLEventHandler::onServerStopped);
         NeoForge.EVENT_BUS.addListener(FMLEventHandler::onPlayerLoggedOut);
@@ -171,6 +172,7 @@ public class ArsNouveau {
             }
 
             DispenserBehaviorRegistry.register();
+            FireworkStarRecipe.
         });
         for(String warning : postLoadWarnings){
             Log.getLogger().error(warning);
@@ -185,6 +187,7 @@ public class ArsNouveau {
         } catch (Exception e) {
             optifineLoaded = false;
         }
+        FireworkShapes.registerFireworkShapes();
     }
 
     public static ResourceLocation prefix(String str) {
