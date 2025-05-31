@@ -50,7 +50,7 @@ public class ColorProperty extends SubProperty<ColorProperty>{
 
     public ColorProperty(PropMap propertyHolder) {
         super(propertyHolder);
-        ColorProperty colorProperty = propertyHolder.getOrDefault(ParticlePropertyRegistry.COLOR_PROPERTY.get(), new ColorProperty(ParticleColor.defaultParticleColor(), false));
+        ColorProperty colorProperty = propertyHolder.getOrDefault(ParticlePropertyRegistry.COLOR_PROPERTY.get(), new ColorProperty(ParticleColor.defaultParticleColor(), true));
         this.particleColor = colorProperty.particleColor;
         this.tintDisabled = colorProperty.tintDisabled;
         this.displayColor = particleColor;
@@ -158,6 +158,7 @@ public class ColorProperty extends SubProperty<ColorProperty>{
                 rainbowButton = new SelectedParticleButton(x + xOffset + (size % numPerRow) * 18, y + 100 + (size / numPerRow) * 18, DocAssets.SPELLSTYLE_RAINBOW, (button) ->{
                     particleColor = new RainbowParticleColor(particleColor.getRedInt(), particleColor.getGreenInt(), particleColor.getBlueInt());
                     displayColor = particleColor;
+                    tintDisabled = false;
                     propertyHolder.set(getType(), property);
                     updateSelected();
                 }){
@@ -233,6 +234,7 @@ public class ColorProperty extends SubProperty<ColorProperty>{
                 hueSlider.setValue(color.getHue());
                 saturation.setValue(color.getSaturation());
                 lightness.setValue(color.getLightness());
+                tintDisabled = false;
             }
 
             public BookSlider buildSlider(int x, int y, Component prefix, Component suffix, double currentVal, Consumer<Double> onValueChange) {
@@ -241,7 +243,7 @@ public class ColorProperty extends SubProperty<ColorProperty>{
 
             @Override
             public void renderIcon(GuiGraphics graphics, int x, int y, int mouseX, int mouseY, float partialTicks) {
-                if(tintDisabled){
+                if(!isLegacyRGB && tintDisabled){
                     DocClientUtils.blit(graphics, DocAssets.STYLE_ICON_NONE, x, y );
                     return;
                 }

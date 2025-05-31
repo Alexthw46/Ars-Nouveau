@@ -1,15 +1,21 @@
 package com.hollingsworth.arsnouveau.api.particle.configurations.properties;
 
+import com.hollingsworth.arsnouveau.api.documentation.DocAssets;
 import com.hollingsworth.arsnouveau.api.documentation.DocClientUtils;
 import com.hollingsworth.arsnouveau.api.particle.PropertyParticleOptions;
 import com.hollingsworth.arsnouveau.api.particle.configurations.ParticleConfigWidgetProvider;
 import com.hollingsworth.arsnouveau.api.registry.ParticlePropertyRegistry;
+import com.hollingsworth.arsnouveau.client.gui.buttons.GuiImageButton;
 import com.hollingsworth.arsnouveau.client.gui.buttons.SelectedParticleButton;
+import com.hollingsworth.arsnouveau.client.gui.documentation.DocEntryButton;
 import com.hollingsworth.arsnouveau.client.registry.ModParticles;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.core.particles.ParticleType;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -17,6 +23,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.item.ItemStack;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -54,7 +62,7 @@ public class ParticleTypeProperty extends Property<ParticleTypeProperty> {
         selectedData = PARTICLE_TYPES.get(type);
         if (selectedData == null) {
             System.out.println("UNREGISTERED PARTICLE TYPE FOR " + type);
-            selectedData = new ParticleData(ModParticles.NEW_GLOW_TYPE.get(), false);
+            selectedData = PARTICLE_TYPES.get(ModParticles.NEW_GLOW_TYPE.get());
         }
     }
 
@@ -65,8 +73,7 @@ public class ParticleTypeProperty extends Property<ParticleTypeProperty> {
         this.subProperties = property.subProperties;
         selectedData = PARTICLE_TYPES.get(type);
         if (selectedData == null) {
-            System.out.println("UNREGISTERED PARTICLE TYPE FOR " + type);
-            selectedData = new ParticleData(ModParticles.NEW_GLOW_TYPE.get(), false);
+            selectedData = PARTICLE_TYPES.get(ModParticles.NEW_GLOW_TYPE.get());
         }
     }
 
@@ -83,6 +90,13 @@ public class ParticleTypeProperty extends Property<ParticleTypeProperty> {
         ParticleTypeProperty self = this;
         return new ParticleConfigWidgetProvider(x, y, width, height) {
             SelectedParticleButton selectedParticleButton;
+            int pageOffset;
+            int maxEntries;
+            List<DocEntryButton> buttons = new ArrayList<>();
+            ArrayList<Map.Entry<ParticleType<? extends PropertyParticleOptions>, ParticleTypeProperty.ParticleData>> particleEntries;
+            GuiImageButton upButton;
+            GuiImageButton downButton;
+
             @Override
             public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
                 DocClientUtils.drawHeader(getName(), graphics, x, y, width, mouseX, mouseY, partialTicks);
@@ -90,40 +104,80 @@ public class ParticleTypeProperty extends Property<ParticleTypeProperty> {
 
             @Override
             public void addWidgets(List<AbstractWidget> widgets) {
-                var particleEntries = new ArrayList<>(PARTICLE_TYPES.entrySet());
+                maxEntries = PARTICLE_TYPES.size();
+                particleEntries = new ArrayList<>(PARTICLE_TYPES.entrySet());
                 particleEntries.sort((o1, o2) ->{
                     if(o1.getKey() == ModParticles.NEW_GLOW_TYPE.get()){
                         return -1;
                     }
                     return getTypeName(o1.getKey()).getString().compareTo(getTypeName(o2.getKey()).getString());
                 });
-                for (int i = 0; i < particleEntries.size(); i++) {
-                    var particleType = particleEntries.get(i);
-                    SelectedParticleButton button = new SelectedParticleButton(x + 6 + 16 * (i % 7), y + 20 + 20*(i/7), 14, 14, getImagePath(particleType.getKey()), (b) -> {
-                        var didHaveColor = selectedData.acceptsColor;
-                        var wasLegacyRGB = selectedData.useLegacyRGB();
+                for (Map.Entry<ParticleType<? extends PropertyParticleOptions>, ParticleData> particleType : particleEntries) {
+                    DocEntryButton button = new DocEntryButton(0, 0, ItemStack.EMPTY, getTypeName(particleType.getKey()), (b) -> {
                         selectedData = particleType.getValue();
                         type = particleType.getKey();
-                        var nowHasColor = selectedData.acceptsColor;
-                        var useLegacyRGB = selectedData.useLegacyRGB();
                         propertyHolder.set(getType(), self);
-                        if ((useLegacyRGB != wasLegacyRGB || didHaveColor != nowHasColor) && onDependenciesChanged != null) {
-                            onDependenciesChanged.run();
-                        }
-
-                        selectedParticleButton.selected = false;
-                        if(b instanceof SelectedParticleButton selectedParticleButton1){
-                            selectedParticleButton1.selected = true;
-                            selectedParticleButton = selectedParticleButton1;
-                        }
+                        onDependenciesChanged.run();
                     });
-                    button.withTooltip(getTypeName(particleType.getKey()));
+                    buttons.add(button);
                     widgets.add(button);
-                    if(selectedData.type == particleType.getKey()) {
-                        this.selectedParticleButton = button;
-                        selectedParticleButton.selected = true;
-                    }
                 }
+
+                upButton = new GuiImageButton(x + 80, y + height - 5, DocAssets.BUTTON_UP, (button) -> {
+                    onScroll(-1);
+                }).withHoverImage(DocAssets.BUTTON_UP_HOVER);
+
+                downButton = new GuiImageButton(x + 100, y + height - 5, DocAssets.BUTTON_DOWN, (button) -> {
+                    onScroll(1);
+                }).withHoverImage(DocAssets.BUTTON_DOWN_HOVER);
+
+                widgets.add(upButton);
+                widgets.add(downButton);
+                onScroll(pageOffset);
+            }
+
+            @Override
+            public boolean mouseScrolled(double pMouseX, double pMouseY, double pScrollX, double pScrollY) {
+                SoundManager manager = Minecraft.getInstance().getSoundManager();
+                if (pScrollY < 0) {
+                    onScroll(1);
+                    manager.play(SimpleSoundInstance.forUI(SoundEvents.BOOK_PAGE_TURN, 1.0F));
+                } else if (pScrollY > 0) {
+                    onScroll(-1);
+                    manager.play(SimpleSoundInstance.forUI(SoundEvents.BOOK_PAGE_TURN, 1.0F));
+                }
+
+                return true;
+            }
+
+            public void onScroll(int offset) {
+                pageOffset += offset;
+                pageOffset = Math.max(0, Math.min(pageOffset, maxEntries - 8));
+                if (selectedParticleButton != null) {
+                    selectedParticleButton.selected = false;
+                }
+
+                for(var button : buttons){
+                    button.active = false;
+                    button.visible = false;
+                    button.setPosition(-100, -100);
+                }
+                var sublist = buttons.subList(pageOffset, Math.min(particleEntries.size(), pageOffset + 8));
+                for (int i = 0; i < sublist.size(); i++) {
+                    int x = this.x;
+                    int y = this.y + 20 + 15 * (i % 8);
+                    DocEntryButton button = sublist.get(i);
+                    button.visible = true;
+                    button.active = true;
+                    button.setPosition(x, y);
+                }
+
+                boolean hasMore = pageOffset + 8 < maxEntries;
+                boolean hasFewer = pageOffset > 0;
+                upButton.visible = hasFewer;
+                upButton.active = hasFewer;
+                downButton.active = hasMore;
+                downButton.visible = hasMore;
             }
 
             private ResourceLocation getImagePath(ParticleType<?> type) {
@@ -142,7 +196,7 @@ public class ParticleTypeProperty extends Property<ParticleTypeProperty> {
 
             @Override
             public void renderIcon(GuiGraphics graphics, int x, int y, int mouseX, int mouseY, float partialTicks) {
-                graphics.blit(getImagePath(selectedData.type()), x, y, 0, 0, 14, 14, 14, 14);
+                DocClientUtils.blit(graphics, DocAssets.PARTICLES_ICON, x, y);
             }
 
             @Override

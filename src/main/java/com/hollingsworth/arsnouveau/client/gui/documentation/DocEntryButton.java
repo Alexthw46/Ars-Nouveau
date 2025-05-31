@@ -26,8 +26,17 @@ public class DocEntryButton extends NuggetImageButton {
 
     @Override
     protected void renderWidget(GuiGraphics graphics, int pMouseX, int pMouseY, float pPartialTick) {
-        super.renderWidget(graphics, pMouseX, pMouseY, pPartialTick);
+        if(!visible){
+            return;
+        }
+        int xOffset = 14;
+        if(renderStack.isEmpty()){
+            xOffset = 2;
+            DocClientUtils.blit(graphics, DocAssets.CHAPTER_BUTTON_NO_ITEM, x, y);
+        }else {
+            super.renderWidget(graphics, pMouseX, pMouseY, pPartialTick);
+        }
         RenderHelpers.drawItemAsIcon(renderStack, graphics, x - 1, y - 1 , 10, false);
-        DocClientUtils.drawStringScaled(graphics, title, x + 14, y + 3, 0, 0.8f, false);
+        DocClientUtils.drawStringScaled(graphics, title, x + xOffset, y + 3, 0, 0.8f, false);
     }
 }
