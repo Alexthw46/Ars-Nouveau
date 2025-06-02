@@ -65,12 +65,13 @@ public class ParticleOverviewScreen extends BaseBook {
     public static ParticleOverviewScreen lastScreen;
     BaseProperty selectedProperty;
     SelectedParticleButton selectedParticleButton;
+    SelectableButton currentlySelectedButton;
 
     public ParticleOverviewScreen(AbstractCaster<?> caster,  int slot, InteractionHand stackHand) {
         this.slot = slot;
         this.stackHand = stackHand;
         this.caster = caster;
-        this.timeline = caster.getParticles().mutable();
+        this.timeline = caster.getParticles(slot).mutable();
         if(LAST_SELECTED_PART == null) {
             for (AbstractSpellPart spellPart : caster.getSpell(slot).recipe()) {
                 var allTimelines = ParticleTimelineRegistry.PARTICLE_TIMELINE_REGISTRY.entrySet();
@@ -93,9 +94,11 @@ public class ParticleOverviewScreen extends BaseBook {
         AbstractCaster<?> caster = SpellCasterRegistry.from(stack);
         int hash = caster.getSpell(slot).particleTimeline().hashCode();
         if(ParticleOverviewScreen.lastOpenedHash != hash || ParticleOverviewScreen.lastScreen == null){
-            Minecraft.getInstance().setScreen(new ParticleOverviewScreen(caster, slot, stackHand));
+            LAST_SELECTED_PART = null;
             ParticleOverviewScreen.lastOpenedHash = hash;
+            Minecraft.getInstance().setScreen(new ParticleOverviewScreen(caster, slot, stackHand));
         }else{
+            ParticleOverviewScreen.lastScreen.slot = slot;
             Minecraft.getInstance().setScreen(ParticleOverviewScreen.lastScreen);
         }
     }
@@ -108,13 +111,25 @@ public class ParticleOverviewScreen extends BaseBook {
     }
 
     @Override
+    public void removed() {
+        super.removed();
+        int hash = timeline.immutable().hashCode();
+        ParticleOverviewScreen.lastOpenedHash = hash;
+        ParticleOverviewScreen.lastScreen = this;
+    }
+
+    @Override
     public void init() {
         super.init();
 
         addSaveButton((b) -> Networking.sendToServer(new PacketUpdateParticleTimeline(slot, timeline.immutable(), this.stackHand == InteractionHand.MAIN_HAND)));
         timelineButton = addRenderableWidget(new DocEntryButton(bookLeft + LEFT_PAGE_OFFSET, bookTop + 36, selectedTimeline.getSpellPart().glyphItem.getDefaultInstance(), Component.translatable(selectedTimeline.getSpellPart().getLocaleName()), (button) -> {
             addTimelineSelectionWidgets();
+            setSelectedButton(timelineButton);
         }));
+        if(currentlySelectedButton == null){
+            setSelectedButton(timelineButton);
+        }
         if(selectedProperty == null) {
             addTimelineSelectionWidgets();
         }else{
@@ -134,6 +149,14 @@ public class ParticleOverviewScreen extends BaseBook {
 //        Vec3 pos = Minecraft.getInstance().player.position;
 //        var bakedLevel = LevelBakery.bakeVertices(Minecraft.getInstance().level, new AABB(BlockPos.containing(pos)).inflate(5), new Vector3f());
 //        this.updateScene(bakedLevel);
+    }
+
+    public void setSelectedButton(SelectableButton selectedButton) {
+        if (currentlySelectedButton != null) {
+            currentlySelectedButton.isSelected = false;
+        }
+        currentlySelectedButton = selectedButton;
+        currentlySelectedButton.isSelected = true;
     }
 
     @Override
@@ -194,8 +217,11 @@ public class ParticleOverviewScreen extends BaseBook {
             ParticleMotion motion = entryData.motion();
             IParticleMotionType<?> motionType = motion.getType();
             Component name = Component.literal(timelineOption.name().getString() + ": " + motionType.getName().getString());
-            DropdownParticleButton dropdownParticleButton = new DropdownParticleButton(bookLeft + LEFT_PAGE_OFFSET + 13, bookTop + 51 + 15 * (propertyOffset), name, DocAssets.NESTED_ENTRY_BUTTON, motionType.getIconLocation(), (button) -> {
+            DropdownParticleButton dropdownParticleButton = new DropdownParticleButton(bookLeft + LEFT_PAGE_OFFSET + 13, bookTop + 51 + 15 * (propertyOffset), name, DocAssets.NESTED_ENTRY_BUTTON, DocAssets.NESTED_ENTRY_BUTTON_SELECTED, motionType.getIconLocation(), (button) -> {
                 addParticleMotionOptions(timelineOption);
+                if(button instanceof SelectableButton selectableButton) {
+                    setSelectedButton(selectableButton);
+                }
             });
             widgets.add(dropdownParticleButton);
             propertyOffset++;
@@ -234,14 +260,14 @@ public class ParticleOverviewScreen extends BaseBook {
         hasMoreElements = rowOffset + LEFT_PAGE_SLICE < widgets.size();
         hasPreviousElements = rowOffset > 0;
         if(hasPreviousElements){
-            addLeftPageWidget(new GuiImageButton(bookLeft + LEFT_PAGE_OFFSET + 80, bookBottom - 30, DocAssets.BUTTON_UP, (button) -> {
+            addLeftPageWidget(new GuiImageButton(bookLeft + LEFT_PAGE_OFFSET + 87, bookBottom - 30, DocAssets.BUTTON_UP, (button) -> {
                 rowOffset = Math.max(rowOffset - 1, 0);
                 initLeftSideButtons();
             }).withHoverImage(DocAssets.BUTTON_UP_HOVER));
         }
 
         if(hasMoreElements){
-            addLeftPageWidget(new GuiImageButton(bookLeft + LEFT_PAGE_OFFSET + 100, bookBottom - 30, DocAssets.BUTTON_DOWN, (button) -> {
+            addLeftPageWidget(new GuiImageButton(bookLeft + LEFT_PAGE_OFFSET + 103, bookBottom - 30, DocAssets.BUTTON_DOWN, (button) -> {
                 rowOffset = rowOffset + 1;
                 initLeftSideButtons();
             }).withHoverImage(DocAssets.BUTTON_DOWN_HOVER));
@@ -251,10 +277,14 @@ public class ParticleOverviewScreen extends BaseBook {
     public PropertyButton buildPropertyButton(BaseProperty property, int yOffset) {
         boolean isSubProperty = property instanceof SubProperty;
         var widgetProvider = property.buildWidgets(bookLeft + RIGHT_PAGE_OFFSET, bookTop + PAGE_TOP_OFFSET, ONE_PAGE_WIDTH, ONE_PAGE_HEIGHT);
-        return new PropertyButton(bookLeft + LEFT_PAGE_OFFSET + 26 + (isSubProperty ? 13 : 0), bookTop + 51 + 15 * (yOffset), isSubProperty ? DocAssets.TRIPLE_NESTED_ENTRY_BUTTON : DocAssets.DOUBLE_NESTED_ENTRY_BUTTON, widgetProvider, (button) -> {
+        return new PropertyButton(bookLeft + LEFT_PAGE_OFFSET + 26 + (isSubProperty ? 13 : 0), bookTop + 51 + 15 * (yOffset),
+                isSubProperty ? DocAssets.TRIPLE_NESTED_ENTRY_BUTTON : DocAssets.DOUBLE_NESTED_ENTRY_BUTTON,
+                isSubProperty ? DocAssets.TRIPLE_NESTED_ENTRY_BUTTON_SELECTED : DocAssets.DOUBLE_NESTED_ENTRY_BUTTON_SELECTED,
+                widgetProvider, (button) -> {
             onPropertySelected(property);
             if(button instanceof PropertyButton propertyButton){
                 propertyButton.widgetProvider = propertyWidgetProvider;
+                setSelectedButton(propertyButton);
             }
             selectedProperty = property;
         });
