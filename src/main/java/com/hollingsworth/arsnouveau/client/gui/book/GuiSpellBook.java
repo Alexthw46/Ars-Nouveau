@@ -30,7 +30,6 @@ import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.ChatFormatting;
-import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -50,8 +49,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import org.lwjgl.glfw.GLFW;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.*;
 
 import static com.hollingsworth.arsnouveau.api.util.ManaUtil.getPlayerDiscounts;
@@ -144,12 +141,12 @@ public class GuiSpellBook extends BaseBook {
         this.caster = SpellCasterRegistry.from(stack);
         if (caster == null) {
             Minecraft.getInstance().setScreen(null);
-        }else{
+        } else {
             onSetCaster();
         }
     }
 
-    public void onSetCaster(){
+    public void onSetCaster() {
         this.selectedSpellSlot = caster.getCurrentSlot();
         this.spellname = caster.getSpellName(caster.getCurrentSlot());
         List<AbstractSpellPart> recipe = SpellCasterRegistry.from(bookStack).getSpell(selectedSpellSlot).mutable().recipe;
@@ -209,25 +206,13 @@ public class GuiSpellBook extends BaseBook {
             addRenderableWidget(slot);
         }
 
-        addRenderableWidget(new GuiImageButton(bookLeft - 15, bookTop + 22, 0, 0, 23, 20, 23, 20, "textures/gui/worn_book_bookmark.png", this::onDocumentationClick)
-                .withTooltip(Component.translatable("ars_nouveau.gui.notebook")));
-
-        addRenderableWidget(new GuiImageButton(bookLeft - 15, bookTop + 44, 0, 0, 23, 20, 23, 20, "textures/gui/color_wheel_bookmark.png", (b) ->{
+        addRenderableWidget(new GuiImageButton(bookLeft - 15, bookTop + 46, 0, 0, 23, 20, 23, 20, "textures/gui/color_wheel_bookmark.png", (b) -> {
             ParticleOverviewScreen.openScreen(bookStack, selectedSpellSlot, this.hand);
         }).withTooltip(Component.translatable("ars_nouveau.gui.spell_style")));
-        addRenderableWidget(new GuiImageButton(bookLeft - 15, bookTop + 68, 0, 0, 23, 20, 23, 20, "textures/gui/summon_circle_bookmark.png", this::onFamiliarClick)
-                .withTooltip(Component.translatable("ars_nouveau.gui.familiar")));
-        addRenderableWidget(new GuiImageButton(bookLeft - 15, bookTop + 116, 0, 0, 23, 20, 23, 20, "textures/gui/settings_tab.png", b -> {
-            Minecraft.getInstance().setScreen(new GuiSettingsScreen(this));
-        }).withTooltip(Component.translatable("ars_nouveau.gui.settings")));
-
-        addRenderableWidget(new GuiImageButton(bookLeft - 15, bookTop + 140, 0, 0, 23, 20, 23, 20, "textures/gui/discord_tab.png", b -> {
-            try {
-                Util.getPlatform().openUri(new URI("https://discord.com/invite/y7TMXZu"));
-            } catch (URISyntaxException e) {
-                throw new RuntimeException(e);
-            }
-        }).withTooltip(Component.translatable("ars_nouveau.gui.discord")));
+        addRenderableWidget(new GuiImageButton(bookLeft - 36, bookTop + 46, 0, 0, 23, 20, 23, 20, "textures/gui/color_wheel_bookmark.png", this::onColorClick)
+                .withTooltip(Component.translatable("ars_nouveau.gui.color")));
+        addRenderableWidget(new GuiImageButton(bookLeft - 15, bookTop + 70, 0, 0, 23, 20, 23, 20, "textures/gui/sounds_tab.png", this::onSoundsClick)
+                .withTooltip(Component.translatable("ars_nouveau.gui.sounds")));
 
 
         this.nextButton = addRenderableWidget(new PageButton(bookRight - 20, bookBottom - 6, true, this::onPageIncrease, true));
