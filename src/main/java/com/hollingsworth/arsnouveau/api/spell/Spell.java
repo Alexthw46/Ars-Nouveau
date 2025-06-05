@@ -220,8 +220,12 @@ public class Spell {
     public Spell withSound(@NotNull ConfiguredSpellSound sound){
         return new Spell(name, color, sound, recipe, particleTimeline);
     }
+    public Spell withTimeline(@NotNull TimelineMap timeline) {
+        return new Spell(name, color, sound, recipe, timeline);
+    }
 
-    public ParticleColor color() {
+    @Deprecated(forRemoval = true)
+    public ParticleColor color(){
         return color;
     }
 

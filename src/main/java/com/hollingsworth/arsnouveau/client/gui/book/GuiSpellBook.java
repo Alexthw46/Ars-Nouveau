@@ -196,7 +196,7 @@ public class GuiSpellBook extends BaseBook {
         addRenderableWidget(new PasteButton(this).withTooltip(Component.translatable("ars_nouveau.spell_book_gui.paste")));
 
         // Add spell slots
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < caster.getMaxSlots(); i++) {
             String name = caster.getSpellName(i);
             GuiSpellSlot slot = new GuiSpellSlot(bookLeft + 281, bookTop - 1 + 15 * (i + 1), i, name, this::onSlotChange);
             if (i == selectedSpellSlot) {
@@ -303,7 +303,6 @@ public class GuiSpellBook extends BaseBook {
             }
             int xOffset = 20 * (adjustedXPlaced % PER_ROW) + (nextPage ? 134 : 0);
             int yPlace = adjustedRowsPlaced * 18 + yStart;
-
 
             GlyphButton cell = new GlyphButton(xStart + xOffset, yPlace, part, this::onGlyphClick);
             addRenderableWidget(cell);
