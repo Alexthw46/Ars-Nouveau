@@ -36,10 +36,10 @@ public class BurstMotion extends ParticleMotion {
 
     @Override
     public void tick(PropertyParticleOptions particleOptions, Level level, double x, double y, double z, double prevX, double prevY, double prevZ) {
-        ParticleDensityProperty density = getDensity(particleOptions);
+        ParticleDensityProperty density = getDensity(particleOptions, 5, 0.1f);
         Vec3 adjustedVec = getMotionScaled(new Vec3(x, y, z), density.radius(), density.spawnType().orElse(SpawnType.SPHERE));
         for (int i = 0; i < density.density(); i++) {
-            level.addParticle(particleOptions, adjustedVec.x, adjustedVec.y, adjustedVec.z,
+            level.addAlwaysVisibleParticle(particleOptions, true, adjustedVec.x, adjustedVec.y, adjustedVec.z,
                     ParticleUtil.inRange(-0.05, 0.05),
                     ParticleUtil.inRange(0, 0.05),
                     ParticleUtil.inRange(-0.05, 0.05));
@@ -48,6 +48,9 @@ public class BurstMotion extends ParticleMotion {
 
     @Override
     public List<BaseProperty<?>> getProperties(PropMap propMap) {
-        return List.of(new ParticleTypeProperty(propMap), new ParticleDensityProperty(propMap, 5, 20, 1, true));
+        return List.of(propMap.createIfMissing(new ParticleTypeProperty()), propMap.createIfMissing(new ParticleDensityProperty(5, 0.1f, SpawnType.SPHERE)
+                .minDensity(5)
+                .maxDensity(20)
+                .supportsShapes(true)));
     }
 }

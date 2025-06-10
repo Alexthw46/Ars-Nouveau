@@ -5,6 +5,7 @@ import com.hollingsworth.arsnouveau.api.particle.PropertyParticleOptions;
 import com.hollingsworth.arsnouveau.api.particle.configurations.properties.BaseProperty;
 import com.hollingsworth.arsnouveau.api.particle.configurations.properties.ParticleDensityProperty;
 import com.hollingsworth.arsnouveau.api.particle.configurations.properties.PropMap;
+import com.hollingsworth.arsnouveau.api.particle.configurations.properties.SpeedProperty;
 import com.hollingsworth.arsnouveau.api.registry.ParticleMotionRegistry;
 import com.hollingsworth.arsnouveau.api.registry.ParticlePropertyRegistry;
 import com.hollingsworth.arsnouveau.client.particle.ParticleUtil;
@@ -37,7 +38,6 @@ public abstract class ParticleMotion {
     public ParticleMotion(PropMap propertyMap){
         this.propertyMap = propertyMap;
     }
-
 
     public void init(ParticleEmitter emitter) {
         this.emitter = emitter;
@@ -106,8 +106,8 @@ public abstract class ParticleMotion {
     }
 
     public Vector3f toEmitterSpace(float x, float y, float z, float localX, float localY, float localZ) {
-        float xRotRadians = (float) Math.toRadians(this.emitter.getRotation().x);
-        float yRotRadians = (float) Math.toRadians(this.emitter.getRotation().y);
+        float xRotRadians = (float) Math.toRadians(this.emitter.getAdjustedRotation().x);
+        float yRotRadians = (float) Math.toRadians(this.emitter.getAdjustedRotation().y);
         Matrix4f transform = new Matrix4f();
         transform.identity()
                 .translate(new Vector3f(x, y, z))
@@ -119,7 +119,42 @@ public abstract class ParticleMotion {
         return localPos;
     }
 
-    protected ParticleDensityProperty getDensity(PropertyParticleOptions particleOptions){
+    protected ParticleDensityProperty getDensity(PropertyParticleOptions particleOptions, int defaultDensity, float defaultRadius) {
+        return particleOptions.map.getOrDefault(ParticlePropertyRegistry.DENSITY_PROPERTY.get(), new ParticleDensityProperty(defaultDensity, defaultRadius, SpawnType.SPHERE));
+    }
+
+    protected SpeedProperty getSpeed(PropertyParticleOptions particleOptions) {
+        return particleOptions.map.getOrDefault(ParticlePropertyRegistry.SPEED_PROPERTY.get(), new SpeedProperty());
+    }
+
+    protected Vec3 randomSpeed(PropertyParticleOptions particleOptions) {
+        SpeedProperty speedProperty = getSpeed(particleOptions);
+        double minXSpeed = speedProperty.minXZ();
+        double minYSpeed = speedProperty.minY();
+        double maxXSpeed = speedProperty.maxXZ();
+        double maxYSpeed = speedProperty.maxY();
+        return new Vec3(
+                ParticleUtil.inRange(minXSpeed, maxXSpeed),
+                ParticleUtil.inRange(minYSpeed, maxYSpeed),
+                ParticleUtil.inRange(minXSpeed, maxXSpeed)
+        );
+    }
+
+
+    protected Vec3 randomSpeed(PropertyParticleOptions particleOptions, double defaultMinXZ, double defaultMaxXZ,  double defaultMinY, double defaultMaxY) {
+        if(particleOptions.map.has(ParticlePropertyRegistry.SPEED_PROPERTY.get())){
+            return randomSpeed(particleOptions);
+        }else{
+            return new Vec3(
+                    ParticleUtil.inRange(defaultMinXZ, defaultMaxXZ),
+                    ParticleUtil.inRange(defaultMinY, defaultMaxY),
+                    ParticleUtil.inRange(defaultMinXZ, defaultMaxXZ)
+            );
+        }
+    }
+
+
+    protected ParticleDensityProperty getDensity(PropertyParticleOptions particleOptions) {
         return particleOptions.map.getOrDefault(ParticlePropertyRegistry.DENSITY_PROPERTY.get(), new ParticleDensityProperty());
     }
 

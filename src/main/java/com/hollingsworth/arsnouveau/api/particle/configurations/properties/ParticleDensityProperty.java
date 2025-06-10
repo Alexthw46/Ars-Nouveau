@@ -55,7 +55,7 @@ public class ParticleDensityProperty extends BaseProperty<ParticleDensityPropert
 
     public ParticleDensityProperty(){
         super();
-        this.density = 50;
+        this.density = 10;
         this.radius = 0.3f;
         this.spawnType = ParticleMotion.SpawnType.SPHERE;
     }
@@ -72,33 +72,6 @@ public class ParticleDensityProperty extends BaseProperty<ParticleDensityPropert
         this.density = density;
         this.radius = radius;
         this.spawnType = spawnType.orElse(ParticleMotion.SpawnType.SPHERE);
-    }
-
-    public ParticleDensityProperty(PropMap propMap, int densityMin, int densityMax, int stepSize, boolean supportsShapes){
-        this(propMap, densityMin, densityMax, stepSize, supportsShapes, supportsShapes);
-    }
-
-    public ParticleDensityProperty(PropMap propMap, int densityMin, int densityMax, int stepSize, boolean supportsShapes, boolean supportsRadius){
-        this(propMap, (densityMax / 2), 0.3);
-        this.minDensity = densityMin;
-        this.maxDensity = densityMax;
-        this.supportsShapes = supportsShapes;
-        this.supportsRadius = supportsRadius;
-        this.densityStepSize = stepSize;
-    }
-
-    public ParticleDensityProperty(PropMap propMap, int defaultDensity, double initialRadius){
-        super(propMap);
-        if(!propMap.has(getType())){
-            this.density = defaultDensity;
-            this.radius = initialRadius;
-            this.spawnType = ParticleMotion.SpawnType.SPHERE;
-        } else {
-            ParticleDensityProperty densityProperty = propMap.get(getType());
-            this.density = densityProperty.density;
-            this.spawnType = densityProperty.spawnType().orElse(ParticleMotion.SpawnType.SPHERE);
-            this.radius = densityProperty.radius;
-        }
     }
 
     public ParticleDensityProperty minDensity(int minDensity) {
@@ -154,6 +127,7 @@ public class ParticleDensityProperty extends BaseProperty<ParticleDensityPropert
             HorizontalSlider densitySlider;
             HorizontalSlider radiusSlider;
             SelectedParticleButton selectedButton;
+
             @Override
             public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
                 DocClientUtils.drawHeader(getName(), graphics, x, y, width, mouseX, mouseY, partialTicks);
@@ -168,9 +142,9 @@ public class ParticleDensityProperty extends BaseProperty<ParticleDensityPropert
                     yOffset += 2;
                     DocClientUtils.drawHeaderNoUnderline(Component.translatable("ars_nouveau.density_slider", densitySlider.getValueString()), graphics, x, y + yOffset, width, mouseX, mouseY, partialTicks);
                 }
-
+                int sliderSpacing = 25;
                 if(supportsRadius){
-                    yOffset +=  32;
+                    yOffset +=  sliderSpacing;
                     DocClientUtils.drawHeaderNoUnderline(Component.translatable("ars_nouveau.radius_slider", radiusSlider.getValueString()), graphics, x, y + yOffset, width, mouseX, mouseY, partialTicks);
                 }
             }
@@ -203,24 +177,28 @@ public class ParticleDensityProperty extends BaseProperty<ParticleDensityPropert
 
                     yOffset += 30;
                 }
+                int xSliderOffset = x + 4;
                 yOffset += 4;
-                densitySlider = buildSlider(x + 4, y + yOffset, minDensity, maxDensity, densityStepSize, 1, Component.translatable("ars_nouveau.density_slider"), Component.empty(), Math.floor((maxDensity + minDensity) / 2.0), (value) -> {
+                densitySlider = buildSlider(xSliderOffset, y + yOffset, minDensity, maxDensity, densityStepSize, 1, Component.translatable("ars_nouveau.density_slider"), Component.empty(), Math.floor((maxDensity + minDensity) / 2.0), (value) -> {
                     density = densitySlider.getValueInt();
                     writeChanges();
                 });
-                yOffset += 30;
+                int sliderSpacing = 25;
+                yOffset += sliderSpacing;
 
                 densitySlider.setValue(Mth.clamp(density, minDensity, maxDensity));
                 widgets.add(densitySlider);
 
-                radiusSlider = buildSlider(x + 4, y + yOffset, minRadius, maxRadius, 0.05, 1, Component.translatable("ars_nouveau.radius_slider"), Component.empty(),  initialRadius,  (value) -> {
+                radiusSlider = buildSlider(xSliderOffset, y + yOffset, minRadius, maxRadius, 0.05, 1, Component.translatable("ars_nouveau.radius_slider"), Component.empty(),  initialRadius,  (value) -> {
                     radius = radiusSlider.getValue();
                     writeChanges();
                 });
                 radiusSlider.setValue(radius);
 
+
                 if(supportsRadius) {
                     widgets.add(radiusSlider);
+                    yOffset += sliderSpacing;
                 }
             }
 

@@ -36,8 +36,9 @@ public class PropertyParticleOptions implements ParticleOptions {
 
     public PropMap map;
 
-    public static PropertyParticleOptions defaultGlow() {
-        return new PropertyParticleOptions(defaultPropMap());
+
+    public PropertyParticleOptions() {
+        this(ModParticles.NEW_GLOW_TYPE.get());
     }
 
     public PropertyParticleOptions(PropMap propMap) {
@@ -49,18 +50,12 @@ public class PropertyParticleOptions implements ParticleOptions {
         this.map.set(ParticlePropertyRegistry.TYPE_PROPERTY.get(), new ParticleTypeProperty(type, new PropMap()));
     }
 
-    public static PropMap defaultPropMap(){
-        PropMap propMap = new PropMap();
-        propMap.set(ParticlePropertyRegistry.TYPE_PROPERTY.get(), new ParticleTypeProperty(ModParticles.NEW_GLOW_TYPE.get(), new PropMap()));
-        return propMap;
-    }
-
     public ColorProperty colorProp() {
         ParticleTypeProperty typeProperty = map.get(ParticlePropertyRegistry.TYPE_PROPERTY.get());
         if (typeProperty != null) {
             return typeProperty.getColor();
         }
-        return new ColorProperty(new PropMap());
+        return new ColorProperty();
     }
 
     @Override

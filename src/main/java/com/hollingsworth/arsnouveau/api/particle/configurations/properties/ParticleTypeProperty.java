@@ -7,6 +7,7 @@ import com.hollingsworth.arsnouveau.api.particle.configurations.ListParticleWidg
 import com.hollingsworth.arsnouveau.api.particle.configurations.ParticleConfigWidgetProvider;
 import com.hollingsworth.arsnouveau.api.registry.ParticlePropertyRegistry;
 import com.hollingsworth.arsnouveau.client.gui.documentation.DocEntryButton;
+import com.hollingsworth.arsnouveau.client.particle.ParticleColor;
 import com.hollingsworth.arsnouveau.client.registry.ModParticles;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -23,7 +24,7 @@ import net.minecraft.world.item.ItemStack;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Supplier;
+import java.util.function.BiFunction;
 
 public class ParticleTypeProperty extends BaseProperty<ParticleTypeProperty> {
     public static final Map<ParticleType<? extends PropertyParticleOptions>, ParticleData> PARTICLE_TYPES = new ConcurrentHashMap<>();
@@ -33,22 +34,34 @@ public class ParticleTypeProperty extends BaseProperty<ParticleTypeProperty> {
     }
 
 
-    public static MapCodec<ParticleTypeProperty> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            BuiltInRegistries.PARTICLE_TYPE.byNameCodec().fieldOf("particleType").forGetter(i -> i.type),
-            PropMap.CODEC.fieldOf("subProperties").forGetter(i -> i.subProperties)
-    ).apply(instance, ParticleTypeProperty::new));
+    public static MapCodec<ParticleTypeProperty> CODEC = buildCodec(ParticleTypeProperty::new);
 
-    public static StreamCodec<RegistryFriendlyByteBuf, ParticleTypeProperty> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.registry(BuiltInRegistries.PARTICLE_TYPE.key()),
-            ParticleTypeProperty::type,
-            PropMap.STREAM_CODEC,
-            (i) -> i.subProperties,
-            ParticleTypeProperty::new
-    );
+    public static StreamCodec<RegistryFriendlyByteBuf, ParticleTypeProperty> STREAM_CODEC = buildStreamCodec(ParticleTypeProperty::new);
+
+    protected static <T extends ParticleTypeProperty> MapCodec<T> buildCodec(BiFunction<ParticleType<?>, PropMap, T> constructor) {
+        return RecordCodecBuilder.mapCodec(instance -> instance.group(
+                BuiltInRegistries.PARTICLE_TYPE.byNameCodec().fieldOf("particleType").forGetter(i -> i.type),
+                PropMap.CODEC.fieldOf("subProperties").forGetter(i -> i.subProperties)
+        ).apply(instance, constructor));
+    }
+
+    protected static <T extends ParticleTypeProperty> StreamCodec<RegistryFriendlyByteBuf, T> buildStreamCodec(BiFunction<ParticleType<?>, PropMap, T> constructor) {
+        return StreamCodec.composite(
+                ByteBufCodecs.registry(BuiltInRegistries.PARTICLE_TYPE.key()),
+                ParticleTypeProperty::type,
+                PropMap.STREAM_CODEC,
+                (i) -> i.subProperties,
+                constructor
+        );
+    }
 
     protected ParticleData selectedData;
     protected PropMap subProperties;
     protected ParticleType<? extends PropertyParticleOptions> type;
+
+    public ParticleTypeProperty() {
+        this(ModParticles.NEW_GLOW_TYPE.get(), new PropMap());
+    }
 
     public ParticleTypeProperty(ParticleType<?> type, PropMap subProperties) {
         super();
@@ -60,17 +73,9 @@ public class ParticleTypeProperty extends BaseProperty<ParticleTypeProperty> {
             System.out.println(BuiltInRegistries.PARTICLE_TYPE.getKey(type));
             selectedData = PARTICLE_TYPES.get(ModParticles.NEW_GLOW_TYPE.get());
         }
-    }
-
-    public ParticleTypeProperty(PropMap propMap) {
-        super(propMap);
-        ParticleTypeProperty property = propMap.getOrDefault(getType(), new ParticleTypeProperty(ModParticles.NEW_GLOW_TYPE.get(), new PropMap()));
-        this.type = property.type;
-        this.subProperties = property.subProperties;
-        selectedData = PARTICLE_TYPES.get(type);
-        if (selectedData == null) {
-            selectedData = PARTICLE_TYPES.get(ModParticles.NEW_GLOW_TYPE.get());
-        }
+        subProperties.getOrCreate(ParticlePropertyRegistry.COLOR_PROPERTY.get(), () ->{
+            return new ColorProperty(ParticleColor.defaultParticleColor(), true);
+        });
     }
 
     public ParticleType<? extends PropertyParticleOptions> type() {
@@ -78,7 +83,7 @@ public class ParticleTypeProperty extends BaseProperty<ParticleTypeProperty> {
     }
 
     public ColorProperty getColor(){
-        return subProperties.getOrDefault(ParticlePropertyRegistry.COLOR_PROPERTY.get(), new ColorProperty(new PropMap()));
+        return subProperties.getOrDefault(ParticlePropertyRegistry.COLOR_PROPERTY.get(), new ColorProperty());
     }
 
     @Override
@@ -88,7 +93,9 @@ public class ParticleTypeProperty extends BaseProperty<ParticleTypeProperty> {
         var particleEntries = new ArrayList<>(PARTICLE_TYPES.entrySet());
         particleEntries.sort((o1, o2) ->{
             if(o1.getKey() == ModParticles.NEW_GLOW_TYPE.get()){
-                return -1;
+                return -3;
+            }else if(o2.getKey() == ModParticles.NEW_GLOW_TYPE.get()){
+                return 3;
             }
             return getTypeName(o1.getKey()).getString().compareTo(getTypeName(o2.getKey()).getString());
         });
@@ -96,7 +103,7 @@ public class ParticleTypeProperty extends BaseProperty<ParticleTypeProperty> {
             DocEntryButton button = new DocEntryButton(0, 0, ItemStack.EMPTY, getTypeName(particleType.getKey()), (b) -> {
                 selectedData = particleType.getValue();
                 type = particleType.getKey();
-                propertyHolder.set(getType(), self);
+                writeChanges();
                 onDependenciesChanged.run();
             });
             buttons.add(button);
@@ -131,7 +138,7 @@ public class ParticleTypeProperty extends BaseProperty<ParticleTypeProperty> {
     }
 
     @Override
-    public IPropertyType<ParticleTypeProperty> getType() {
+    public IPropertyType getType() {
         return ParticlePropertyRegistry.TYPE_PROPERTY.get();
     }
 
@@ -140,29 +147,26 @@ public class ParticleTypeProperty extends BaseProperty<ParticleTypeProperty> {
         if (selectedData == null || !selectedData.acceptsColor) {
             return Collections.emptyList();
         }
-
-        return List.of(new ColorProperty(subProperties, selectedData.useLegacyRGB()));
+        ColorProperty colorProperty = subProperties.getOrCreate(ParticlePropertyRegistry.COLOR_PROPERTY.get(), () -> new ColorProperty(ParticleColor.defaultParticleColor(), true));
+        colorProperty.isLegacyRGB = selectedData.useLegacyRGB;
+        return List.of(colorProperty);
     }
 
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         ParticleTypeProperty property = (ParticleTypeProperty) o;
-        return Objects.equals(type, property.type) && Objects.equals(subProperties, property.subProperties);
+        return Objects.equals(type, property.type) && Objects.equals(subProperties, property.subProperties) && Objects.equals(getType(), property.getType());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(type, subProperties);
+        return Objects.hash(getType(), type, subProperties);
     }
 
-    public record ParticleData(ParticleType<? extends PropertyParticleOptions> type, Supplier<PropertyParticleOptions> defaultOptions, boolean acceptsColor, boolean useLegacyRGB) {
+    public record ParticleData(ParticleType<? extends PropertyParticleOptions> type, boolean acceptsColor, boolean useLegacyRGB) {
         public ParticleData(ParticleType<? extends PropertyParticleOptions> type, boolean acceptsColor) {
-            this(type, () -> new PropertyParticleOptions(type), acceptsColor, false);
-        }
-
-        public ParticleData(ParticleType<? extends PropertyParticleOptions> type, boolean acceptsColor, boolean useLegacyRGB) {
-            this(type, () -> new PropertyParticleOptions(type), acceptsColor, useLegacyRGB);
+            this(type, acceptsColor, false);
         }
     }
 }

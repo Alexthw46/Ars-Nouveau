@@ -72,8 +72,7 @@ public class SpellBook extends ModItem implements GeoItem, ICasterTool, IDyeable
     public @NotNull InteractionResultHolder<ItemStack> use(@NotNull Level worldIn, Player playerIn, @NotNull InteractionHand handIn) {
         ItemStack stack = playerIn.getItemInHand(handIn);
         var caster2 = SpellCasterRegistry.from(stack);
-//        caster2.getSpell().particleTimeline().debugPrintHash(caster2.getSpell(), worldIn);
-//        .CODEC.encodeStart(JsonOps.INSTANCE, g.toData()).getOrThrow()
+        caster2.getSpell().particleTimeline().debugPrintHash(caster2.getSpell(), worldIn);
         var timeline = caster2.getSpell().particleTimeline().get(ParticleTimelineRegistry.PROJECTILE_TIMELINE.get());
         var element = IParticleTimeline.CODEC.encodeStart(JsonOps.INSTANCE, timeline);
         Gson gson = new GsonBuilder().setPrettyPrinting().create();

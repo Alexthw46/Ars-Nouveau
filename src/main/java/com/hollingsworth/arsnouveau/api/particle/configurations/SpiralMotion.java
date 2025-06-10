@@ -32,11 +32,9 @@ public class SpiralMotion extends ParticleMotion {
 
     @Override
     public void tick(PropertyParticleOptions particleOptions, Level level, double x, double y, double z, double prevX, double prevY, double prevZ) {
-        ParticleDensityProperty density = getDensity(particleOptions);
+        ParticleDensityProperty density = getDensity(particleOptions, 100, 0.3f);
         double spiralRadius = density.radius();
         int totalParticles = getNumParticles(density.density());
-        System.out.println(density.density());
-        double spiralSpeed = 1.0f;
         for (int step = 0; step <= totalParticles; step++) {
             double t = (double) step / totalParticles;
             double interpolatedX = prevX + t * (x - prevX);
@@ -44,13 +42,12 @@ public class SpiralMotion extends ParticleMotion {
             double interpolatedZ = prevZ + t * (z - prevZ);
 
             // Interpolate the angle for the current step
-            double interpolatedAge = this.emitter.age + t;
-            double angle = interpolatedAge * spiralSpeed;
+            double angle = this.emitter.age + t;
             float localX = (float) (Math.cos(angle) * spiralRadius);
             float localZ = 0;
             float localY = (float) (Math.sin(angle) * spiralRadius);
             Vector3f localPos = toEmitterSpace((float) interpolatedX, (float) interpolatedY, (float) interpolatedZ, localX, localY, localZ);
-            level.addParticle(particleOptions, localPos.x, localPos.y, localPos.z, ParticleUtil.inRange(-0.05, 0.05),
+            level.addAlwaysVisibleParticle(particleOptions, true, localPos.x, localPos.y, localPos.z, ParticleUtil.inRange(-0.05, 0.05),
                     ParticleUtil.inRange(-0.05, 0.05),
                     ParticleUtil.inRange(-0.05, 0.05));
         }
@@ -58,11 +55,11 @@ public class SpiralMotion extends ParticleMotion {
 
     @Override
     public List<BaseProperty<?>> getProperties(PropMap propMap) {
-        return List.of(new ParticleTypeProperty(propMap), new ParticleDensityProperty(propMap, 100, 0.3f)
+        return List.of(propMap.createIfMissing(new ParticleTypeProperty()), propMap.createIfMissing(new ParticleDensityProperty(100, 0.3f, SpawnType.SPHERE)
                 .maxDensity(200)
                 .minDensity(20)
                 .densityStepSize(5)
                 .supportsShapes(false)
-                .supportsRadius(true));
+                .supportsRadius(true)));
     }
 }
