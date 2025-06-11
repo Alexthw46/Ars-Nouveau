@@ -46,17 +46,21 @@ public class MotionProperty extends BaseProperty<MotionProperty>{
 
             @Override
             public void addWidgets(List<AbstractWidget> widgets) {
-                int entryCount = 0;
-                for (IParticleMotionType<?> type : timelineOption.options()) {
-                    SelectedParticleButton widget = new SelectedParticleButton(x + 10 + entryCount * 20, y + 20, 14, 14, type.getIconLocation(), (button) -> {
-                        timelineOption.entry().setMotion(type.create(timelineOption.entry().motion().propertyMap));
-                        if(onDependenciesChanged != null){
+
+                var options = timelineOption.options();
+                for (int i = 0; i < options.size(); i++) {
+                    IParticleMotionType<?> type = options.get(i);
+                    SelectedParticleButton widget = new SelectedParticleButton(x + 5 + (i % 7) * 16, y + 20 + 18 * (i / 7), 14, 14, type.getIconLocation(), (button) -> {
+                        PropMap motionMap = timelineOption.entry().motion().propertyMap;
+                        motionMap.removePropsOnMotionChange();
+                        timelineOption.entry().particleOptions().map.removePropsOnMotionChange();
+                        timelineOption.entry().setMotion(type.create(motionMap));
+                        if (onDependenciesChanged != null) {
                             onDependenciesChanged.run();
                         }
                     });
                     widget.withTooltip(type.getName());
                     widgets.add(widget);
-                    entryCount++;
                 }
             }
 

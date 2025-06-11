@@ -18,6 +18,7 @@ import com.hollingsworth.arsnouveau.common.network.Networking;
 import com.hollingsworth.arsnouveau.common.network.PacketUpdateParticleTimeline;
 import com.hollingsworth.arsnouveau.setup.registry.CreativeTabRegistry;
 import com.hollingsworth.nuggets.client.gui.GuiHelpers;
+import com.hollingsworth.nuggets.client.gui.NuggetImageButton;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -55,8 +56,11 @@ public class ParticleOverviewScreen extends BaseBook {
     BaseProperty selectedProperty;
     SelectedParticleButton selectedParticleButton;
     SelectableButton currentlySelectedButton;
+    GuiSpellBook previousScreen;
 
-    public ParticleOverviewScreen(AbstractCaster<?> caster,  int slot, InteractionHand stackHand) {
+
+    public ParticleOverviewScreen(GuiSpellBook previousScreen, AbstractCaster<?> caster,  int slot, InteractionHand stackHand) {
+        this.previousScreen = previousScreen;
         this.slot = slot;
         this.stackHand = stackHand;
         this.caster = caster;
@@ -77,46 +81,25 @@ public class ParticleOverviewScreen extends BaseBook {
         }else{
             selectedTimeline = LAST_SELECTED_PART;
         }
-    }
-
-    public static void openScreen(ItemStack stack, int slot, InteractionHand stackHand) {
-        AbstractCaster<?> caster = SpellCasterRegistry.from(stack);
-        int hash = caster.getSpell(slot).particleTimeline().hashCode();
-        if(ParticleOverviewScreen.lastOpenedHash != hash || ParticleOverviewScreen.lastScreen == null){
-            LAST_SELECTED_PART = null;
-            ParticleOverviewScreen.lastOpenedHash = hash;
-            Minecraft.getInstance().setScreen(new ParticleOverviewScreen(caster, slot, stackHand));
-        }else{
-            ParticleOverviewScreen.lastScreen.slot = slot;
-            Minecraft.getInstance().setScreen(ParticleOverviewScreen.lastScreen);
-        }
-    }
-
-
-    @Override
-    public void onClose() {
-        super.onClose();
-        int hash = timelineMap.immutable().hashCode();
-        ParticleOverviewScreen.lastOpenedHash = hash;
-        ParticleOverviewScreen.lastScreen = this;
-    }
-
-    @Override
-    public void removed() {
-        super.removed();
-        int hash = timelineMap.immutable().hashCode();
-        ParticleOverviewScreen.lastOpenedHash = hash;
-        ParticleOverviewScreen.lastScreen = this;
+        LAST_SELECTED_PART = selectedTimeline;
     }
 
     @Override
     public void init() {
         super.init();
-
-        addSaveButton((b) -> Networking.sendToServer(new PacketUpdateParticleTimeline(slot, timelineMap.immutable(), this.stackHand == InteractionHand.MAIN_HAND)));
+        var backButton = new NuggetImageButton(bookLeft + 6, bookTop + 6, DocAssets.ARROW_BACK_HOVER.width(), DocAssets.ARROW_BACK_HOVER.height(), DocAssets.ARROW_BACK.location(), DocAssets.ARROW_BACK_HOVER.location(), (b) -> {
+            Minecraft.getInstance().setScreen(previousScreen);
+        });
+        addRenderableWidget(backButton);
+        addSaveButton((b) ->{
+            int hash = timelineMap.immutable().hashCode();
+            ParticleOverviewScreen.lastOpenedHash = hash;
+            Networking.sendToServer(new PacketUpdateParticleTimeline(slot, timelineMap.immutable(), this.stackHand == InteractionHand.MAIN_HAND));
+        });
         timelineButton = addRenderableWidget(new DocEntryButton(bookLeft + LEFT_PAGE_OFFSET, bookTop + 36, selectedTimeline.getSpellPart().glyphItem.getDefaultInstance(), Component.translatable(selectedTimeline.getSpellPart().getLocaleName()), (button) -> {
             addTimelineSelectionWidgets();
             setSelectedButton(timelineButton);
+            selectedProperty = null;
         }));
         if(currentlySelectedButton == null){
             setSelectedButton(timelineButton);
@@ -124,9 +107,48 @@ public class ParticleOverviewScreen extends BaseBook {
         if(selectedProperty == null) {
             addTimelineSelectionWidgets();
         }else{
-            onPropertySelected(selectedProperty);
+            if(propertyWidgetProvider != null){
+                List<AbstractWidget> propertyWidgets = new ArrayList<>();
+                propertyWidgetProvider.x = bookLeft + RIGHT_PAGE_OFFSET;
+                propertyWidgetProvider.y = bookTop + PAGE_TOP_OFFSET;
+                propertyWidgetProvider.addWidgets(propertyWidgets);
+
+                for (AbstractWidget widget : propertyWidgets) {
+                    addRightPageWidget(widget);
+                }
+            }else {
+                onPropertySelected(selectedProperty);
+            }
         }
         initLeftSideButtons();
+    }
+
+    public static void openScreen(GuiSpellBook parentScreen, ItemStack stack, int slot, InteractionHand stackHand) {
+        AbstractCaster<?> caster = SpellCasterRegistry.from(stack);
+        int hash = caster.getSpell(slot).particleTimeline().hashCode();
+        if(LAST_SELECTED_PART == null || ParticleOverviewScreen.lastOpenedHash != hash || ParticleOverviewScreen.lastScreen == null){
+            LAST_SELECTED_PART = null;
+            ParticleOverviewScreen.lastOpenedHash = hash;
+            Minecraft.getInstance().setScreen(new ParticleOverviewScreen(parentScreen, caster, slot, stackHand));
+        }else{
+            ParticleOverviewScreen screen = ParticleOverviewScreen.lastScreen;
+            screen.slot = slot;
+            parentScreen.selectedSpellSlot = slot;
+            Minecraft.getInstance().setScreen(screen);
+        }
+    }
+
+
+    @Override
+    public void onClose() {
+        super.onClose();
+        ParticleOverviewScreen.lastScreen = this;
+    }
+
+    @Override
+    public void removed() {
+        super.removed();
+        ParticleOverviewScreen.lastScreen = this;
     }
 
     public void setSelectedButton(SelectableButton selectedButton) {
@@ -230,7 +252,7 @@ public class ParticleOverviewScreen extends BaseBook {
             }
         }
         var widgetProvider = property.buildWidgets(bookLeft + RIGHT_PAGE_OFFSET, bookTop + PAGE_TOP_OFFSET, ONE_PAGE_WIDTH, ONE_PAGE_HEIGHT);
-        return new PropertyButton(bookLeft + LEFT_PAGE_OFFSET + xOffset, bookTop + 51 + 15 * (yOffset), texture, selectedTexture, widgetProvider, (button) -> {
+        return new PropertyButton(bookLeft + LEFT_PAGE_OFFSET + xOffset, bookTop + 51 + 15 * (yOffset), texture, selectedTexture, widgetProvider, nestLevel, (button) -> {
             onPropertySelected(property);
             if(button instanceof PropertyButton propertyButton){
                 propertyButton.widgetProvider = propertyWidgetProvider;

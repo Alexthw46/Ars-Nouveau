@@ -56,10 +56,12 @@ public class ModSetup {
         CreativeTabRegistry.TABS.register(modEventBus);
         DataSerializers.DS.register(modEventBus);
         AttachmentsRegistry.ATTACHMENT_TYPES.register(modEventBus);
+
         ParticleMotionRegistry.PARTICLE_CONFIG.register(modEventBus);
         ParticleTimelineRegistry.TIMELINE_DF.register(modEventBus);
         ParticlePropertyRegistry.PROP_DF.register(modEventBus);
         modEventBus.addListener(ModSetup::addBlocksToTile);
+
     }
 
     public static void registerRegistries(NewRegistryEvent event) {

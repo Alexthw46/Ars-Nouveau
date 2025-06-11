@@ -224,6 +224,10 @@ public class Spell {
         return new Spell(name, color, sound, recipe, timeline);
     }
 
+    public Spell withName(String name) {
+        return new Spell(name, color, sound, recipe, particleTimeline);
+    }
+
     @Deprecated(forRemoval = true)
     public ParticleColor color(){
         return color;
@@ -232,6 +236,7 @@ public class Spell {
     public String name() {
         return name;
     }
+
 
     public TimelineMap particleTimeline(){
         return particleTimeline;
