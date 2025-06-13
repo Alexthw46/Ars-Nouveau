@@ -11,12 +11,10 @@ import com.hollingsworth.arsnouveau.api.util.ManaUtil;
 import com.hollingsworth.arsnouveau.client.ClientInfo;
 import com.hollingsworth.arsnouveau.client.gui.Color;
 import com.hollingsworth.arsnouveau.client.gui.GuiUtils;
-import com.hollingsworth.arsnouveau.client.gui.NoShadowTextField;
 import com.hollingsworth.arsnouveau.client.gui.*;
 import com.hollingsworth.arsnouveau.client.gui.buttons.*;
 import com.hollingsworth.arsnouveau.client.gui.utils.RenderUtils;
 import com.hollingsworth.arsnouveau.client.particle.ParticleColor;
-import com.hollingsworth.arsnouveau.common.capability.IPlayerCap;
 import com.hollingsworth.arsnouveau.common.items.SpellBook;
 import com.hollingsworth.arsnouveau.common.network.Networking;
 import com.hollingsworth.arsnouveau.common.network.PacketSetSound;
@@ -26,12 +24,10 @@ import com.hollingsworth.arsnouveau.common.spell.validation.CombinedSpellValidat
 import com.hollingsworth.arsnouveau.common.spell.validation.GlyphKnownValidator;
 import com.hollingsworth.arsnouveau.common.spell.validation.GlyphMaxTierValidator;
 import com.hollingsworth.arsnouveau.setup.config.ServerConfig;
-import com.hollingsworth.arsnouveau.setup.registry.CapabilityRegistry;
+import com.hollingsworth.arsnouveau.setup.registry.ItemsRegistry;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
-import net.minecraft.ChatFormatting;
-import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -42,11 +38,10 @@ import net.minecraft.client.gui.screens.inventory.PageButton;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextColor;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.tooltip.TooltipComponent;
 import net.minecraft.world.item.ItemStack;
 import org.lwjgl.glfw.GLFW;
@@ -122,7 +117,7 @@ public class GuiSpellBook extends SpellSlottedScreen {
         this.spellValidator = new CombinedSpellValidator(
                 ArsNouveauAPI.getInstance().getSpellCraftingSpellValidator(),
                 new GlyphMaxTierValidator(tier),
-                new GlyphKnownValidator(player.isCreative() ? null : cap)
+                new GlyphKnownValidator((player.isCreative() || bookStack.getItem() == ItemsRegistry.CREATIVE_SPELLBOOK.asItem()) ? null : playerCap)
         );
         spell = SpellCasterRegistry.from(bookStack).getSpell(selectedSpellSlot).mutable().recipe;
     }
@@ -412,10 +407,6 @@ public class GuiSpellBook extends SpellSlottedScreen {
         Minecraft.getInstance().setScreen(new GuiColorScreen(color.getRedInt(), color.getGreenInt(), color.getBlueInt(), selectedSpellSlot, this.hand, this));
     }
 
-    public void onDocumentationClick(Button button) {
-        GuiUtils.openWiki(ArsNouveau.proxy.getPlayer());
-    }
-
     public void onSoundsClick(Button button) {
         ConfiguredSpellSound spellSound = SpellCasterRegistry.from(bookStack).getSound(selectedSpellSlot);
         Minecraft.getInstance().setScreen(new SoundScreen(spellSound, selectedSpellSlot, this.hand, this));
@@ -425,7 +416,7 @@ public class GuiSpellBook extends SpellSlottedScreen {
         if (button instanceof CraftingButton craftingButton) {
             craftingButton.clear();
             if (craftingButton.slotNum < spell.size()) {
-                spell.set(((CraftingButton) button).slotNum, null);
+                spell.set(craftingButton.slotNum, null);
             }
         }
         //sanitize the spell if manually cleared

@@ -26,7 +26,7 @@ public class SpellSlottedScreen extends BaseBook{
     public ItemStack bookStack;
     public Player player;
     public Minecraft mc;
-    IPlayerCap playerCap;
+    protected IPlayerCap playerCap;
 
 
     public SpellSlottedScreen(InteractionHand hand) {
