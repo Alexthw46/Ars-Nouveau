@@ -15,6 +15,9 @@ import com.hollingsworth.arsnouveau.setup.registry.CapabilityRegistry;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.Util;
+import com.hollingsworth.nuggets.client.gui.NuggetImageButton;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -29,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.function.Consumer;
 
 public class BaseBook extends ModdedScreen {
     public static final int FONT_COLOR = -8355712;
@@ -78,6 +82,20 @@ public class BaseBook extends ModdedScreen {
                 throw new RuntimeException(e);
             }
         }).withTooltip(Component.translatable("ars_nouveau.gui.discord")));
+    }
+
+    public void addBackButton(Screen parentScreen){
+        addBackButton(parentScreen,(b) ->{});
+    }
+
+
+    public void addBackButton(Screen parentScreen, Consumer<Button> onPress){
+        addRenderableWidget(new NuggetImageButton(bookLeft + 6, bookTop + 6, DocAssets.ARROW_BACK_HOVER.width(), DocAssets.ARROW_BACK_HOVER.height(), DocAssets.ARROW_BACK.location(), DocAssets.ARROW_BACK_HOVER.location(), (b) -> {
+            if (onPress != null) {
+                onPress.accept(b);
+            }
+            Minecraft.getInstance().setScreen(parentScreen);
+        }));
     }
 
     public void addSaveButton(Button.OnPress onPress) {

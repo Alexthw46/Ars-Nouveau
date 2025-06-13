@@ -32,13 +32,15 @@ public class ModdedScreen extends Screen {
 
     public void drawTooltip(GuiGraphics stack, int mouseX, int mouseY) {
         List<Component> tooltip = new ArrayList<>();
-        collectTooltips(stack, mouseX, mouseY, tooltip);
-        if (!tooltip.isEmpty()) {
-            stack.renderTooltip(font, tooltip, Optional.ofNullable(collectComponent(mouseX, mouseY)), mouseX, mouseY);
+        collectTooltips(mouseX, mouseY, tooltip);
+        Optional<TooltipComponent> image = Optional.ofNullable(collectComponent(mouseX, mouseY));
+        if(image.isPresent() && tooltip.isEmpty()){
+            tooltip.add(Component.empty());
         }
+        stack.renderTooltip(font, tooltip, image, mouseX, mouseY);
     }
 
-    public void collectTooltips(GuiGraphics stack, int mouseX, int mouseY, List<Component> tooltip){
+    public void collectTooltips(int mouseX, int mouseY, List<Component> tooltip){
         for(Renderable renderable : renderables){
             if(renderable instanceof AbstractWidget widget){
                 if(GuiUtils.isMouseInRelativeRange(mouseX, mouseY, widget)){
