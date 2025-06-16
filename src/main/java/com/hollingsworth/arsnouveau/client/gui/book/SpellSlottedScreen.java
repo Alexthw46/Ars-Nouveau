@@ -32,12 +32,12 @@ public class SpellSlottedScreen extends BaseBook{
     public SpellSlottedScreen(InteractionHand hand) {
         super();
         this.hand = hand;
-        mc = Minecraft.getInstance();
-        player = mc.player;
-        playerCap = CapabilityRegistry.getPlayerDataCap(player);
-        bookStack = player.getItemInHand(hand);
+        this.mc = Minecraft.getInstance();
+        this.player = mc.player;
+        this.playerCap = CapabilityRegistry.getPlayerDataCap(player);
+        this.bookStack = player.getItemInHand(hand);
         this.caster = SpellCasterRegistry.from(bookStack);
-        selectedSpellSlot = caster.getCurrentSlot();
+        this.selectedSpellSlot = caster.getCurrentSlot();
     }
 
     @Override

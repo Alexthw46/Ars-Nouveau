@@ -130,8 +130,7 @@ public class GuiSpellBook extends SpellSlottedScreen {
     public void onSetCaster(int slot) {
         this.selectedSpellSlot = slot;
         this.spellname = caster.getSpellName(slot);
-        if(spellNameBox != null) {
-
+        if(this.spellNameBox != null) {
             this.spellNameBox.setValue(caster.getSpellName(slot));
         }
         spell = SpellCasterRegistry.from(bookStack).getSpell(selectedSpellSlot).mutable().recipe;
@@ -165,7 +164,8 @@ public class GuiSpellBook extends SpellSlottedScreen {
 
         spellNameBox = new EnterTextField(minecraft.font, bookLeft + 16, bookBottom - 13);
 
-        spellNameBox.setValue(caster.getSpellName(selectedSpellSlot));
+        if (caster != null)
+            spellNameBox.setValue(caster.getSpellName(selectedSpellSlot));
         addRenderableWidget(spellNameBox);
         addRenderableWidget(searchBar);
 
