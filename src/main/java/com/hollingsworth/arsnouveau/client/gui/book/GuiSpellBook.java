@@ -89,7 +89,6 @@ public class GuiSpellBook extends SpellSlottedScreen {
     public int spellWindowOffset = 0;
     public int bonusSlots = 0;
     public String spellname = "";
-    public AbstractCaster<?> caster;
 
     public long timeOpened;
 
@@ -187,11 +186,8 @@ public class GuiSpellBook extends SpellSlottedScreen {
         addRenderableWidget(new GuiImageButton(bookLeft - 15, bookTop + 46, 0, 0, 23, 20, 23, 20, "textures/gui/color_wheel_bookmark.png", (b) -> {
             ParticleOverviewScreen.openScreen(this, bookStack, selectedSpellSlot, this.hand);
         }).withTooltip(Component.translatable("ars_nouveau.gui.spell_style")));
-        addRenderableWidget(new GuiImageButton(bookLeft - 36, bookTop + 46, 0, 0, 23, 20, 23, 20, "textures/gui/color_wheel_bookmark.png", this::onColorClick)
+        addRenderableWidget(new GuiImageButton(bookLeft - 15, bookTop + 70, 0, 0, 23, 20, 23, 20, "textures/gui/color_wheel_bookmark.png", this::onColorClick)
                 .withTooltip(Component.translatable("ars_nouveau.gui.color")));
-        addRenderableWidget(new GuiImageButton(bookLeft - 15, bookTop + 70, 0, 0, 23, 20, 23, 20, "textures/gui/sounds_tab.png", this::onSoundsClick)
-                .withTooltip(Component.translatable("ars_nouveau.gui.sounds")));
-
 
         this.nextButton = addRenderableWidget(new PageButton(bookRight - 20, bookBottom - 6, true, this::onPageIncrease, true));
         this.previousButton = addRenderableWidget(new PageButton(bookLeft - 5, bookBottom - 6, false, this::onPageDec, true));

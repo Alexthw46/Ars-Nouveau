@@ -301,6 +301,7 @@ public class ParticleOverviewScreen extends SpellSlottedScreen {
             var entry = timelineList.get(i);
             var widget = new GlyphButton(bookLeft + RIGHT_PAGE_OFFSET + 2 + 20 * (i % 6), bookTop + 40 + 20*(i/6), entry.getValue().getSpellPart(), (button) -> {
                 selectedTimeline = entry.getValue();
+                rowOffset = 0;
                 LAST_SELECTED_PART = selectedTimeline;
                 AbstractSpellPart spellPart = selectedTimeline.getSpellPart();
                 timelineButton.title = Component.translatable(spellPart.getLocaleName());
@@ -331,6 +332,11 @@ public class ParticleOverviewScreen extends SpellSlottedScreen {
         if (propertyWidgetProvider != null) {
             propertyWidgetProvider.render(graphics, mouseX, mouseY, partialTicks);
         }
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        return super.mouseClicked(mouseX, mouseY, button);
     }
 
     @Override

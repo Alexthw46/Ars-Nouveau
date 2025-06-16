@@ -110,20 +110,6 @@ public class Spell {
 
     public static Spell fromBinaryBase64(String base64) {
 
-//        try{
-//            byte[] data = Base64.getDecoder().decode(base64);
-//            FriendlyByteBuf baseBuf = new FriendlyByteBuf(Unpooled.wrappedBuffer(data));
-//            RegistryFriendlyByteBuf buf = new RegistryFriendlyByteBuf(baseBuf, ArsNouveau.proxy.getPlayer().registryAccess(), ConnectionType.NEOFORGE);
-//
-//            Spell spell = Spell.STREAM.decode(buf);
-//
-//            System.out.println("About to read full spell from binary base64: " + base64);
-//            System.out.println("Full decoded spell: " + spell);
-//            return spell;
-//        }catch (Exception e) {
-//            System.out.println("Failed to read spell from binary base64: " + e.getMessage());
-//        }
-
         try {
             byte[] bytes = Base64.getDecoder().decode(base64);
             DataInputStream in = new DataInputStream(new ByteArrayInputStream(bytes));
@@ -162,7 +148,8 @@ public class Spell {
     }
 
 
-    public ConfiguredSpellSound sound() {
+    @Deprecated(forRemoval = true)
+    public ConfiguredSpellSound sound(){
         return sound;
     }
 

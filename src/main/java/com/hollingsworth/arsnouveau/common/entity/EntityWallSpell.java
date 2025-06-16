@@ -111,6 +111,9 @@ public class EntityWallSpell extends EntityProjectileSpell {
                     resolveEmitter.tick(level);
                 }
             }
+            if(!level.isClientSide) {
+                resolveSound.playSound(level, getX(), getY(), getZ());
+            }
         }else{
             int i = 0;
             // Expand the axis if start and end are equal
@@ -150,6 +153,9 @@ public class EntityWallSpell extends EntityProjectileSpell {
                 }
                 if (i > 5)
                     break;
+                if(!level.isClientSide) {
+                    resolveSound.playSound(level, getX(), getY(), getZ());
+                }
             }
             totalProcs += i;
             if (totalProcs >= maxProcs)
@@ -178,6 +184,7 @@ public class EntityWallSpell extends EntityProjectileSpell {
         if (this.tickEmitter.particleOptions instanceof PropertyParticleOptions propertyParticleOptions) {
             propertyParticleOptions.map.set(ParticlePropertyRegistry.WALL_PROPERTY.get(), new WallProperty(Math.round(getAoe()), 5, 20, getDirection()));
         }
+        this.resolveSound = projectileTimeline.resolveSound.sound;
     }
 
     @Override

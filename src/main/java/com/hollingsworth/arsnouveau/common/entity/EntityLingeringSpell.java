@@ -91,6 +91,7 @@ public class EntityLingeringSpell extends EntityProjectileSpell {
         if (this.tickEmitter.particleOptions instanceof PropertyParticleOptions propertyParticleOptions) {
             propertyParticleOptions.map.set(ParticlePropertyRegistry.WALL_PROPERTY.get(), new WallProperty(Math.round(getAoe()), 5, 20, getDirection()));
         }
+        this.resolveSound = projectileTimeline.resolveSound.sound;
     }
 
     public void castSpells() {
@@ -108,6 +109,9 @@ public class EntityLingeringSpell extends EntityProjectileSpell {
                         resolveEmitter.tick(level);
                     }
                 }
+                if(!level.isClientSide) {
+                    resolveSound.playSound(level, getX(), getY(), getZ());
+                }
             } else {
                 int i = 0;
                 for (Entity entity : level.getEntities(null, new AABB(this.blockPosition()).inflate(getAoe()))) {
@@ -115,6 +119,7 @@ public class EntityLingeringSpell extends EntityProjectileSpell {
                         continue;
                     if (!level.isClientSide) {
                         resolver().getNewResolver(resolver().spellContext.clone().makeChildContext()).onResolveEffect(level, new EntityHitResult(entity));
+                        resolveSound.playSound(level, getX(), getY(), getZ());
                     } else {
                         resolveEmitter.setPositionOffset(entity.position.subtract(position));
                         resolveEmitter.tick(level);
