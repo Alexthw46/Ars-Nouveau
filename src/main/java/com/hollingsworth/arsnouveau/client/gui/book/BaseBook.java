@@ -32,6 +32,7 @@ import org.jetbrains.annotations.Nullable;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -167,37 +168,18 @@ public class BaseBook extends BaseScreen {
 
     @Override
     public void collectTooltips(GuiGraphics stack, int mouseX, int mouseY, List<Component> tooltip) {
-        super.collectTooltips(stack, mouseX, mouseY, tooltip);
-
         // TODO: 1.22 remove along with ITooltipProvider from ars
         for(Renderable renderable : renderables) {
             if (renderable instanceof AbstractWidget widget) {
                 if (GuiUtils.isMouseInRelativeRange(mouseX, mouseY, widget)) {
                     if (renderable instanceof ITooltipProvider tooltipProvider) {
                         tooltipProvider.getTooltip(tooltip);
-                    }
-                }
-            }
-        }
-    }
-
-    public void collectTooltips(int mouseX, int mouseY, List<Component> tooltip){
-        for(Renderable renderable : renderables){
-            if(renderable instanceof AbstractWidget widget){
-                if(GuiUtils.isMouseInRelativeRange(mouseX, mouseY, widget)){
-                    if(renderable instanceof ITooltipProvider tooltipProvider) {
-                        tooltipProvider.getTooltip(tooltip);
                     }else if(renderable instanceof ITooltipRenderer nuggetProvider){
                         nuggetProvider.gatherTooltips(tooltip);
                     }
-                    break;
                 }
             }
         }
-    }
-
-    protected TooltipComponent collectComponent(int mouseX, int mouseY) {
-        return null;
     }
 
     public @Nullable Renderable getHoveredRenderable(int mouseX, int mouseY){
