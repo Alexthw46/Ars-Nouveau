@@ -13,7 +13,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 import java.util.stream.Stream;
 
-public class ArcanePlatform extends ArcanePedestal{
+public class ArcanePlatform extends ArcanePedestal {
 
     public ArcanePlatform() {
         super();
@@ -77,7 +77,7 @@ public class ArcanePlatform extends ArcanePedestal{
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter worldIn, BlockPos pos, CollisionContext context) {
         Direction facing = state.getValue(BlockStateProperties.FACING);
-        switch(facing){
+        switch (facing) {
             case UP:
                 return UP;
             case DOWN:

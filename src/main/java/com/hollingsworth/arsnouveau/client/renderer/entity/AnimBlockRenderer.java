@@ -28,12 +28,11 @@ import software.bernie.geckolib.util.Color;
 import software.bernie.geckolib.util.RenderUtil;
 
 
-
 public class AnimBlockRenderer<BOBBY extends AnimBlockSummon> extends GeoEntityRenderer<BOBBY> {
     public static MultiBufferSource.BufferSource buffer = MultiBufferSource.immediate(new ByteBufferBuilder(1536));
-    protected static final ResourceLocation TEXTURE = ArsNouveau.prefix( "textures/entity/anim_block.png");
-    public static final ResourceLocation BASE_MODEL = ArsNouveau.prefix( "geo/animated_block.geo.json");
-    public static final ResourceLocation ANIMATIONS = ArsNouveau.prefix( "animations/animated_block_animations.json");
+    protected static final ResourceLocation TEXTURE = ArsNouveau.prefix("textures/entity/anim_block.png");
+    public static final ResourceLocation BASE_MODEL = ArsNouveau.prefix("geo/animated_block.geo.json");
+    public static final ResourceLocation ANIMATIONS = ArsNouveau.prefix("animations/animated_block_animations.json");
 
     private final BlockRenderDispatcher dispatcher;
     protected MultiBufferSource bufferSource;

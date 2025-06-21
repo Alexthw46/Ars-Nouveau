@@ -17,7 +17,7 @@ import org.joml.Matrix4f;
 public record SpellTooltip(Spell spell, boolean showName) implements TooltipComponent {
 
 
-    public SpellTooltip(AbstractCaster<?> spellcaster, boolean showName){
+    public SpellTooltip(AbstractCaster<?> spellcaster, boolean showName) {
         this(spellcaster.getSpell(), showName);
     }
 
@@ -32,6 +32,7 @@ public record SpellTooltip(Spell spell, boolean showName) implements TooltipComp
     public static class SpellTooltipRenderer implements ClientTooltipComponent {
         private final boolean showName;
         public final Spell spell;
+
         public SpellTooltipRenderer(SpellTooltip pSpellTooltip) {
             this.showName = pSpellTooltip.showName();
             spell = pSpellTooltip.spell;

@@ -60,12 +60,12 @@ public class BaseDocScreen extends BaseScreen {
         searchBar.setResponder(this::onSearchChanged);
         addRenderableWidget(searchBar);
         backButton = new NuggetImageButton(screenLeft + 6, screenTop + 6, DocAssets.ARROW_BACK_HOVER.width(), DocAssets.ARROW_BACK_HOVER.height(), DocAssets.ARROW_BACK.location(), DocAssets.ARROW_BACK_HOVER.location(), (b) -> {
-            if(isShiftDown()){
+            if (isShiftDown()) {
                 var home = new IndexScreen();
                 transition(home);
                 home.previousScreen = null;
                 home.backButton.visible = false;
-            }else {
+            } else {
                 goBack();
             }
         }).withTooltip(Component.translatable("ars_nouveau.shift_back"));
@@ -78,11 +78,11 @@ public class BaseDocScreen extends BaseScreen {
         addRenderableWidget(leftArrow);
         addRenderableWidget(rightArrow);
 
-        if(!showLeftArrow()){
+        if (!showLeftArrow()) {
             leftArrow.visible = false;
         }
 
-        if(!showRightArrow()){
+        if (!showRightArrow()) {
             rightArrow.visible = false;
         }
         addRenderableWidget(new NuggetImageButton(screenLeft - 15, screenTop + 140, 0, 0, 23, 20, 23, 20, ArsNouveau.prefix("textures/gui/discord_tab.png"), (b) -> {
@@ -92,7 +92,7 @@ public class BaseDocScreen extends BaseScreen {
                 throw new RuntimeException(e);
             }
         }).withTooltip(Component.translatable("ars_nouveau.gui.discord")));
-        if(previousScreen == null && !(this instanceof IndexScreen)){
+        if (previousScreen == null && !(this instanceof IndexScreen)) {
             previousScreen = new IndexScreen();
         }
         backButton.visible = previousScreen != null;
@@ -114,17 +114,17 @@ public class BaseDocScreen extends BaseScreen {
         if (str.equals(previousString))
             return;
         previousString = str;
-        if(!str.isEmpty()){
+        if (!str.isEmpty()) {
             transition(new SearchScreen(str));
         }
     }
 
-    public boolean isShiftDown(){
+    public boolean isShiftDown() {
         return InputConstants.isKeyDown(Minecraft.getInstance().getWindow().getWindow(), Minecraft.getInstance().options.keyShift.getKey().getValue());
     }
 
-    public void initBookmarks(){
-        for(AbstractWidget button : bookmarkButtons){
+    public void initBookmarks() {
+        for (AbstractWidget button : bookmarkButtons) {
             removeWidget(button);
         }
         bookmarkButtons.clear();
@@ -135,14 +135,14 @@ public class BaseDocScreen extends BaseScreen {
             DocEntry entry = DocumentationRegistry.getEntry(entryId);
 
             BookmarkButton slot = addRenderableWidget(new BookmarkButton(screenLeft + 281, screenTop + 1 + 15 * (i + 1), entry, (b) -> {
-                if(entry == null) return;
-                if(isShiftDown()){
+                if (entry == null) return;
+                if (isShiftDown()) {
                     bookmarks.remove(entryId);
                     initBookmarks();
-                }else {
+                } else {
                     PageHolderScreen pageHolderScreen = new PageHolderScreen(entry);
                     // Prevent bookmarks from transitioning to the same screen
-                    if(Minecraft.getInstance().screen instanceof PageHolderScreen newPageHolder && newPageHolder.entry == entry){
+                    if (Minecraft.getInstance().screen instanceof PageHolderScreen newPageHolder && newPageHolder.entry == entry) {
                         return;
                     }
                     transition(pageHolderScreen);
@@ -166,8 +166,8 @@ public class BaseDocScreen extends BaseScreen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if(!searchBar.isHovered()){
-            if(button == 1){
+        if (!searchBar.isHovered()) {
+            if (button == 1) {
                 goBack();
             }
         }
@@ -176,7 +176,7 @@ public class BaseDocScreen extends BaseScreen {
 
     @Override
     public boolean charTyped(char c, int i) {
-        if(!searchBar.isFocused()){
+        if (!searchBar.isFocused()) {
             searchBar.setFocused(true);
         }
         if (searchBar.charTyped(c, i)) {
@@ -186,15 +186,15 @@ public class BaseDocScreen extends BaseScreen {
         return super.charTyped(c, i);
     }
 
-    public void transition(BaseDocScreen screen){
+    public void transition(BaseDocScreen screen) {
         SoundManager manager = Minecraft.getInstance().getSoundManager();
         screen.previousScreen = this;
         manager.play(SimpleSoundInstance.forUI(SoundEvents.BOOK_PAGE_TURN, 1.0F));
         Minecraft.getInstance().setScreen(screen);
     }
 
-    public void goBack(){
-        if(previousScreen != null){
+    public void goBack() {
+        if (previousScreen != null) {
             Minecraft.getInstance().setScreen(previousScreen);
             manager.play(SimpleSoundInstance.forUI(SoundEvents.BOOK_PAGE_TURN, 1.0F));
         }
@@ -206,35 +206,35 @@ public class BaseDocScreen extends BaseScreen {
         DocPlayerData.previousScreen = this;
     }
 
-    public boolean showLeftArrow(){
+    public boolean showLeftArrow() {
         return this.arrowIndex > 0;
     }
 
-    public boolean showRightArrow(){
+    public boolean showRightArrow() {
         return this.arrowIndex < this.maxArrowIndex;
     }
 
-    public void onLeftArrowClick(Button button){
+    public void onLeftArrowClick(Button button) {
         this.arrowIndex--;
         this.onArrowIndexChange();
     }
 
-    public void onRightArrowClick(Button button){
+    public void onRightArrowClick(Button button) {
         this.arrowIndex++;
         this.onArrowIndexChange();
     }
 
-    public void onArrowIndexChange(){
+    public void onArrowIndexChange() {
         leftArrow.visible = showLeftArrow();
         rightArrow.visible = showRightArrow();
     }
 
-    public RecipeManager recipeManager(){
+    public RecipeManager recipeManager() {
         Level level = ArsNouveau.proxy.getClientWorld();
         return level.getRecipeManager();
     }
 
-    public void setMinecraft(Minecraft minecraft){
+    public void setMinecraft(Minecraft minecraft) {
         this.minecraft = minecraft;
     }
 }

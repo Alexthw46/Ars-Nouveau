@@ -44,7 +44,7 @@ public class ArcanePedestal extends ModBlock implements EntityBlock, SimpleWater
     }
 
     @Override
-    public ItemInteractionResult useItemOn(ItemStack pStack,BlockState state, Level world, BlockPos pos, Player player, InteractionHand handIn, BlockHitResult hit) {
+    public ItemInteractionResult useItemOn(ItemStack pStack, BlockState state, Level world, BlockPos pos, Player player, InteractionHand handIn, BlockHitResult hit) {
         if (handIn != InteractionHand.MAIN_HAND)
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         if (!world.isClientSide && world.getBlockEntity(pos) instanceof ArcanePedestalTile tile) {
@@ -114,7 +114,7 @@ public class ArcanePedestal extends ModBlock implements EntityBlock, SimpleWater
         return state.getValue(WATERLOGGED) ? Fluids.WATER.getSource(false) : Fluids.EMPTY.defaultFluidState();
     }
 
-   @NotNull
+    @NotNull
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
         FluidState fluidState = context.getLevel().getFluidState(context.getClickedPos());
@@ -153,7 +153,7 @@ public class ArcanePedestal extends ModBlock implements EntityBlock, SimpleWater
     public void neighborChanged(BlockState pState, Level pLevel, BlockPos pPos, Block pBlock, BlockPos pFromPos, boolean pIsMoving) {
         super.neighborChanged(pState, pLevel, pPos, pBlock, pFromPos, pIsMoving);
         if (!pLevel.isClientSide && pLevel.getBlockEntity(pPos) instanceof ArcanePedestalTile tile) {
-            if(tile.hasSignal != pLevel.hasNeighborSignal(pPos)) {
+            if (tile.hasSignal != pLevel.hasNeighborSignal(pPos)) {
                 tile.hasSignal = !tile.hasSignal;
                 tile.updateBlock();
             }

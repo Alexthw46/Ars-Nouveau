@@ -283,7 +283,7 @@ public class EnchantedFallingBlock extends ColoredProjectile implements GeoEntit
                     }
                 }
                 if (this.level.getBlockEntity(blockpos) instanceof MageBlockTile mbt) {
-                    if(context != null) {
+                    if (context != null) {
                         mbt.color = context.getSpell().particleTimeline().get(ParticleTimelineRegistry.MAGEBLOCK_TIMELINE.get()).getColor();
                     }
                     mbt.setChanged();

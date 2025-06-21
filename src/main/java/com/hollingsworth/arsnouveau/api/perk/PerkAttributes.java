@@ -49,11 +49,10 @@ public class PerkAttributes {
     public static void modifyEntityAttributes(EntityAttributeModificationEvent event) {
         event.getTypes().stream().filter(e -> e == EntityType.PLAYER).forEach(e -> {
             ATTRIBUTES.getEntries().forEach((v) -> {
-                    event.add(e, v);
+                event.add(e, v);
             });
         });
     }
-
 
 
 }

@@ -149,7 +149,7 @@ public class Spell {
 
 
     @Deprecated(forRemoval = true)
-    public ConfiguredSpellSound sound(){
+    public ConfiguredSpellSound sound() {
         return sound;
     }
 
@@ -204,7 +204,7 @@ public class Spell {
         return new Spell(name, color, sound, recipe, particleTimeline);
     }
 
-    public Spell withSound(@NotNull ConfiguredSpellSound sound){
+    public Spell withSound(@NotNull ConfiguredSpellSound sound) {
         return new Spell(name, color, sound, recipe, particleTimeline);
     }
     public Spell withTimeline(@NotNull TimelineMap timeline) {
@@ -216,7 +216,7 @@ public class Spell {
     }
 
     @Deprecated(forRemoval = true)
-    public ParticleColor color(){
+    public ParticleColor color() {
         return color;
     }
 
@@ -225,7 +225,7 @@ public class Spell {
     }
 
 
-    public TimelineMap particleTimeline(){
+    public TimelineMap particleTimeline() {
         return particleTimeline;
     }
 
@@ -330,7 +330,7 @@ public class Spell {
         return this.recipe.stream().map(AbstractSpellPart::getRegistryName).toList();
     }
 
-    public Mutable mutable(){
+    public Mutable mutable() {
         return new Mutable(new ArrayList<>(recipe), name, color, sound, particleTimeline);
     }
 
@@ -393,7 +393,7 @@ public class Spell {
         }
 
 
-        public Spell immutable(){
+        public Spell immutable() {
             return new Spell(name, color, sound, recipe, particleTimeline);
         }
     }
