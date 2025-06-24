@@ -16,8 +16,6 @@ import com.hollingsworth.arsnouveau.client.gui.*;
 import com.hollingsworth.arsnouveau.client.gui.buttons.*;
 import com.hollingsworth.arsnouveau.client.gui.utils.RenderUtils;
 import com.hollingsworth.arsnouveau.client.particle.ParticleColor;
-import com.hollingsworth.arsnouveau.client.gui.*;
-import com.hollingsworth.arsnouveau.client.gui.buttons.*;
 import com.hollingsworth.arsnouveau.common.items.SpellBook;
 import com.hollingsworth.arsnouveau.common.network.Networking;
 import com.hollingsworth.arsnouveau.common.network.PacketSetSound;
