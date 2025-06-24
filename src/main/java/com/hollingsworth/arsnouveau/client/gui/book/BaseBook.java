@@ -4,6 +4,7 @@ import com.hollingsworth.arsnouveau.ArsNouveau;
 import com.hollingsworth.arsnouveau.api.client.ITooltipProvider;
 import com.hollingsworth.arsnouveau.api.documentation.DocAssets;
 import com.hollingsworth.arsnouveau.api.registry.FamiliarRegistry;
+
 import com.hollingsworth.arsnouveau.api.spell.SpellValidationError;
 import com.hollingsworth.arsnouveau.client.gui.BookSlider;
 import com.hollingsworth.arsnouveau.client.gui.GuiUtils;
@@ -26,7 +27,6 @@ import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.inventory.tooltip.TooltipComponent;
 import org.jetbrains.annotations.Nullable;
 
 import java.net.URI;
@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
+
 import java.util.function.Consumer;
 
 public class BaseBook extends BaseScreen {
@@ -56,6 +57,7 @@ public class BaseBook extends BaseScreen {
     public int bookBottom;
     public List<SpellValidationError> validationErrors = new ArrayList<>();
     public Screen parent;
+
     public SaveButton saveButton;
     public static BaseBook lastOpenedScreen = null;
 
@@ -89,6 +91,7 @@ public class BaseBook extends BaseScreen {
             }
         }).withTooltip(Component.translatable("ars_nouveau.gui.discord")));
     }
+
 
     public void addBackButton(Screen parentScreen) {
         addBackButton(parentScreen, (b) -> {
@@ -172,7 +175,8 @@ public class BaseBook extends BaseScreen {
         // TODO: 1.22 remove along with ITooltipProvider from ars
         for (Renderable renderable : renderables) {
             if (renderable instanceof AbstractWidget widget) {
-                if (GuiUtils.isMouseInRelativeRange(mouseX, mouseY, widget)) {
+
+                if (widget.visible && GuiUtils.isMouseInRelativeRange(mouseX, mouseY, widget)) {
                     if (renderable instanceof ITooltipProvider tooltipProvider) {
                         tooltipProvider.getTooltip(tooltip);
                     } else if (renderable instanceof ITooltipRenderer nuggetProvider) {

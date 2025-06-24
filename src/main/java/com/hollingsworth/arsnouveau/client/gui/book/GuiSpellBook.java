@@ -3,6 +3,7 @@ package com.hollingsworth.arsnouveau.client.gui.book;
 import com.hollingsworth.arsnouveau.ArsNouveau;
 import com.hollingsworth.arsnouveau.api.ArsNouveauAPI;
 import com.hollingsworth.arsnouveau.api.item.ICasterTool;
+import com.hollingsworth.arsnouveau.api.documentation.DocAssets;
 import com.hollingsworth.arsnouveau.api.registry.GlyphRegistry;
 import com.hollingsworth.arsnouveau.api.registry.SpellCasterRegistry;
 import com.hollingsworth.arsnouveau.api.sound.ConfiguredSpellSound;
@@ -15,6 +16,8 @@ import com.hollingsworth.arsnouveau.client.gui.*;
 import com.hollingsworth.arsnouveau.client.gui.buttons.*;
 import com.hollingsworth.arsnouveau.client.gui.utils.RenderUtils;
 import com.hollingsworth.arsnouveau.client.particle.ParticleColor;
+import com.hollingsworth.arsnouveau.client.gui.*;
+import com.hollingsworth.arsnouveau.client.gui.buttons.*;
 import com.hollingsworth.arsnouveau.common.items.SpellBook;
 import com.hollingsworth.arsnouveau.common.network.Networking;
 import com.hollingsworth.arsnouveau.common.network.PacketSetSound;
@@ -28,6 +31,7 @@ import com.hollingsworth.arsnouveau.setup.registry.ItemsRegistry;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -38,6 +42,7 @@ import net.minecraft.client.gui.screens.inventory.PageButton;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.network.chat.Component;
+
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
@@ -130,7 +135,7 @@ public class GuiSpellBook extends SpellSlottedScreen {
     public void onSetCaster(int slot) {
         this.selectedSpellSlot = slot;
         this.spellname = caster.getSpellName(slot);
-        if(this.spellNameBox != null) {
+        if (this.spellNameBox != null) {
             this.spellNameBox.setValue(caster.getSpellName(slot));
         }
         spell = SpellCasterRegistry.from(bookStack).getSpell(selectedSpellSlot).mutable().recipe;
@@ -176,18 +181,18 @@ public class GuiSpellBook extends SpellSlottedScreen {
         addRenderableWidget(new CopyButton(this).withTooltip(Component.translatable("ars_nouveau.spell_book_gui.copy")));
         addRenderableWidget(new PasteButton(this).withTooltip(Component.translatable("ars_nouveau.spell_book_gui.paste")));
 
-        initSpellSlots((slotButton) ->{
+        initSpellSlots((slotButton) -> {
+
             onSetCaster(selectedSpellSlot);
             resetCraftingCells();
             updateWindowOffset(0); //includes validation
             rebuildWidgets();
         });
 
-        addRenderableWidget(new GuiImageButton(bookLeft - 15, bookTop + 46, 0, 0, 23, 20, 23, 20, "textures/gui/color_wheel_bookmark.png", (b) -> {
+        addRenderableWidget(new GuiImageButton(bookLeft - 15, bookTop + 44, DocAssets.SPELL_STYLE_TAB, (b) -> {
             ParticleOverviewScreen.openScreen(this, bookStack, selectedSpellSlot, this.hand);
         }).withTooltip(Component.translatable("ars_nouveau.gui.spell_style")));
-        addRenderableWidget(new GuiImageButton(bookLeft - 15, bookTop + 70, 0, 0, 23, 20, 23, 20, "textures/gui/color_wheel_bookmark.png", this::onColorClick)
-                .withTooltip(Component.translatable("ars_nouveau.gui.color")));
+
 
         this.nextButton = addRenderableWidget(new PageButton(bookRight - 20, bookBottom - 6, true, this::onPageIncrease, true));
         this.previousButton = addRenderableWidget(new PageButton(bookLeft - 5, bookBottom - 6, false, this::onPageDec, true));
@@ -396,11 +401,6 @@ public class GuiSpellBook extends SpellSlottedScreen {
         }
 
         return true;
-    }
-
-    public void onColorClick(Button button) {
-        ParticleColor color = SpellCasterRegistry.from(bookStack).getColor(selectedSpellSlot);
-        Minecraft.getInstance().setScreen(new GuiColorScreen(color.getRedInt(), color.getGreenInt(), color.getBlueInt(), selectedSpellSlot, this.hand, this));
     }
 
     public void onSoundsClick(Button button) {
@@ -699,9 +699,9 @@ public class GuiSpellBook extends SpellSlottedScreen {
         var caster = SpellCasterRegistry.from(Minecraft.getInstance().player.getItemInHand(hand));
         if (lastOpenedScreen == null) {
             Minecraft.getInstance().setScreen(new GuiSpellBook(hand));
-        }else if(lastOpenedScreen instanceof ParticleOverviewScreen particleOverviewScreen){
+        } else if (lastOpenedScreen instanceof ParticleOverviewScreen particleOverviewScreen) {
             ParticleOverviewScreen.openScreen(particleOverviewScreen.previousScreen, stack, caster.getCurrentSlot(), hand);
-        }else{
+        } else {
             Minecraft.getInstance().setScreen(new GuiSpellBook(hand));
         }
     }
@@ -864,16 +864,17 @@ public class GuiSpellBook extends SpellSlottedScreen {
 
             if (renderable instanceof GlyphButton widget) {
                 return widget.abstractSpellPart.spellSchools.isEmpty() ? null : new SchoolTooltip(widget.abstractSpellPart);
-            }else if(renderable instanceof GuiSpellSlot spellSlot){
-                if(spellSlot.isSelected){
-                    if(spell.isEmpty()){
+            } else if (renderable instanceof GuiSpellSlot spellSlot) {
+                if (spellSlot.isSelected) {
+                    if (spell.isEmpty()) {
                         return null;
                     }
                     return new SpellTooltip(new Spell(spell), false);
                 }
 
                 Spell spellInSlot = caster.getSpell(spellSlot.slotNum);
-                if(spellInSlot.isEmpty())
+
+                if (spellInSlot.isEmpty())
                     return null;
                 return new SpellTooltip(spellInSlot, false);
             }

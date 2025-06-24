@@ -3,6 +3,7 @@ package com.hollingsworth.arsnouveau.api.spell;
 import com.google.common.collect.ImmutableList;
 import com.google.gson.JsonParser;
 import com.hollingsworth.arsnouveau.api.registry.GlyphRegistry;
+
 import com.hollingsworth.arsnouveau.api.particle.timelines.TimelineMap;
 import com.hollingsworth.arsnouveau.api.sound.ConfiguredSpellSound;
 import com.hollingsworth.arsnouveau.client.particle.ParticleColor;
@@ -22,7 +23,6 @@ import java.util.*;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.util.*;
 
 public class Spell {
 
@@ -147,7 +147,6 @@ public class Spell {
         return new Spell();
     }
 
-
     @Deprecated(forRemoval = true)
     public ConfiguredSpellSound sound() {
         return sound;
@@ -206,7 +205,9 @@ public class Spell {
 
     public Spell withSound(@NotNull ConfiguredSpellSound sound) {
         return new Spell(name, color, sound, recipe, particleTimeline);
+
     }
+
     public Spell withTimeline(@NotNull TimelineMap timeline) {
         return new Spell(name, color, sound, recipe, timeline);
     }

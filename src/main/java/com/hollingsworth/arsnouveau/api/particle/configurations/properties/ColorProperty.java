@@ -54,11 +54,6 @@ public class ColorProperty extends BaseProperty<ColorProperty> {
         this(ParticleColor.defaultParticleColor(), true);
     }
 
-    public ColorProperty usesLegacyRGB(boolean legacyRGB) {
-        this.isLegacyRGB = legacyRGB;
-        return this;
-    }
-
     public ParticleColor color() {
         return tintDisabled ? ParticleColor.WHITE : particleColor;
     }
@@ -96,15 +91,15 @@ public class ColorProperty extends BaseProperty<ColorProperty> {
 
                 DocClientUtils.blit(graphics, DocAssets.SPELLSTYLE_COLOR_PREVIEW, xOffset, yOffset);
                 int hueOffset = 35;
-                if (!isLegacyRGB) {
-                    DocClientUtils.drawParagraph(Component.translatable("ars_nouveau.hue"), graphics, x + 8, y + hueOffset, width, mouseX, mouseY, partialTicks);
-                    DocClientUtils.drawParagraph(Component.translatable("ars_nouveau.sat"), graphics, x + 8, y + hueOffset + 20, width, mouseX, mouseY, partialTicks);
-                    DocClientUtils.drawParagraph(Component.translatable("ars_nouveau.lightness"), graphics, x + 8, y + hueOffset + 40, width, mouseX, mouseY, partialTicks);
-                } else {
-                    DocClientUtils.drawParagraph(Component.translatable("ars_nouveau.color_gui.red_slider", redW.getValueInt()), graphics, x + 8, y + hueOffset, width, mouseX, mouseY, partialTicks);
-                    DocClientUtils.drawParagraph(Component.translatable("ars_nouveau.color_gui.green_slider", greenW.getValueInt()), graphics, x + 8, y + hueOffset + 20, width, mouseX, mouseY, partialTicks);
-                    DocClientUtils.drawParagraph(Component.translatable("ars_nouveau.color_gui.blue_slider", blueW.getValueInt()), graphics, x + 8, y + hueOffset + 41, width, mouseX, mouseY, partialTicks);
-                }
+//                if (!isLegacyRGB) {
+                DocClientUtils.drawParagraph(Component.translatable("ars_nouveau.hue"), graphics, x + 8, y + hueOffset, width, mouseX, mouseY, partialTicks);
+                DocClientUtils.drawParagraph(Component.translatable("ars_nouveau.sat"), graphics, x + 8, y + hueOffset + 20, width, mouseX, mouseY, partialTicks);
+                DocClientUtils.drawParagraph(Component.translatable("ars_nouveau.lightness"), graphics, x + 8, y + hueOffset + 40, width, mouseX, mouseY, partialTicks);
+//                } else {
+//                    DocClientUtils.drawParagraph(Component.translatable("ars_nouveau.color_gui.red_slider", redW.getValueInt()), graphics, x + 8, y + hueOffset, width, mouseX, mouseY, partialTicks);
+//                    DocClientUtils.drawParagraph(Component.translatable("ars_nouveau.color_gui.green_slider", greenW.getValueInt()), graphics, x + 8, y + hueOffset + 20, width, mouseX, mouseY, partialTicks);
+//                    DocClientUtils.drawParagraph(Component.translatable("ars_nouveau.color_gui.blue_slider", blueW.getValueInt()), graphics, x + 8, y + hueOffset + 41, width, mouseX, mouseY, partialTicks);
+//                }
             }
 
             @Override
@@ -156,7 +151,6 @@ public class ColorProperty extends BaseProperty<ColorProperty> {
                     displayColor = particleColor;
                     tintDisabled = false;
                     propertyHolder.set(getType(), property);
-                    updateSelected();
                 }) {
                     @Override
                     protected void renderWidget(GuiGraphics graphics, int pMouseX, int pMouseY, float pPartialTick) {
@@ -170,48 +164,23 @@ public class ColorProperty extends BaseProperty<ColorProperty> {
                     particleColor = ParticleColor.WHITE;
                     displayColor = particleColor;
                     propertyHolder.set(getType(), property);
-                    updateSelected();
                 });
                 rainbowButton.withTooltip(Component.translatable("ars_nouveau.color_rainbow"));
                 noneButton.withTooltip(Component.translatable("ars_nouveau.color_none"));
                 selectableButtons.add(noneButton);
                 selectableButtons.add(rainbowButton);
                 widgets.add(rainbowButton);
-                if (isLegacyRGB) {
-                    widgets.add(redW);
-                    widgets.add(greenW);
-                    widgets.add(blueW);
-                } else {
-                    widgets.add(hueSlider);
-                    widgets.add(saturation);
-                    widgets.add(lightness);
+//                if (isLegacyRGB) {
+//                    widgets.add(redW);
+//                    widgets.add(greenW);
+//                    widgets.add(blueW);
+//                } else {
+                widgets.add(hueSlider);
+                widgets.add(saturation);
+                widgets.add(lightness);
+                if (!isLegacyRGB) {
                     widgets.add(noneButton);
                 }
-            }
-
-            public void updateSelected() {
-//                for(SelectedParticleButton selectedParticleButton : selectableButtons){
-//                    selectedParticleButton.selected = false;
-//                }
-//
-//                if(tintDisabled){
-//                    noneButton.selected = true;
-//                }else{
-//                    for(SelectedParticleButton selectedParticleButton : selectableButtons){
-//                        if(selectedParticleButton instanceof ColorPresetButton presetButton){
-//                            if(presetButton.particleColor.equals(particleColor)){
-//                                selectedParticleButton.selected = true;
-//                                break;
-//                            }
-//                        } else if(selectedParticleButton == rainbowButton && particleColor instanceof RainbowParticleColor){
-//                            selectedParticleButton.selected = true;
-//                            break;
-//                        } else if(selectedParticleButton == noneButton && tintDisabled){
-//                            selectedParticleButton.selected = true;
-//                            break;
-//                        }
-//                    }
-//                }
             }
 
             public void updateParticleColor() {
@@ -219,7 +188,6 @@ public class ColorProperty extends BaseProperty<ColorProperty> {
                 particleColor = HSLColor.hsl(hueSlider.getValueInt(), saturation.getValue(), lightness.getValue()).toColor().toParticle();
                 displayColor = particleColor;
                 propertyHolder.set(getType(), property);
-                updateSelected();
             }
 
             public void setFromPreset(ParticleColor preset) {
@@ -244,7 +212,9 @@ public class ColorProperty extends BaseProperty<ColorProperty> {
                     return;
                 }
                 Color color = new Color(displayColor.getColor(), false);
-                graphics.fill(x + 2, y + 2, x + 12, y + 12, color.getRGB());
+                graphics.fill(x + 3, y + 2, x + 11, y + 3, color.getRGB());
+                graphics.fill(x + 2, y + 3, x + 12, y + 11, color.getRGB());
+                graphics.fill(x + 3, y + 11, x + 11, y + 12, color.getRGB());
             }
 
             @Override

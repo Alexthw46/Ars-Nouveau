@@ -94,6 +94,8 @@ public class DocAssets {
     public static final BlitInfo SLIDER_BAR = new BlitInfo(ArsNouveau.prefix("textures/gui/documentation/doc_spellstyle_slider_bar.png"), 106, 7);
     public static final BlitInfo SLIDER = new BlitInfo(ArsNouveau.prefix("textures/gui/documentation/doc_spellstyle_slider.png"), 5, 9);
     public static final BlitInfo STYLE_ICON_BLOCK = new BlitInfo(ArsNouveau.prefix("textures/gui/doc_spellstyle_icon_block.png"), 14, 14);
+
+    public static final BlitInfo STYLE_ICON_SPIKE = new BlitInfo(ArsNouveau.prefix("textures/gui/spike_icon.png"), 14, 14);
     public static final BlitInfo STYLE_ICON_NONE = new BlitInfo(ArsNouveau.prefix("textures/gui/doc_spellstyle_icon_none.png"), 14, 14);
     public static final BlitInfo STYLE_ICON_CUBE = new BlitInfo(ArsNouveau.prefix("textures/gui/doc_spellstyle_icon_cube.png"), 14, 14);
     public static final BlitInfo STYLE_ICON_SPHERE = new BlitInfo(ArsNouveau.prefix("textures/gui/doc_spellstyle_icon_sphere.png"), 14, 14);
@@ -111,6 +113,16 @@ public class DocAssets {
     public static final BlitInfo SOUND_ICON = new BlitInfo(ArsNouveau.prefix("textures/gui/sound_icon.png"), 14, 14);
     public static final BlitInfo FAVORITE_ICON_HOVER = new BlitInfo(ArsNouveau.prefix("textures/gui/documentation/favorite_icon_hover.png"), 7, 6);
     public static final BlitInfo FAVORITE_ICON = new BlitInfo(ArsNouveau.prefix("textures/gui/documentation/favorite_icon.png"), 7, 6);
+
+    public static final BlitInfo COLLAPSE_ICON = new BlitInfo(ArsNouveau.prefix("textures/gui/collapse.png"), 15, 10);
+    public static final BlitInfo EXPAND_ICON = new BlitInfo(ArsNouveau.prefix("textures/gui/expand.png"), 15, 10);
+    public static final BlitInfo EXPAND_MARKER = new BlitInfo(ArsNouveau.prefix("textures/gui/expanded_marker.png"), 6, 3);
+    public static final BlitInfo COLLAPSE_MARKER = new BlitInfo(ArsNouveau.prefix("textures/gui/collapsed_marker.png"), 3, 6);
+    public static final BlitInfo SPELL_STYLE_TAB = new BlitInfo(ArsNouveau.prefix("textures/gui/spell_style_tab.png"), 23, 20);
+    public static final BlitInfo FAMILIAR_TAB = new BlitInfo(ArsNouveau.prefix("textures/gui/familiar_tab.png"), 23, 20);
+    public static final BlitInfo DOCUMENTATION_TAB = new BlitInfo(ArsNouveau.prefix("textures/gui/documentation_tab.png"), 23, 20);
+    public static final BlitInfo SETTINGS_TAB = new BlitInfo(ArsNouveau.prefix("textures/gui/settings_tab.png"), 23, 20);
+    public static final BlitInfo DISCORD_TAB = new BlitInfo(ArsNouveau.prefix("textures/gui/discord_tab.png"), 23, 20);
 
     public record BlitInfo(ResourceLocation location, int u, int v, int width, int height) {
         public BlitInfo(ResourceLocation location, int width, int height) {
