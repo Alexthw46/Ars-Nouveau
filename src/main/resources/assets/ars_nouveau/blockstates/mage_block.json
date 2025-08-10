@@ -1,5 +1,22 @@
 {
   "variants": {
-    "": { "model": "ars_nouveau:block/mage_block" }
+    "transparency=0": {
+      "model": "ars_nouveau:block/mage_block"
+    },
+    "transparency=1": {
+      "model": "ars_nouveau:block/mage_glass_1"
+    },
+    "transparency=2": {
+      "model": "ars_nouveau:block/mage_glass_2"
+    },
+    "transparency=3": {
+      "model": "ars_nouveau:block/mage_glass_3"
+    },
+    "transparency=4": {
+      "model": "ars_nouveau:block/mage_glass_4"
+    },
+    "transparency=5": {
+      "model": "ars_nouveau:block/mage_block_transparent"
+    }
   }
 }

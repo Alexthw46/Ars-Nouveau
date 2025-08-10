@@ -49,7 +49,7 @@ public class EffectPhantomBlock extends AbstractEffect {
             BlockState state = world.getBlockState(pos);
             if (state.canBeReplaced() && world.isUnobstructed(BlockRegistry.MAGE_BLOCK.get().defaultBlockState(), pos, CollisionContext.of(fakePlayer))) {
 
-                world.setBlockAndUpdate(pos, BlockRegistry.MAGE_BLOCK.get().defaultBlockState().setValue(MageBlock.TEMPORARY, !spellStats.hasBuff(AugmentAmplify.INSTANCE)));
+                world.setBlockAndUpdate(pos, BlockRegistry.MAGE_BLOCK.get().defaultBlockState().setValue(MageBlock.TEMPORARY, !spellStats.hasBuff(AugmentAmplify.INSTANCE)).setValue(MageBlock.TRANSPARENCY, spellStats.getBuffCount(AugmentDampen.INSTANCE)));
                 if (world.getBlockEntity(pos) instanceof MageBlockTile tile) {
                     tile.setColor(spellContext.getParticleTimeline(ParticleTimelineRegistry.MAGEBLOCK_TIMELINE.get()).getColor());
                     tile.lengthModifier = spellStats.getDurationMultiplier();
@@ -81,7 +81,7 @@ public class EffectPhantomBlock extends AbstractEffect {
     @NotNull
     @Override
     public Set<AbstractAugment> getCompatibleAugments() {
-        return augmentSetOf(AugmentAOE.INSTANCE, AugmentPierce.INSTANCE, AugmentAmplify.INSTANCE, AugmentExtendTime.INSTANCE, AugmentDurationDown.INSTANCE);
+        return augmentSetOf(AugmentAOE.INSTANCE, AugmentPierce.INSTANCE, AugmentAmplify.INSTANCE, AugmentDampen.INSTANCE, AugmentExtendTime.INSTANCE, AugmentDurationDown.INSTANCE);
     }
 
     @Override

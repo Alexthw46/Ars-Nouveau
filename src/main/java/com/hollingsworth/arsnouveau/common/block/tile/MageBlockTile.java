@@ -41,13 +41,13 @@ public class MageBlockTile extends ModdedTile implements ITickable, IDispellable
 
 
     @Override
-    public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider lookupProvider) {
+    public void handleUpdateTag(@NotNull CompoundTag tag, HolderLookup.@NotNull Provider lookupProvider) {
         super.handleUpdateTag(tag, lookupProvider);
         level.sendBlockUpdated(worldPosition, level.getBlockState(worldPosition), level.getBlockState(worldPosition), 8);
     }
 
     @Override
-    protected void loadAdditional(CompoundTag compound, HolderLookup.Provider pRegistries) {
+    protected void loadAdditional(@NotNull CompoundTag compound, HolderLookup.@NotNull Provider pRegistries) {
         super.loadAdditional(compound, pRegistries);
         this.age = compound.getInt("age");
         this.color = ParticleColorRegistry.from(compound.getCompound("lightColor"));
@@ -56,7 +56,7 @@ public class MageBlockTile extends ModdedTile implements ITickable, IDispellable
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider pRegistries) {
+    protected void saveAdditional(@NotNull CompoundTag tag, HolderLookup.@NotNull Provider pRegistries) {
         super.saveAdditional(tag, pRegistries);
         tag.put("age", IntTag.valueOf(age));
         tag.put("lightColor", color.serialize());
