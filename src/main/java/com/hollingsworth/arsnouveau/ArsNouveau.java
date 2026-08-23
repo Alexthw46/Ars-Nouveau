@@ -9,6 +9,7 @@ import com.hollingsworth.arsnouveau.common.block.tile.PlanariumTile;
 import com.hollingsworth.arsnouveau.common.entity.BubbleEntity;
 import com.hollingsworth.arsnouveau.common.entity.pathfinding.Pathfinding;
 import com.hollingsworth.arsnouveau.common.event.BreezeEvent;
+import com.hollingsworth.arsnouveau.common.items.AbjurationEssence;
 import com.hollingsworth.arsnouveau.common.network.Networking;
 import com.hollingsworth.arsnouveau.common.util.Log;
 import com.hollingsworth.arsnouveau.common.world.Terrablender;
@@ -102,7 +103,7 @@ public class ArsNouveau {
         NeoForge.EVENT_BUS.addListener(BubbleEntity::entityHurt);
         NeoForge.EVENT_BUS.addListener(BubbleEntity::preEntityRemoval);
         NeoForge.EVENT_BUS.addListener(BreezeEvent::onSpellResolve);
-
+        NeoForge.EVENT_BUS.addListener(AbjurationEssence::onScribesTableInteract);
         NeoForge.EVENT_BUS.addListener((ClientTickEvent.Post e) -> {
             ClientInfo.endClientTick();
         });
