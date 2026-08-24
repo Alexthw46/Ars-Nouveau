@@ -1,13 +1,14 @@
 # Changelog
 
-Adds a preview button to the spell particles screen for visualizing current selected effects and sounds
+Adds more relations in documentation
 
-Adds Drygmy and Starbuncle painting blocks (Jarva)
+Makes caster tome names and flavor text translatable entries
 
-Improves performance with automated enchanting apparatus (Jarva)
+Projectiles now preserve momentum when interacting with spell prisms
 
-Fixes world loading with Biolith
+Fixes jagged animation on items floating above scribes table
 
-Fixes bubbles targeting create contraptions
+Fixes crash when glyph recipes have more than 10 items
 
-Fixes warp portal particles spawning in wrong location (Qther)
+Fixes abjuration essence not clearing prestidigitation
+
