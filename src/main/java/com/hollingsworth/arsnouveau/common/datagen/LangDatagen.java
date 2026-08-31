@@ -85,6 +85,10 @@ public class LangDatagen extends LanguageProvider {
                 add("item.ars_nouveau." + i.perk.getRegistryName().getPath(), i.perk.getLangName());
             }
         }
+        for (Map.Entry<String, String> entry : CasterTomeProvider.langEntries().entrySet()) {
+            add(entry.getKey(), entry.getValue());
+        }
+
         add("key.category.ars_nouveau.general", "Ars Nouveau");
         add("key.ars_nouveau.previous_slot", "(Spell Book) Previous Slot");
         add("key.ars_nouveau.next_slot", "(Spell Book) Next Slot");
@@ -1397,6 +1401,7 @@ public class LangDatagen extends LanguageProvider {
         add("tooltip.drygmy_shard2", "A tribute to what once was.");
         add("tooltip.wixie_shard2", "Knowledge for freedom.");
         add("block.ars_nouveau.alakarkinos_hat", "Alakarkinos Hat");
+        add("block.ars_nouveau.starbuncle_plush", "Starbuncle Plush");
         add("entity.ars_nouveau.bubble", "Bubble");
         add("entity.ars_nouveau.alakarkinos", "Alakarkinos");
         add("item.ars_nouveau.alakarkinos_charm", "Alakarkinos Charm");
@@ -1820,6 +1825,13 @@ public class LangDatagen extends LanguageProvider {
         add("ars_nouveau.effect_icon_tooltip", "Effects: Determines what the spell does after hitting a target.");
         add("ars_nouveau.filter_icon_tooltip", "Filters: Prevents the spell from resolving if the target does not match the filter.");
         add("ars_nouveau.spell_book_info_tooltip", "Tips and Tricks: \n• Middle-Click a glyph in the spell to add an empty space to the left of it.\n• Press 0-9 when hovering your mouse over a glyph to add it to that spell slot.\n• Ctrl + C to copy the spell and its particles.\n• Ctrl + V to paste a spell.");
+        add("ars_nouveau.starby_plush_campaign", "Sign up for a Starbuncle plush from Makeship now! See the plush button on the left side of your spell book or tattered tome screen.");
+        add("ars_nouveau.page.starbuncle_plush", "Soft and squishy, probably won't steal your items.");
+        add("ars_nouveau.preview", "Preview");
+        add("painting.ars_nouveau.starbuncle.title", "Starbuncle");
+        add("painting.ars_nouveau.starbuncle.author", "Gootastic");
+        add("painting.ars_nouveau.resting_drygmy.title", "Resting Drygmy");
+        add("painting.ars_nouveau.resting_drygmy.author", "Gootastic");
     }
 
     public void addCategory(String key, String value) {

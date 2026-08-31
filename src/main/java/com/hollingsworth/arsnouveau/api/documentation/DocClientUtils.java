@@ -17,8 +17,10 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import org.apache.commons.lang3.StringUtils;
@@ -26,6 +28,7 @@ import org.apache.commons.lang3.StringUtils;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class DocClientUtils {
 
@@ -158,6 +161,34 @@ public class DocClientUtils {
 
     public static List<NuggetMultilLineLabel> splitToFitFullPage(Component text) {
         return DocClientUtils.splitToFitPageWithOffset(text, ROWS_FOR_NORMAL_PAGE, ROWS_FOR_NORMAL_PAGE);
+    }
+
+    public static List<Component> splitTooltip(Component text, @Nullable Item.TooltipContext context) {
+        if (context == null) {
+            return List.of(text);
+        }
+        var level = context.level();
+        if (level == null || !level.isClientSide) {
+            return List.of(text);
+        }
+        Font font = Minecraft.getInstance().font;
+        if (font.width(text) <= 200) {
+            return List.of(text);
+        }
+        List<FormattedText> lines = font.getSplitter().splitLines(text, 200, Style.EMPTY);
+        if (lines.isEmpty()) {
+            return List.of(text);
+        }
+        List<Component> components = new ArrayList<>();
+        for (FormattedText line : lines) {
+            MutableComponent component = Component.empty().withStyle(text.getStyle());
+            line.visit((style, contents) -> {
+                component.append(Component.literal(contents).withStyle(style));
+                return Optional.empty();
+            }, Style.EMPTY);
+            components.add(component);
+        }
+        return components;
     }
 
     public static List<NuggetMultilLineLabel> splitToFitTitlePage(Component text) {

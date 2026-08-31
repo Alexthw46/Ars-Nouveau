@@ -1,11 +1,14 @@
 # Changelog
 
-Fix client memory leak with portals
+Adds more relations in documentation
 
-Fix crash with edge case using scribes tables in structures
+Makes caster tome names and flavor text translatable entries
 
-Fix mana values after learning a new glyph not updating until using a spell book.
+Projectiles now preserve momentum when interacting with spell prisms
 
-Adds Starbuncles and Golems to the sable destroy_when_leaving_plot and retain_in_sub_level tags
+Fixes jagged animation on items floating above scribes table
 
-Interacting with a source jar in creative mode will now add source or remove it if crouching.
+Fixes crash when glyph recipes have more than 10 items
+
+Fixes abjuration essence not clearing prestidigitation
+

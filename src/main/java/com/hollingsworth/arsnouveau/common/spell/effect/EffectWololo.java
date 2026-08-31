@@ -13,7 +13,6 @@ import com.hollingsworth.arsnouveau.api.spell.SpellStats;
 import com.hollingsworth.arsnouveau.api.spell.wrapped_caster.TileCaster;
 import com.hollingsworth.arsnouveau.api.util.IWololoable;
 import com.hollingsworth.arsnouveau.client.particle.ParticleColor;
-import com.hollingsworth.arsnouveau.common.crafting.recipes.IDyeable;
 import com.hollingsworth.arsnouveau.common.entity.debug.FixedStack;
 import com.hollingsworth.arsnouveau.common.mixin.MobAccessor;
 import com.hollingsworth.arsnouveau.common.spell.augment.AugmentRandomize;
@@ -76,10 +75,11 @@ public class EffectWololo extends AbstractEffect {
         DyeItem dye = (DyeItem) dyeStack.getItem();
 
         if (rayTraceResult.getEntity() instanceof ItemEntity itemEntity) {
-            Item item = itemEntity.getItem().getItem();
-            if (item instanceof IDyeable iDyeable)
-                iDyeable.onDye(itemEntity.getItem(), dye.getDyeColor());
-            else if (item instanceof BlockItem blockItem) {
+            ItemStack item = itemEntity.getItem();
+
+            if (itemEntity.getItem().has(DataComponents.BASE_COLOR)) {
+                itemEntity.getItem().set(DataComponents.BASE_COLOR, dye.getDyeColor());
+            } else if (item.getItem() instanceof BlockItem blockItem) {
                 ItemStack result = getDyedResult((ServerLevel) world, makeContainer(dye, blockItem));
                 result.setCount(itemEntity.getItem().getCount());
                 if (!result.isEmpty() && result.getItem() instanceof BlockItem) {
@@ -87,9 +87,7 @@ public class EffectWololo extends AbstractEffect {
                 }
             }
 
-            if (itemEntity.getItem().has(DataComponents.BASE_COLOR)) {
-                itemEntity.getItem().set(DataComponents.BASE_COLOR, dye.getDyeColor());
-            }
+
         } else if (rayTraceResult.getEntity() instanceof LivingEntity living) {
             if (living instanceof Sheep sheep)
                 sheep.setColor(dye.getDyeColor());
@@ -99,11 +97,7 @@ public class EffectWololo extends AbstractEffect {
                         var dyeComponent = armorStack.get(DataComponents.DYED_COLOR);
                         if (dyeComponent != null) {
                             armorStack.set(DataComponents.DYED_COLOR, new DyedItemColor(dye.getDyeColor().getTextureDiffuseColor(), false));
-                        } else if (armorStack.getItem() instanceof IDyeable iDyeable) {
-                            iDyeable.onDye(armorStack, dye.getDyeColor());
-                        }
-
-                        if (armorStack.has(DataComponents.BASE_COLOR)) {
+                        } else if (armorStack.has(DataComponents.BASE_COLOR)) {
                             armorStack.set(DataComponents.BASE_COLOR, dye.getDyeColor());
                         }
                     }
@@ -124,7 +118,7 @@ public class EffectWololo extends AbstractEffect {
         if (spellContext.getCaster() instanceof TileCaster) {
             InventoryManager manager = spellContext.getCaster().getInvManager();
             SlotReference reference = manager.findItem(i -> i.getItem() instanceof DyeItem, InteractType.EXTRACT);
-            if (!reference.isEmpty()) {
+            if (!reference.isEmpty() && reference.getHandler() != null) {
                 return reference.getHandler().getStackInSlot(reference.getSlot());
             }
         } else {
@@ -144,7 +138,7 @@ public class EffectWololo extends AbstractEffect {
         BlockPos blockPos = rayTraceResult.getBlockPos();
         BlockEntity blockEntity = world.getBlockEntity(blockPos);
         if (blockEntity instanceof IWololoable tileToDye) {
-            ParticleColor color = spellStats.isRandomized() ? ParticleColor.makeRandomColor(255, 255, 255, shooter.getRandom()) : spellContext.getSpell().particleTimeline().get(ParticleTimelineRegistry.WOLOLO_TIMELINE).getColor();;
+            ParticleColor color = spellStats.isRandomized() ? ParticleColor.makeRandomColor(255, 255, 255, shooter.getRandom()) : spellContext.getSpell().particleTimeline().get(ParticleTimelineRegistry.WOLOLO_TIMELINE).getColor();
             tileToDye.setColor(color);
         } else {
             ItemStack dyeStack = getDye(shooter, spellStats, spellContext);
@@ -168,6 +162,14 @@ public class EffectWololo extends AbstractEffect {
                 blockItem = (BlockItem) result.getItem();
                 BlockState newState = blockItem.getBlock().withPropertiesOf(hitBlock);
                 world.setBlockAndUpdate(blockPos, newState);
+                //transfer tag if the block entity type is the same,
+                //for shulkers-like so they keep their inventory if dyed in-world
+                if (blockEntity != null) {
+                    var newBlockEntity = world.getBlockEntity(blockPos);
+                    if (newBlockEntity != null && newBlockEntity.getClass() == blockEntity.getClass()) {
+                        newBlockEntity.loadWithComponents(blockEntity.saveWithoutMetadata(world.registryAccess()), world.registryAccess());
+                    }
+                }
             }
         }
     }
